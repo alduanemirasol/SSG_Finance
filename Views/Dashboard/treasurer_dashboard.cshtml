@@ -37,6 +37,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);display:flex;min-heig
 .sb-brand{display:flex;align-items:center;gap:10px;padding:20px 16px 18px;border-bottom:1px solid rgba(255,255,255,.05)}
 .sb-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 14px rgba(39,167,68,.3)}
 .sb-logo svg{width:18px;height:18px}
+.sb-logo img{width:100%;height:100%;object-fit:cover;border-radius:10px}
 .sb-brand-name{font-size:13.5px;font-weight:700;color:#fff;letter-spacing:-.01em}
 .sb-brand-sub{font-size:10px;color:rgba(39,167,68,.85);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
 .sb-label{font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text-d);padding:16px 16px 5px}
@@ -234,6 +235,42 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 .dropdown-item:hover{background:rgba(39,167,68,.08);color:var(--text)}
 .dropdown-item.danger{color:var(--red-badge-t)}
 .dropdown-item.danger:hover{background:rgba(239,68,68,.08)}
+
+/* Receipt preview */
+.receipt-modal{display:none;position:fixed;inset:0;z-index:700;align-items:center;justify-content:center}
+.receipt-modal.open{display:flex}
+.receipt-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px)}
+.receipt-modal-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:12px;max-height:95vh;overflow-y:auto;padding:16px}
+.receipt-controls{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 14px;width:100%;max-width:620px}
+.receipt-ctrl-title{flex:1;font-size:12.5px;font-weight:600;color:var(--text-m)}
+.btn-receipt-close{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;font-family:inherit;flex-shrink:0}
+.btn-receipt-close:hover{background:rgba(239,68,68,.12);color:#f87171}
+.receipt-paper{width:620px;min-height:952px;background:#ffffff;border:1px solid #ccc;box-shadow:0 8px 40px rgba(0,0,0,.45);padding:60px 64px 72px;font-family:'Libre Baskerville',Georgia,serif;color:#111;position:relative;flex-shrink:0}
+.receipt-paper::before{display:none}
+.rp-header{text-align:center;margin-bottom:32px;position:relative;z-index:1}
+.rp-org{font-size:20px;font-weight:700;letter-spacing:.01em;margin-bottom:2px}
+.rp-campus{font-size:13px;font-weight:400}
+.rp-divider{border:none;border-top:1px solid #555;margin:14px 0 10px}
+.rp-type{font-size:14px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-top:10px}
+.rp-copy{font-size:12px;font-style:italic;color:#444;margin-top:2px}
+.rp-meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px;position:relative;z-index:1}
+.rp-meta-label{font-size:12.5px;font-weight:400}
+.rp-meta-value{font-size:13px;font-weight:700;color:#111;border-bottom:1px solid #888;min-width:140px;display:inline-block;padding-bottom:2px;text-align:center}
+.rp-meta-value.date-val{color:#111}
+.rp-section-title{text-align:center;font-size:13.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:22px;position:relative;z-index:1}
+.rp-field{display:flex;align-items:baseline;margin-bottom:16px;position:relative;z-index:1}
+.rp-field-label{font-size:13px;font-weight:400;min-width:160px;flex-shrink:0}
+.rp-field-value{flex:1;font-size:13.5px;font-weight:700;border-bottom:1px solid #888;padding-bottom:2px;min-height:22px;padding-left:6px;font-family:'Libre Baskerville',Georgia,serif}
+.rp-field-value.handwritten{font-style:italic;font-size:14px;letter-spacing:.01em}
+.rp-status-badge{display:inline-block;padding:0;border:none;border-radius:0;font-size:13px;font-weight:700;font-style:italic;color:#111;background:none}
+.rp-status-badge.paid{border:none;color:#111;background:none}
+.rp-status-badge.partial{border:none;color:#111;background:none}
+.rp-signature-section{margin-top:52px;display:flex;justify-content:flex-end;position:relative;z-index:1}
+.rp-sig-block{text-align:center;min-width:220px}
+.rp-sig-label{font-size:12.5px;margin-bottom:6px}
+.rp-sig-line{display:none}
+.rp-sig-name-label{font-size:11px;color:#555}
+.rp-watermark{display:none}
 </style>
 </head>
 <body>
@@ -244,7 +281,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 <aside class="sidebar">
   <div class="sb-brand">
     <div class="sb-logo">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <img src="~/logo.png" alt="SSG Finance Logo" />
     </div>
     <div>
       <div class="sb-brand-name">SSG Finance</div>
@@ -261,8 +298,12 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
     <svg viewBox="0 0 24 24" fill="none"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
     Transaction History
   </div>
+  <div class="nav-item" onclick="showPage('students',this)">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Students
+  </div>
 
-  <div class="sb-label">Add Transaction</div>
+  <div class="sb-label">Transactions</div>
   <div class="nav-item" onclick="showPage('income',this)">
     <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12l7-7 7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     Add Income
@@ -316,36 +357,17 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
       </div>
     </div>
 
-    <!-- 3 STAT CARDS -->
-    <div class="stat-grid-3">
-      <div class="stat-card green">
-        <div class="stat-lbl">Total Income</div>
-        <div class="stat-row">
-          <div class="stat-val" id="s-income">₱0.00</div>
-          <div class="stat-icon g"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12l7-7 7 7" stroke="#27a744" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-        </div>
-        <div class="stat-sub" id="s-income-sub">Org Fees + Other Funds</div>
-      </div>
-      <div class="stat-card red">
-        <div class="stat-lbl">Total Expenses</div>
-        <div class="stat-row">
-          <div class="stat-val" id="s-expenses">₱0.00</div>
-          <div class="stat-icon r"><svg viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7 7 7-7" stroke="#f87171" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-        </div>
-        <div class="stat-sub" id="s-exp-sub">All recorded expenses</div>
-      </div>
-      <div class="stat-card blue">
-        <div class="stat-lbl">Remaining Balance</div>
-        <div class="stat-row">
-          <div class="stat-val" id="s-balance">₱0.00</div>
-          <div class="stat-icon b"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="#93c5fd" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="#93c5fd" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-        </div>
-        <div class="stat-sub" id="s-balance-sub">Income − Expenses</div>
+    <!-- REMAINING BALANCE — inline display, no card -->
+    <div style="margin-bottom:16px;padding:14px 20px;background:transparent;border:none;border-radius:14px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:4px">Remaining Balance</div>
+        <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-.04em" id="s-balance">₱0.00</div>
+        <div style="font-size:10.5px;margin-top:4px" id="s-balance-sub">Income − Expenses</div>
       </div>
     </div>
 
     <!-- CHARTS -->
-    <div class="charts-grid">
+    <div style="margin-bottom:14px">
       <div class="content-card">
         <div class="cc-hdr">
           <div class="cc-title">Monthly Overview</div>
@@ -357,25 +379,11 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
         </div>
         <div class="chart-wrap"><canvas id="barChart"></canvas></div>
       </div>
-      <div class="content-card">
-        <div class="cc-hdr"><div class="cc-title">Breakdown</div></div>
-        <div class="donut-wrap">
-          <div class="donut-canvas"><canvas id="donutChart"></canvas></div>
-          <div class="donut-legend" id="donut-legend"></div>
-        </div>
-      </div>
     </div>
-
-    <!-- RECENT TRANSACTIONS -->
-    <div class="content-card">
-      <div class="cc-hdr">
-        <div class="cc-title">Recent Transactions</div>
-        <button class="btn-outline" onclick="showPage('history',document.querySelector('[onclick*=history]'))">View All</button>
-      </div>
-      <table>
-        <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th></tr></thead>
-        <tbody id="dash-tbody"></tbody>
-      </table>
+    <!-- hidden donut elements so JS doesn't error -->
+    <div style="display:none">
+      <canvas id="donutChart"></canvas>
+      <div id="donut-legend"></div>
     </div>
   </div>
 
@@ -383,68 +391,188 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
   <div class="page" id="page-history">
     <div class="page-hdr">
       <div><div class="page-title">Transaction History</div><div class="page-sub">Complete record of all financial entries</div></div>
-      <button class="btn-primary" onclick="openModal('modal-pick')">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-        Add Transaction
-      </button>
     </div>
+
+    <!-- Summary row moved above the table -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px">
+      <div style="background:var(--card);border:1px solid var(--card-b);border-radius:12px;padding:14px 18px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-d);margin-bottom:5px">Total Revenue</div>
+        <div class="amt-in" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:600" id="h-income">₱0.00</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--card-b);border-radius:12px;padding:14px 18px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-d);margin-bottom:5px">Total Expenses</div>
+        <div class="amt-out" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:600" id="h-expense">₱0.00</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--card-b);border-radius:12px;padding:14px 18px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-d);margin-bottom:5px">Collectable Org Fee</div>
+        <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:600" id="h-balance">₱0.00</div>
+      </div>
+    </div>
+
     <div class="content-card">
       <div class="toolbar">
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
           <input type="text" placeholder="Search by description, student name, school ID, course…" oninput="filterHistory(this.value)"/>
         </div>
-        <select class="filter-select" onchange="filterHistoryType(this.value)">
-          <option value="">All Types</option>
-          <option value="income">Income</option>
-          <option value="expense">Expense</option>
-        </select>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select class="filter-select" id="hist-filter-sy" onchange="applyHistoryFilters()">
+            <option value="">All School Years</option>
+          </select>
+          <select class="filter-select" id="hist-filter-sem" onchange="applyHistoryFilters()">
+            <option value="">All Semesters</option>
+            <option value="First">1st Semester</option>
+            <option value="Second">2nd Semester</option>
+          </select>
+          <select class="filter-select" id="hist-filter-type" onchange="applyHistoryFilters()">
+            <option value="">All Types</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
       </div>
       <table>
-        <thead><tr><th>Date</th><th>Description</th><th>Student Info</th><th>Category</th><th>Type</th><th>Receipt / OR</th><th>Amount</th><th></th></tr></thead>
+        <thead><tr><th>Date</th><th>Description</th><th>Student Info</th><th>Receipt / OR</th><th>Amount</th><th></th></tr></thead>
         <tbody id="history-tbody"></tbody>
       </table>
-      <div class="summary-row">
-        <div class="summary-cell"><div class="summary-lbl">Total Income</div><div class="summary-val amt-in" id="h-income">₱0.00</div></div>
-        <div class="summary-cell"><div class="summary-lbl">Total Expenses</div><div class="summary-val amt-out" id="h-expense">₱0.00</div></div>
-        <div class="summary-cell"><div class="summary-lbl">Remaining Balance</div><div class="summary-val" id="h-balance">₱0.00</div></div>
+    </div>
+  </div>
+
+  <!-- STUDENTS -->
+  <div class="page" id="page-students">
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">Students</div>
+        <div class="page-sub" id="students-page-sub">All approved students and treasurers</div>
       </div>
+    </div>
+    <div class="content-card">
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input type="text" placeholder="Search by name, school ID, course…" oninput="filterStudentsPage(this.value)"/>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>School ID</th><th>Name</th><th>Course · Year &amp; Section</th><th>1st Sem</th><th>2nd Sem</th><th>Org Fees</th></tr></thead>
+        <tbody id="students-page-tbody">
+          <tr class="empty-row"><td colspan="7">Loading students…</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
   <!-- INCOME -->
   <div class="page" id="page-income">
-    <div class="page-hdr"><div><div class="page-title">Add Income</div><div class="page-sub">Record student fees and other receivable funds</div></div></div>
-    <div class="income-grid">
-      <div class="income-card" onclick="openModal('modal-orgfee')">
-        <div class="income-card-icon" style="background:rgba(39,167,68,.15)">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="#5fdd8e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 12v5c0 1.657 2.686 3 6 3s6-1.343 6-3v-5" stroke="#5fdd8e" stroke-width="1.8" stroke-linecap="round"/></svg>
-        </div>
-        <div class="income-card-title">Student Organizational Fee</div>
-        <div class="income-card-desc">Collect and record SSG membership fees from students. Required fee: <strong style="color:#5fdd8e" id="current-fee-amount">₱200.00</strong> per student per semester.</div>
-        <button class="btn-primary" style="width:100%;justify-content:center" onclick="event.stopPropagation();openModal('modal-orgfee')">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-          Record Org Fee
-        </button>
+    <div class="page-hdr">
+      <div><div class="page-title">Add Income</div><div class="page-sub">Record student fees and other receivable funds</div></div>
+    </div>
+
+    <!-- TYPE TABS -->
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      <button id="income-tab-orgfee" onclick="switchIncomeTab('orgfee')"
+        style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;background:var(--green);color:#fff;border:none">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Org Fee
+      </button>
+      <button id="income-tab-fund" onclick="switchIncomeTab('fund')"
+        style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--text-m)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6" stroke="currentColor" stroke-width="1.8"/></svg>
+        Other Fund
+      </button>
+    </div>
+
+    <!-- ORG FEE FORM -->
+    <div id="income-panel-orgfee" class="content-card" style="max-width:600px">
+      <div class="cc-hdr">
+        <div class="cc-title">Student Organizational Fee</div>
+        <span style="font-size:11.5px;color:var(--text-m)">Required: <strong style="color:#5fdd8e" id="page-fee-amount">₱0.00</strong></span>
       </div>
-      <div class="income-card" onclick="openModal('modal-fund')">
-        <div class="income-card-icon" style="background:rgba(59,130,246,.15)">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6" stroke="#93c5fd" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <div style="padding:22px">
+        <div class="form-group">
+          <label class="form-label">Search Student (name or school ID)</label>
+          <input class="form-input" id="page-of-search" placeholder="Type to search…" oninput="pageSearchStudents(this.value)"/>
+          <div class="student-list" id="page-of-list"></div>
         </div>
-        <div class="income-card-title">Other Receivable Funds</div>
-        <div class="income-card-desc">Record donations, grants, fundraising proceeds, event income, or any other funds received by the organization.</div>
-        <button class="btn-outline" style="width:100%;justify-content:center" onclick="event.stopPropagation();openModal('modal-fund')">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-          Record Fund
-        </button>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 12px;margin-bottom:13px;display:none" id="page-of-selected">
+          <div style="font-size:10px;color:var(--text-d);margin-bottom:2px">Selected student</div>
+          <div style="font-size:13px;font-weight:600;color:#fff" id="page-of-sel-name">—</div>
+          <div style="font-size:11px;color:var(--text-m)" id="page-of-sel-info">—</div>
+          <input type="hidden" id="page-of-uid"/>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">School Year & Semester</label>
+            <select class="form-select" id="page-of-sem" onchange="pageOnSemesterChange()">
+              <option value="">Loading...</option>
+            </select>
+            <div style="font-size:10.5px;color:var(--text-d);margin-top:4px" id="page-of-sem-status"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Amount Paid (₱)</label>
+            <input class="form-input" id="page-of-amount" type="number" placeholder="0.00" oninput="pageCheckPaymentStatus()"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Payment Status</label>
+          <div class="status-box" id="page-of-status">Enter amount to determine status</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Receipt Number</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="form-input" id="page-of-receipt" placeholder="Generating…" style="flex:1;font-family:'DM Mono',monospace"/>
+            <button type="button" onclick="pageAutoFillReceiptNumber()"
+              style="padding:8px 12px;background:var(--green-glow);border:1px solid rgba(39,167,68,.2);border-radius:8px;color:#5fdd8e;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit">
+              ↻ Regenerate
+            </button>
+          </div>
+          <div style="font-size:10.5px;color:var(--text-d);margin-top:4px">Auto-generated · Treasurer can still edit manually if needed</div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)">
+          <button class="btn-primary" onclick="pageSubmitOrgFee()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            Save Payment
+          </button>
+        </div>
       </div>
     </div>
-    <div class="content-card">
-      <div class="cc-hdr"><div class="cc-title">Recent Income Records</div><span class="badge bg" id="income-count">0 records</span></div>
-      <table>
-        <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Receipt / OR</th><th>Amount</th><th></th></tr></thead>
-        <tbody id="income-tbody"></tbody>
-      </table>
+
+    <!-- OTHER FUND FORM -->
+    <div id="income-panel-fund" class="content-card" style="max-width:600px;display:none">
+      <div class="cc-hdr"><div class="cc-title">Other Receivable Fund</div></div>
+      <div style="padding:22px">
+        <div class="form-group">
+          <label class="form-label">Source / Received From</label>
+          <input class="form-input" id="page-fn-source" placeholder="e.g. Alumni Association, CHED…"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <input class="form-input" id="page-fn-desc" placeholder="e.g. Fundraising proceeds – T-shirt sale"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-select" id="page-fn-cat">
+            <option>Donation</option><option>Grant</option><option>Fundraising</option>
+            <option>Event Proceeds</option><option>Sponsorship</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Amount (₱)</label>
+            <input class="form-input" id="page-fn-amount" type="number" placeholder="0.00"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date Received</label>
+            <input class="form-input" type="date" id="page-fn-date"/>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)">
+          <button class="btn-primary" onclick="pageSubmitFund()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            Save Fund
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -454,7 +582,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
       <div><div class="page-title">Add Expense</div><div class="page-sub">Track organizational expenditures</div></div>
       <button class="btn-primary" onclick="openModal('modal-expense')">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-        Record Expense
+        Add Expense
       </button>
     </div>
     <div class="stat-grid-3">
@@ -765,7 +893,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 <div class="modal-overlay" id="modal-orgfee">
   <div class="modal-backdrop" onclick="closeModal('modal-orgfee')"></div>
   <div class="modal-box">
-    <div class="modal-hdr"><div><div class="modal-title">Record Organizational Fee</div><div class="modal-sub" id="org-fee-modal-sub">Student SSG membership fee — Current: ₱200.00</div></div><button class="modal-close" onclick="closeModal('modal-orgfee')">✕</button></div>
+    <div class="modal-hdr"><div><div class="modal-title">Organizational Fee</div><div class="modal-sub" id="org-fee-modal-sub">Student SSG membership fee — Current: ₱200.00</div></div><button class="modal-close" onclick="closeModal('modal-orgfee')">✕</button></div>
     <div class="form-group">
       <label class="form-label">Search Student (name or school ID)</label>
       <input class="form-input" id="of-search" placeholder="Type to search…" oninput="searchStudents(this.value)"/>
@@ -826,13 +954,174 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 <div class="modal-overlay" id="modal-expense">
   <div class="modal-backdrop" onclick="closeModal('modal-expense')"></div>
   <div class="modal-box">
-    <div class="modal-hdr"><div><div class="modal-title">Record Expense</div><div class="modal-sub">Log an expenditure — maps to expenses table</div></div><button class="modal-close" onclick="closeModal('modal-expense')">✕</button></div>
+    <div class="modal-hdr"><div><div class="modal-title">Add Expense</div><div class="modal-sub">Log an expenditure — maps to expenses table</div></div><button class="modal-close" onclick="closeModal('modal-expense')">✕</button></div>
     <div class="form-group"><label class="form-label">Description</label><input class="form-input" id="ex-desc" placeholder="e.g. Printing of event tarpaulins"/></div>
     <div class="form-grid">
       <div class="form-group"><label class="form-label">Amount (₱)</label><input class="form-input" id="ex-amount" type="number" placeholder="0.00"/></div>
       <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="ex-date"/></div>
     </div>
     <div class="modal-footer"><button class="btn-outline" onclick="closeModal('modal-expense')">Cancel</button><button class="btn-primary" onclick="saveExpense()">Save Expense</button></div>
+  </div>
+</div>
+
+<!-- EDIT ORG FEE MODAL -->
+<div class="modal-overlay" id="modal-edit-orgfee">
+  <div class="modal-backdrop" onclick="closeModal('modal-edit-orgfee')"></div>
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title">Edit Org Fee Payment</div>
+        <div class="modal-sub" id="edit-orgfee-sub">Update payment record</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-edit-orgfee')">✕</button>
+    </div>
+    <input type="hidden" id="edit-orgfee-id"/>
+    <input type="hidden" id="edit-orgfee-full-amount"/>
+    <div class="form-group">
+      <label class="form-label">Amount Paid (₱)</label>
+      <input class="form-input" id="edit-orgfee-amount" type="number" placeholder="0.00" oninput="checkEditPaymentStatus()"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Payment Status</label>
+      <div class="status-box" id="edit-orgfee-status">Enter amount to determine status</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Receipt Number</label>
+      <input class="form-input" id="edit-orgfee-receipt" type="text" style="font-family:'DM Mono',monospace"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('modal-edit-orgfee')">Cancel</button>
+      <button class="btn-primary" onclick="saveEditedOrgFee()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Student Org Fee Details Modal -->
+<div class="modal-overlay" id="modal-student-orgfee">
+  <div class="modal-backdrop" onclick="closeModal('modal-student-orgfee')"></div>
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title" id="student-orgfee-name">Student Org Fees</div>
+        <div class="modal-sub" id="student-orgfee-sub">Loading…</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-student-orgfee')">✕</button>
+    </div>
+    <div id="student-orgfee-summary" style="margin-bottom:18px"></div>
+    <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:8px">Transaction History</div>
+    <div style="max-height:280px;overflow-y:auto;border:1px solid rgba(255,255,255,.06);border-radius:10px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Date</th>
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">School Year / Sem</th>
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Receipt</th>
+            <th style="padding:8px 12px;text-align:right;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Amount</th>
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Status</th>
+          </tr>
+        </thead>
+        <tbody id="student-orgfee-tbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('modal-student-orgfee')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Preview Modal -->
+<div id="treasurerReceiptModal" class="receipt-modal" onclick="handleTreasurerReceiptBackdropClick(event)">
+  <div class="receipt-modal-backdrop"></div>
+  <div class="receipt-modal-inner">
+    <div class="receipt-controls">
+      <span class="receipt-ctrl-title" id="tr-receipt-title">Official Receipt</span>
+      <button class="btn-receipt-close" onclick="closeTreasurerReceipt()">✕</button>
+    </div>
+
+    <div class="receipt-paper" id="trReceiptPaper">
+      <div class="rp-watermark">COPY</div>
+
+      <div class="rp-header">
+        <div class="rp-org">SUPREME STUDENT GOVERNMENT</div>
+        <div class="rp-campus">Cebu Technological University - Ginatilan Campus</div>
+        <hr class="rp-divider" />
+        <div class="rp-type">Official Receipt</div>
+        <div class="rp-copy">Treasurer Copy</div>
+      </div>
+
+      <div class="rp-meta">
+        <div><span class="rp-meta-label">Receipt No. </span><span class="rp-meta-value" id="tr-rp-receipt-no">—</span></div>
+        <div><span class="rp-meta-label">Date </span><span class="rp-meta-value date-val" id="tr-rp-date">—</span></div>
+      </div>
+
+      <div class="rp-section-title">Payment Acknowledgement</div>
+
+      <div class="rp-field">
+        <span class="rp-field-label">Received from:</span>
+        <span class="rp-field-value handwritten" id="tr-rp-name">—</span>
+      </div>
+      <div class="rp-field">
+        <span class="rp-field-label">Student ID:</span>
+        <span class="rp-field-value" id="tr-rp-id">—</span>
+      </div>
+      <div class="rp-field">
+        <span class="rp-field-label">Course / Year:</span>
+        <span class="rp-field-value" id="tr-rp-course">—</span>
+      </div>
+      <div class="rp-field">
+        <span class="rp-field-label">Term:</span>
+        <span class="rp-field-value" id="tr-rp-term">—</span>
+      </div>
+      <div class="rp-field">
+        <span class="rp-field-label">Amount Paid:</span>
+        <span class="rp-field-value" id="tr-rp-amount">—</span>
+      </div>
+      <div class="rp-field">
+        <span class="rp-field-label">Amount in words:</span>
+        <span class="rp-field-value handwritten" id="tr-rp-amount-words">—</span>
+      </div>
+      <div class="rp-field">
+        <span class="rp-field-label">Status:</span>
+        <span class="rp-field-value">
+          <span class="rp-status-badge" id="tr-rp-status">—</span>
+        </span>
+      </div>
+
+      <!-- Signature -->
+      <div class="rp-signature-section">
+        <div class="rp-sig-block">
+          <div class="rp-sig-label">Received by:</div>
+
+          <!-- Stack: name on bottom, signature floats above it, line sits between -->
+          <div style="position:relative;min-height:80px;width:220px;display:flex;flex-direction:column;justify-content:flex-end">
+
+            <!-- Printed name — above the line -->
+            <div id="tr-rp-received-by"
+                 style="font-size:12px;font-weight:700;color:#111;text-align:center;
+                        padding-bottom:4px;position:relative;z-index:1">
+              —
+            </div>
+
+            <!-- The horizontal line -->
+            <div style="border-top:1px solid #555;width:100%;position:relative;z-index:1"></div>
+
+            <!-- Signature image — floats over both the name and the line -->
+            <img id="tr-rp-sig-image" src="" alt="Treasurer signature"
+                 style="display:none;
+                        position:absolute;
+                        bottom:4px;
+                        left:50%;
+                        transform:translateX(-50%);
+                        max-height:56px;
+                        max-width:180px;
+                        object-fit:contain;
+                        z-index:2"/>
+          </div>
+
+          <div class="rp-sig-name-label" style="text-align:center">(Signature over Printed Name)</div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -865,12 +1154,40 @@ let DB = {
 };
 
 let STUDENTS = [];
+let ALL_STUDENTS_PAGE = [];
+let studentsPageQ = '';
 let CURRENT_SCHOOL_YEAR = null;
 let CURRENT_SEMESTER = null;
 let STUDENTS_LAST_FETCH = 0;
 
 // ── STATE ────────────────────────────────────────────────────────
 let histQ = '', histType = '', expQ = '';
+let histSY = '', histSem = '';
+
+// Load school years into history filter dropdown
+async function loadHistorySchoolYears() {
+  try {
+    const res = await fetch('/Home/GetSchoolYears');
+    const data = await res.json();
+    if (!data.success) return;
+    const sel = document.getElementById('hist-filter-sy');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">All School Years</option>' +
+      data.schoolYears.map(sy =>
+        `<option value="${sy.yearStart}-${sy.yearEnd}">${sy.yearStart}–${sy.yearEnd}</option>`
+      ).join('');
+  } catch (err) {
+    console.error('Failed to load school years for filter:', err);
+  }
+}
+
+// Apply all history filters (school year, semester, type)
+function applyHistoryFilters() {
+  histSY   = document.getElementById('hist-filter-sy')?.value  ?? '';
+  histSem  = document.getElementById('hist-filter-sem')?.value ?? '';
+  histType = document.getElementById('hist-filter-type')?.value ?? '';
+  renderHistory();
+}
 let selStudent = null;
 let barChart, donutChart;
 
@@ -890,6 +1207,27 @@ function escapeHtml(value) {
     "'": '&#39;'
   }[ch]));
 }
+function amountToWords(amount) {
+  if (amount === 0) return 'Zero Pesos Only';
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+                'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+                'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  function say(n) {
+    if (n < 20) return ones[n];
+    if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 ? ' ' + ones[n % 10] : '');
+    if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' ' + say(n % 100) : '');
+    if (n < 1000000) return say(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 ? ' ' + say(n % 1000) : '');
+    return say(Math.floor(n / 1000000)) + ' Million' + (n % 1000000 ? ' ' + say(n % 1000000) : '');
+  }
+
+  const pesos = Math.floor(amount);
+  const cents = Math.round((amount - pesos) * 100);
+  let result = say(pesos) + ' Peso' + (pesos !== 1 ? 's' : '');
+  if (cents > 0) result += ' and ' + say(cents) + ' Centavo' + (cents !== 1 ? 's' : '');
+  return result + ' Only';
+}
 
 async function loadDashboardData() {
   try {
@@ -907,34 +1245,11 @@ async function loadDashboardData() {
       }
 
       // Update stats
-      document.getElementById('s-income').textContent = '₱' + Number(data.stats.totalIncome).toLocaleString('en-PH', { minimumFractionDigits: 2 });
-      document.getElementById('s-expenses').textContent = '₱' + Number(data.stats.expensesTotal).toLocaleString('en-PH', { minimumFractionDigits: 2 });
       document.getElementById('s-balance').textContent = '₱' + Number(data.stats.balance).toLocaleString('en-PH', { minimumFractionDigits: 2 });
-
-      const orgFeeTotal = data.stats.orgFeeTotal;
-      const otherFundsTotal = data.stats.otherFundsTotal;
-      document.getElementById('s-income-sub').textContent = 'Org Fees (₱' + Number(orgFeeTotal).toLocaleString('en-PH', { minimumFractionDigits: 2 }) + ') + Other Funds (₱' + Number(otherFundsTotal).toLocaleString('en-PH', { minimumFractionDigits: 2 }) + ')';
-      document.getElementById('s-exp-sub').textContent = data.stats.expenseCount + ' expense record' + (data.stats.expenseCount !== 1 ? 's' : '');
 
       const bal = data.stats.balance;
       const balEl = document.getElementById('s-balance-sub');
-      balEl.textContent = bal >= 0 ? 'Surplus — ₱' + Number(bal).toLocaleString('en-PH', { minimumFractionDigits: 2 }) + ' available' : 'Deficit — ₱' + Number(Math.abs(bal)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) + ' over budget';
-      balEl.style.color = bal >= 0 ? 'rgba(95,221,142,.8)' : 'rgba(248,113,113,.8)';
-
-      // Update recent transactions
-      const tbody = document.getElementById('dash-tbody');
-      if (data.recentTransactions.length > 0) {
-        tbody.innerHTML = data.recentTransactions.map(t => `
-          <tr>
-            <td class="td-mono td-m">${fd(t.date)}</td>
-            <td><strong>${t.description}</strong></td>
-            <td><span class="badge ${t.type==='income'?'bg':'br'}">${t.type === 'income' ? 'Income' : 'Expense'}</span></td>
-            <td class="${t.type==='income'?'amt-in':'amt-out'}">${t.type==='income'?'+':'-'}₱${Number(t.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
-          </tr>
-        `).join('');
-      } else {
-        tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No transactions yet.</td></tr>';
-      }
+      balEl.style.display = 'none';
     }
   } catch (err) {
     console.error('Failed to load dashboard data:', err);
@@ -954,6 +1269,7 @@ async function loadOrgFeePayments() {
         course: p.courseCode,
         yr: p.yearSection,
         sem: p.semester,
+        schoolYear: p.schoolYear,
         amt: p.amount,
         status: p.paymentStatus,
         receipt: p.receiptNumber || '',
@@ -1057,6 +1373,10 @@ async function loadAvailableSemesters() {
                         ${f.yearStart}–${f.yearEnd} · ${semLabel} Semester · ₱${parseFloat(f.amount).toFixed(2)} · ${f.semesterStatus}
                     </option>`;
         }).join('');
+
+        // ── AUTO-SELECT the Current semester ──
+        const currentIndex = data.fees.findIndex(f => f.semesterStatus === 'Current');
+        if (currentIndex !== -1) sel.selectedIndex = currentIndex;
 
         // Trigger status label update
         updateSemesterStatusLabel();
@@ -1187,6 +1507,158 @@ function allTransactions() {
 function totalIncome()   { return DB.orgFees.reduce((s,x)=>s+x.amt,0) + DB.funds.reduce((s,x)=>s+x.amt,0); }
 function totalExpenses() { return DB.expenses.reduce((s,x)=>s+x.amt,0); }
 
+// ── HISTORY ──────────────────────────────────────────────────────
+let historyStudentFilter = null; // holds student rows from search
+
+function filterHistory(q) {
+  histQ = q;
+  if (!q.trim()) {
+    historyStudentFilter = null;
+    renderHistory();
+    return;
+  }
+  searchHistoryWithStudents(q);
+}
+
+async function searchHistoryWithStudents(q) {
+  try {
+    const res  = await fetch('/Home/SearchAllStudentsWithPaymentStatus?q=' + encodeURIComponent(q));
+    const data = await res.json();
+    if (!data.success) { historyStudentFilter = null; renderHistory(); return; }
+    historyStudentFilter = data.students;
+    renderHistory();
+  } catch {
+    historyStudentFilter = null;
+    renderHistory();
+  }
+}
+
+async function renderHistory() {
+  // Ensure data is loaded
+  if (DB.orgFees.length === 0 || historyStudentFilter) {
+    await Promise.all([loadOrgFeePayments(), loadOtherFunds(), loadExpenses()]);
+  }
+
+  const students = historyStudentFilter ?? [];
+
+  // Filter existing transactions by query and type
+  const tx = allTransactions()
+    .filter(t => !histType || t.type === histType)
+    .filter(t => {
+      if (!histSY && !histSem) return true;
+
+      // Expenses and OtherFunds: show them unless a SY/Sem filter is active
+      // (they have no semester, so include them when only type filter is active,
+      //  but hide them when SY or Sem filter is applied — or show always, your call)
+      // Most natural: always show expenses/funds regardless of SY filter
+      if (t.src === 'Expense' || t.src === 'OtherFund') return true;
+
+      const fee = DB.orgFees.find(f => f.id === t.sid);
+      if (!fee) return false;
+
+      // histSY is "2025-2026", fee.schoolYear is "2025 – 2026"
+      // Normalize both to "20252026" for comparison
+      const normalize = s => (s || '').replace(/\s*[–-]\s*/g, '');
+      const syMatch  = !histSY  || normalize(fee.schoolYear) === normalize(histSY);
+      const semMatch = !histSem || fee.sem === histSem;
+      return syMatch && semMatch;
+    })
+    .filter(t =>
+      !histQ ||
+      t.desc.toLowerCase().includes(histQ.toLowerCase()) ||
+      (t.studentName && t.studentName.toLowerCase().includes(histQ.toLowerCase())) ||
+      (t.schoolId && t.schoolId.toLowerCase().includes(histQ.toLowerCase())) ||
+      (t.course && t.course.toLowerCase().includes(histQ.toLowerCase())) ||
+      (t.yearSection && t.yearSection.toLowerCase().includes(histQ.toLowerCase()))
+    );
+
+  // Build rows for unpaid students (only shown if filtering for 'income' or 'all')
+  let unpaidRows = '';
+  if (!histType || histType === 'income') {
+    unpaidRows = students
+      .filter(s => s.status === 'Unpaid')
+      .map(s => `
+        <tr style="opacity:0.6">
+          <td class="td-mono td-m">—</td>
+          <td>
+            <strong>Org Fee</strong>
+            <span class="badge by" style="margin-left:6px;font-size:9px">Unpaid</span>
+            ${s.role === 'Treasurer' ? '<span class="badge" style="margin-left:4px;font-size:9px;background:rgba(249,115,22,.15);color:#fdba74">Treasurer</span>' : ''}
+          </td>
+          <td class="td-m">
+            <div style="font-size:11px">
+              <strong>${s.name}</strong><br>
+              <span style="color:var(--text-d)">ID: ${s.schoolId}</span><br>
+              ${s.courseCode} ${s.yearSection}
+            </div>
+          </td>
+          <td class="td-mono td-m">—</td>
+          <td class="td-m" style="color:var(--text-d)">—</td>
+          <td></td>
+        </tr>`).join('');
+  }
+
+  // Paid/partial rows from existing transactions
+  const txRows = tx.map(t => `
+    <tr>
+      <td class="td-mono td-m">${fd(t.date)}</td>
+      <td><strong>${t.desc}</strong></td>
+      <td class="td-m">${t.studentName
+        ? `<div style="font-size:11px"><strong>${t.studentName}</strong><br>
+           <span style="color:var(--text-d)">ID: ${t.schoolId}</span><br>
+           ${t.course} ${t.yearSection}</div>`
+        : '—'}</td>
+      <td class="td-mono td-m">${t.receipt}</td>
+      <td class="${t.type==='income'?'amt-in':'amt-out'}">${t.type==='income'?'+':'-'}${p(t.amt)}</td>
+      <td>
+        <div class="dropdown-wrap">
+          <button class="dot-btn" onclick="toggleDropdown(this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+          <div class="dropdown-menu">
+            <div class="dropdown-item" onclick="viewReceipt('${t.src}',${t.sid},'${t.receipt}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+              View Receipt
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  const combined = txRows + unpaidRows;
+
+  // Totals always reflect ALL data, regardless of filters/search
+  const allTx = allTransactions();
+  const inc = allTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amt,0);
+  const exp = allTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amt,0);
+
+  // Collectable Org Fee: sum of (required - paid) for each student who hasn't fully paid
+  // Group payments by userId + fullAmountId to get per-student totals
+  const paidMap = {};
+  DB.orgFees.forEach(f => {
+    const key = f.userId + '_' + (f.fullAmountId || f.sem);
+    if (!paidMap[key]) paidMap[key] = { paid: 0, required: f.amtRequired || 0 };
+    paidMap[key].paid += f.amt;
+  });
+
+  // Simpler approach: fetch from server
+  let collectable = 0;
+  try {
+    const res = await fetch('/Home/GetCollectableOrgFee');
+    const data = await res.json();
+    if (data.success) collectable = data.collectable;
+  } catch {}
+
+  document.getElementById('h-income').textContent  = '+' + p(inc);
+  document.getElementById('h-expense').textContent = '-' + p(exp);
+  const balEl = document.getElementById('h-balance');
+  balEl.textContent = p(collectable);
+  balEl.style.color = '#fbbf24';
+
+  document.getElementById('history-tbody').innerHTML = combined ||
+    '<tr class="empty-row"><td colspan="6">No results found.</td></tr>';
+}
+
 // ── PAGE NAVIGATION ──────────────────────────────────────────────
 async function showPage(name, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1194,8 +1666,9 @@ async function showPage(name, el) {
   document.getElementById('page-' + name).classList.add('active');
   if (el) el.classList.add('active');
   if (name === 'dashboard') { await renderDashboard(); setTimeout(renderCharts, 100); }
-  if (name === 'history')   await renderHistory();
-  if (name === 'income')    await renderIncome();
+  if (name === 'history')   { await loadHistorySchoolYears(); await renderHistory(); }
+  if (name === 'students')  await loadStudentsPage();
+  if (name === 'income')    await initIncomePage();
   if (name === 'expenses')  await renderExpenses();
   if (name === 'settings')  await refreshSchoolYears();
 }
@@ -1203,17 +1676,9 @@ async function showPage(name, el) {
 // ── DASHBOARD ────────────────────────────────────────────────────
 async function renderDashboard() {
   await loadDashboardData();
-
   let inc = totalIncome(), exp = totalExpenses(), bal = inc - exp;
-  let orgT = DB.orgFees.reduce((s,x)=>s+x.amt,0);
-  let funT = DB.funds.reduce((s,x)=>s+x.amt,0);
-
-  document.getElementById('s-income-sub').textContent = 'Org Fees (' + p(orgT) + ') + Other Funds (' + p(funT) + ')';
-  document.getElementById('s-exp-sub').textContent    = DB.expenses.length + ' expense record' + (DB.expenses.length !== 1 ? 's' : '');
-
   let balEl = document.getElementById('s-balance-sub');
-  balEl.textContent = bal >= 0 ? 'Surplus — ' + p(bal) + ' available' : 'Deficit — ' + p(Math.abs(bal)) + ' over budget';
-  balEl.style.color = bal >= 0 ? 'rgba(95,221,142,.8)' : 'rgba(248,113,113,.8)';
+  if (balEl) balEl.style.display = 'none';
 }
 
 function renderCharts() {
@@ -1224,13 +1689,15 @@ function renderCharts() {
     if (m < 6) { if (t.type==='income') mInc[m]+=t.amt; else mExp[m]+=t.amt; }
   });
 
-  let mode = document.getElementById('chart-mode').value;
+  let mode = document.getElementById('chart-mode')?.value || 'both';
   let datasets = [];
   if (mode==='both'||mode==='income')  datasets.push({ label:'Income',   data:mInc, backgroundColor:'rgba(39,167,68,.75)',  borderRadius:4, borderSkipped:false });
   if (mode==='both'||mode==='expense') datasets.push({ label:'Expenses', data:mExp, backgroundColor:'rgba(239,68,68,.65)', borderRadius:4, borderSkipped:false });
 
   if (barChart) barChart.destroy();
-  barChart = new Chart(document.getElementById('barChart'), {
+  const canvas = document.getElementById('barChart');
+  if (!canvas) return;
+  barChart = new Chart(canvas, {
     type: 'bar',
     data: { labels: months, datasets },
     options: {
@@ -1245,90 +1712,9 @@ function renderCharts() {
       }
     }
   });
-
-  let orgT = DB.orgFees.reduce((s,x)=>s+x.amt,0);
-  let funT = DB.funds.reduce((s,x)=>s+x.amt,0);
-  let expT = totalExpenses();
-  let dLabels = ['Org Fees','Other Funds','Expenses'];
-  let dData   = [orgT, funT, expT];
-  let dColors = ['rgba(39,167,68,.8)','rgba(59,130,246,.8)','rgba(239,68,68,.7)'];
-  let valColors = ['#5fdd8e','#93c5fd','#f87171'];
-
-  if (donutChart) donutChart.destroy();
-  donutChart = new Chart(document.getElementById('donutChart'), {
-    type: 'doughnut',
-    data: { labels:dLabels, datasets:[{ data:dData, backgroundColor:dColors, borderWidth:0, hoverOffset:4 }] },
-    options: { responsive:true, cutout:'68%', plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${p(ctx.parsed)}`}} } }
-  });
-
-  let total = orgT + funT + expT;
-  document.getElementById('donut-legend').innerHTML = dLabels.map((l,i) => `
-    <div class="dl-row">
-      <div class="dl-lbl"><div class="dl-dot" style="background:${dColors[i]}"></div>${l}</div>
-      <div class="dl-val" style="color:${valColors[i]}">${total>0?Math.round(dData[i]/total*100):0}% · ${p(dData[i])}</div>
-    </div>`).join('');
 }
 
 function updateCharts() { renderCharts(); }
-
-// ── HISTORY ──────────────────────────────────────────────────────
-async function renderHistory() {
-  await loadOrgFeePayments();
-  await loadOtherFunds();
-  await loadExpenses();
-
-  let tx = allTransactions().filter(t =>
-    (!histQ || 
-     t.desc.toLowerCase().includes(histQ.toLowerCase()) ||
-     t.studentName.toLowerCase().includes(histQ.toLowerCase()) ||
-     t.schoolId.toLowerCase().includes(histQ.toLowerCase()) ||
-     t.course.toLowerCase().includes(histQ.toLowerCase()) ||
-     t.yearSection.toLowerCase().includes(histQ.toLowerCase())
-    ) &&
-    (!histType || t.type === histType));
-  let inc = tx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amt,0);
-  let exp = tx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amt,0);
-  let bal = inc - exp;
-  document.getElementById('h-income').textContent  = '+' + p(inc);
-  document.getElementById('h-expense').textContent = '-' + p(exp);
-  let balEl = document.getElementById('h-balance');
-  balEl.textContent = (bal>=0?'+':'') + p(bal);
-  balEl.className = 'summary-val ' + (bal>=0?'amt-in':'amt-out');
-  document.getElementById('history-tbody').innerHTML = tx.map(t => `
-    <tr>
-      <td class="td-mono td-m">${fd(t.date)}</td>
-      <td><strong>${t.desc}</strong></td>
-      <td class="td-m">${t.studentName ? `<div style="font-size:11px"><strong>${t.studentName}</strong><br><span style="color:var(--text-d)">ID: ${t.schoolId}</span><br>${t.course} ${t.yearSection}</div>` : '—'}</td>
-      <td><span class="badge ${t.type==='income'?'bg':'br'}">${t.cat}</span></td>
-      <td><span class="badge ${t.type==='income'?'bg':'br'}">${t.type==='income'?'Income':'Expense'}</span></td>
-      <td class="td-mono td-m">${t.receipt}</td>
-      <td class="${t.type==='income'?'amt-in':'amt-out'}">${t.type==='income'?'+':'-'}${p(t.amt)}</td>
-      <td>
-        <div class="dropdown-wrap">
-          <button class="dot-btn" onclick="toggleDropdown(this)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-          </button>
-          <div class="dropdown-menu">
-            <div class="dropdown-item" onclick="viewReceipt('${t.src}',${t.sid},'${t.receipt}')">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
-              View Receipt
-            </div>
-            <div class="dropdown-item" onclick="editTransaction('${t.src}',${t.sid})">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-              Edit
-            </div>
-            <div class="dropdown-item danger" onclick="deleteTx('${t.src}',${t.sid})">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Delete
-            </div>
-          </div>
-        </div>
-      </td>
-    </tr>`).join('') || '<tr class="empty-row"><td colspan="8">No transactions found.</td></tr>';
-}
-
-function filterHistory(q)     { histQ = q;    renderHistory(); }
-function filterHistoryType(v) { histType = v; renderHistory(); }
 
 // ── INCOME ───────────────────────────────────────────────────────
 async function renderIncome() {
@@ -1339,36 +1725,188 @@ async function renderIncome() {
     ...DB.orgFees.map(x=>({ type:'OrgFee',    id:x.id, date:x.date, desc:'Org Fee – '+x.name+' ('+x.course+' '+x.yr+')', cat:'Org Fee',         amt:x.amt, receipt:x.receipt||'—' })),
     ...DB.funds.map(x  =>({ type:'OtherFund', id:x.id, date:x.date, desc:x.desc+(x.source?' – '+x.source:''),            cat:'Other Receivable', amt:x.amt, receipt:'—' }))
   ].sort((a,b)=>b.date.localeCompare(a.date));
-  document.getElementById('income-count').textContent = rows.length + ' records';
-  document.getElementById('income-tbody').innerHTML = rows.map(r => `
-    <tr>
-      <td class="td-mono td-m">${fd(r.date)}</td>
-      <td><strong>${r.desc}</strong></td>
-      <td><span class="badge bg">${r.cat}</span></td>
-      <td class="td-mono td-m">${r.receipt}</td>
-      <td class="amt-in">+${p(r.amt)}</td>
-      <td>
-        <div class="dropdown-wrap">
-          <button class="dot-btn" onclick="toggleDropdown(this)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-          </button>
-          <div class="dropdown-menu">
-            <div class="dropdown-item" onclick="viewReceipt('${r.type}',${r.id},'${r.receipt}')">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
-              View Receipt
-            </div>
-            <div class="dropdown-item" onclick="editIncome('${r.type}',${r.id})">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-              Edit
-            </div>
-            <div class="dropdown-item danger" onclick="deleteTx('${r.type}',${r.id})">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Delete
-            </div>
-          </div>
+}
+
+// ── INLINE INCOME PAGE ───────────────────────────────────────────
+let pageSelStudent = null;
+let pageReqFee = 200;
+
+function switchIncomeTab(tab) {
+  document.getElementById('income-panel-orgfee').style.display = tab === 'orgfee' ? 'block' : 'none';
+  document.getElementById('income-panel-fund').style.display   = tab === 'fund'   ? 'block' : 'none';
+  const orgBtn  = document.getElementById('income-tab-orgfee');
+  const fundBtn = document.getElementById('income-tab-fund');
+  if (tab === 'orgfee') {
+    orgBtn.style.background  = 'var(--green)'; orgBtn.style.color  = '#fff'; orgBtn.style.border = 'none';
+    fundBtn.style.background = 'transparent';  fundBtn.style.color = 'var(--text-m)'; fundBtn.style.border = '1px solid rgba(255,255,255,.12)';
+  } else {
+    fundBtn.style.background = 'var(--green)'; fundBtn.style.color = '#fff'; fundBtn.style.border = 'none';
+    orgBtn.style.background  = 'transparent';  orgBtn.style.color  = 'var(--text-m)'; orgBtn.style.border  = '1px solid rgba(255,255,255,.12)';
+  }
+}
+
+async function initIncomePage() {
+  // Load semesters
+  try {
+    const res  = await fetch('/Home/GetAvailableSemesters');
+    const data = await res.json();
+    const sel  = document.getElementById('page-of-sem');
+    if (!data.success || !data.fees.length) {
+      sel.innerHTML = '<option value="">No semesters with fees set</option>';
+    } else {
+      sel.innerHTML = data.fees.map(f => {
+        const semLabel = f.semester === 'First' ? '1st' : '2nd';
+        return `<option value="${f.semester}"
+                        data-full-amount-id="${f.fullAmountId}"
+                        data-year-start="${f.yearStart}"
+                        data-year-end="${f.yearEnd}"
+                        data-amount="${f.amount}"
+                        data-status="${f.semesterStatus}">
+                    ${f.yearStart}–${f.yearEnd} · ${semLabel} Semester · ₱${parseFloat(f.amount).toFixed(2)} · ${f.semesterStatus}
+                </option>`;
+      }).join('');
+      // ── AUTO-SELECT the Current semester ──
+      const currentIndex = data.fees.findIndex(f => f.semesterStatus === 'Current');
+      if (currentIndex !== -1) sel.selectedIndex = currentIndex;
+      pageUpdateSemesterStatusLabel();
+    }
+  } catch {}
+  // Auto-fill receipt
+  await pageAutoFillReceiptNumber();
+  // Set date
+  const dateEl = document.getElementById('page-fn-date');
+  if (dateEl && !dateEl.value) dateEl.value = today();
+}
+
+function pageUpdateSemesterStatusLabel() {
+  const sel = document.getElementById('page-of-sem');
+  const opt = sel.options[sel.selectedIndex];
+  const statusEl = document.getElementById('page-of-sem-status');
+  if (!opt || !opt.dataset.status) { statusEl.textContent = ''; return; }
+  const status = opt.dataset.status;
+  const color  = status === 'Current' ? '#5fdd8e' : '#fbbf24';
+  statusEl.innerHTML = `<span style="color:${color};font-weight:600">● ${status}</span> &nbsp;·&nbsp; A.Y. ${opt.dataset.yearStart}–${opt.dataset.yearEnd} &nbsp;·&nbsp; ${opt.value === 'First' ? '1st' : '2nd'} Semester`;
+  pageReqFee = parseFloat(opt.dataset.amount) || pageReqFee;
+  document.getElementById('page-of-amount').placeholder = pageReqFee.toFixed(2);
+  document.getElementById('page-fee-amount').textContent = '₱' + pageReqFee.toFixed(2);
+  if (document.getElementById('page-of-amount').value) pageCheckPaymentStatus();
+}
+
+function pageOnSemesterChange() {
+  pageUpdateSemesterStatusLabel();
+  document.getElementById('page-of-list').style.display = 'none';
+  document.getElementById('page-of-amount').value = '';
+  document.getElementById('page-of-status').textContent = 'Enter amount to determine status';
+}
+
+async function pageAutoFillReceiptNumber() {
+  try {
+    const res  = await fetch('/Home/GetNextReceiptNumber');
+    const data = await res.json();
+    if (data.success) document.getElementById('page-of-receipt').value = data.receiptNumber;
+  } catch {}
+}
+
+async function pageSearchStudents(q) {
+  const list  = document.getElementById('page-of-list');
+  const query = (q || '').trim();
+  if (!query) { list.style.display = 'none'; return; }
+  try {
+    const res  = await fetch('/Home/GetStudentsForPayment?q=' + encodeURIComponent(query));
+    const data = await res.json();
+    list.style.display = 'block';
+    if (!data.success || !data.students.length) {
+      list.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--text-d)">No students found.</div>';
+      return;
+    }
+    list.innerHTML = data.students.map(s => `
+      <div class="student-item${s.hasPaid ? ' paid' : ''}"
+           onclick="${s.hasPaid ? '' : `pageSelectStudent(${s.userId},'${s.name.replace(/'/g,"\\'")}','${s.courseCode.replace(/'/g,"\\'")}','${s.yearSection.replace(/'/g,"\\'")}','${s.schoolId.replace(/'/g,"\\'")}')`}">
+        <div>
+          <div class="student-name">${s.name} ${s.hasPaid ? '<span class="badge by" style="font-size:9px">Paid</span>' : ''}</div>
+          <div class="student-info">${s.schoolId} · ${s.courseCode} ${s.yearSection}</div>
         </div>
-      </td>
-    </tr>`).join('') || '<tr class="empty-row"><td colspan="6">No income records yet.</td></tr>';
+      </div>`).join('');
+  } catch {
+    list.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--text-d)">Request failed.</div>';
+  }
+}
+
+function pageSelectStudent(uid, name, course, yr, sid) {
+  pageSelStudent = { userId: uid };
+  document.getElementById('page-of-uid').value = uid;
+  document.getElementById('page-of-sel-name').textContent = name;
+  document.getElementById('page-of-sel-info').textContent = sid + ' · ' + course + ' ' + yr;
+  document.getElementById('page-of-selected').style.display = 'block';
+  document.getElementById('page-of-list').style.display = 'none';
+  document.getElementById('page-of-search').value = name;
+  if (!document.getElementById('page-of-amount').value)
+    document.getElementById('page-of-amount').value = pageReqFee;
+  pageCheckPaymentStatus();
+}
+
+function pageCheckPaymentStatus() {
+  const amt = parseFloat(document.getElementById('page-of-amount').value) || 0;
+  const el  = document.getElementById('page-of-status');
+  if (!amt) { el.textContent = 'Enter amount to determine status'; el.style.color='#5fdd8e'; el.style.background='rgba(39,167,68,.08)'; el.style.borderColor='rgba(39,167,68,.15)'; return; }
+  if (amt >= pageReqFee) { el.textContent = '✓ Full payment — Status: Paid'; el.style.color='#5fdd8e'; el.style.background='rgba(39,167,68,.08)'; el.style.borderColor='rgba(39,167,68,.15)'; }
+  else                   { el.textContent = '⚠ Partial — ₱'+amt.toFixed(2)+' of ₱'+pageReqFee; el.style.color='#fbbf24'; el.style.background='rgba(251,191,36,.08)'; el.style.borderColor='rgba(251,191,36,.15)'; }
+}
+
+async function pageSubmitOrgFee() {
+  if (!pageSelStudent) { showToast('Please select a student first.', 'fail'); return; }
+  const sem     = document.getElementById('page-of-sem').value;
+  const amt     = parseFloat(document.getElementById('page-of-amount').value) || 0;
+  const receipt = document.getElementById('page-of-receipt').value.trim();
+  if (!sem) { showToast('Please select a semester.', 'fail'); return; }
+  if (!amt)  { showToast('Enter an amount.', 'fail'); return; }
+  try {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    const res  = await fetch('/Home/AddOrgFeePayment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+      body: JSON.stringify({ userId: pageSelStudent.userId, amount: amt, semester: sem, receiptNumber: receipt })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Org fee payment recorded successfully.', 'ok');
+      // Reset form
+      pageSelStudent = null;
+      ['page-of-search','page-of-amount','page-of-receipt'].forEach(f => document.getElementById(f).value = '');
+      document.getElementById('page-of-selected').style.display = 'none';
+      document.getElementById('page-of-status').textContent = 'Enter amount to determine status';
+      await pageAutoFillReceiptNumber();
+      await renderDashboard();
+      renderCharts();
+    } else {
+      showToast(data.message || 'Failed to save payment.', 'fail');
+    }
+  } catch { showToast('Failed to save payment. Please try again.', 'fail'); }
+}
+
+async function pageSubmitFund() {
+  const source = document.getElementById('page-fn-source').value.trim();
+  const desc   = document.getElementById('page-fn-desc').value.trim();
+  const amt    = parseFloat(document.getElementById('page-fn-amount').value) || 0;
+  const date   = document.getElementById('page-fn-date').value || today();
+  if (!desc || !amt) { showToast('Description and amount are required.', 'fail'); return; }
+  try {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    const res  = await fetch('/Home/AddOtherFund', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+      body: JSON.stringify({ source, description: desc, amount: amt, receivedDate: new Date(date).toISOString() })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Fund recorded successfully.', 'ok');
+      ['page-fn-source','page-fn-desc','page-fn-amount'].forEach(f => document.getElementById(f).value = '');
+      await renderDashboard();
+      renderCharts();
+    } else {
+      showToast(data.message || 'Failed to save fund.', 'fail');
+    }
+  } catch { showToast('Failed to save fund. Please try again.', 'fail'); }
 }
 
 // ── EXPENSES ─────────────────────────────────────────────────────
@@ -1393,6 +1931,185 @@ async function renderExpenses() {
 }
 
 function filterExpenses(q) { expQ = q; renderExpenses(); }
+
+// ── STUDENTS PAGE ────────────────────────────────────────────────
+function feeStatusBadge(status) {
+  const s = (status || 'Unpaid').toLowerCase();
+  if (s === 'paid') return '<span class="badge bg">Paid</span>';
+  if (s === 'partial') return '<span class="badge by">Partial</span>';
+  if (s === 'n/a') return '<span class="badge" style="background:rgba(255,255,255,.06);color:var(--text-d)">N/A</span>';
+  return '<span class="badge br">Unpaid</span>';
+}
+
+function renderSemesterSummaryCard(label, sem, schoolYear) {
+  if (!sem) {
+    return `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
+      <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:8px">${label}</div>
+      <div style="font-size:12px;color:var(--text-d)">No fee configured for ${schoolYear || 'current school year'}.</div>
+    </div>`;
+  }
+  return `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:#fff">${label}</div>
+      ${feeStatusBadge(sem.feeStatus)}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      <div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-d);margin-bottom:3px">Required</div>
+        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:#fff">${p(sem.requiredAmount)}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-d);margin-bottom:3px">Paid</div>
+        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:#5fdd8e">${p(sem.totalPaid)}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-d);margin-bottom:3px">Balance</div>
+        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:#fbbf24">${p(sem.balance)}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderReceiptCell(paymentId, receiptNumber, hasReceipt) {
+  if (!hasReceipt || !receiptNumber || receiptNumber === '—') {
+    return '<span style="color:var(--text-d)">—</span>';
+  }
+  const safeReceipt = escapeHtml(receiptNumber);
+  const receiptArg = JSON.stringify(receiptNumber);
+  return `<button type="button" class="btn-outline" style="padding:3px 8px;font-size:10.5px;font-family:'DM Mono',monospace" onclick="viewReceipt('OrgFee', ${paymentId}, ${receiptArg})">${safeReceipt}</button>`;
+}
+
+async function loadStudentsPage() {
+  const tbody = document.getElementById('students-page-tbody');
+  if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Loading students…</td></tr>';
+
+  try {
+    const res = await fetch('/Home/GetTreasurerStudentsWithFees');
+    const data = await res.json();
+    if (!data.success) {
+      if (tbody) tbody.innerHTML = `<tr class="empty-row"><td colspan="7">${escapeHtml(data.message || 'Failed to load students.')}</td></tr>`;
+      return;
+    }
+    ALL_STUDENTS_PAGE = data.students || [];
+    const sub = document.getElementById('students-page-sub');
+    if (sub && data.schoolYear && data.schoolYear !== 'N/A') {
+      sub.textContent = `${ALL_STUDENTS_PAGE.length} approved student${ALL_STUDENTS_PAGE.length !== 1 ? 's' : ''} · A.Y. ${data.schoolYear}`;
+    }
+    renderStudentsPage();
+  } catch (err) {
+    console.error('Failed to load students page:', err);
+    if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Failed to load students.</td></tr>';
+  }
+}
+
+function renderStudentsPage(filtered) {
+  const data = filtered ?? ALL_STUDENTS_PAGE;
+  const tbody = document.getElementById('students-page-tbody');
+  const sub = document.getElementById('students-page-sub');
+  if (!tbody) return;
+
+  if (sub && !sub.textContent.includes('A.Y.')) {
+    sub.textContent = `${data.length} approved student${data.length !== 1 ? 's' : ''} (including treasurers)`;
+  }
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No students found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map((s, i) => {
+    const courseYr = `${escapeHtml(s.courseCode)} ${escapeHtml(s.yearSection)}`;
+    const roleTag = s.role === 'Treasurer'
+      ? ' <span style="font-size:10px;font-weight:600;background:rgba(249,115,22,.15);color:#fdba74;border:1px solid rgba(249,115,22,.25);border-radius:5px;padding:1px 7px;margin-left:6px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle">Treasurer</span>'
+      : '';
+    const inactiveTag = !s.isActive
+      ? ' <span style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:6px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle">Inactive</span>'
+      : '';
+    return `<tr>
+      <td class="td-mono td-m">${i + 1}</td>
+      <td class="td-mono td-m">${escapeHtml(s.schoolId)}</td>
+      <td><strong>${escapeHtml(s.name)}</strong>${roleTag}${inactiveTag}</td>
+      <td class="td-m">${courseYr}</td>
+      <td>${feeStatusBadge(s.firstSemStatus)}</td>
+      <td>${feeStatusBadge(s.secondSemStatus)}</td>
+      <td>
+        <button class="btn-outline" style="padding:5px 12px;font-size:11px" onclick="openStudentOrgFeeModal(${s.userId})">
+          Org Fees
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterStudentsPage(q) {
+  studentsPageQ = (q || '').toLowerCase().trim();
+  if (!studentsPageQ) {
+    renderStudentsPage();
+    return;
+  }
+  const filtered = ALL_STUDENTS_PAGE.filter(s =>
+    (s.name || '').toLowerCase().includes(studentsPageQ)
+    || (s.schoolId || '').toLowerCase().includes(studentsPageQ)
+    || (s.courseCode || '').toLowerCase().includes(studentsPageQ)
+    || (s.yearSection || '').toLowerCase().includes(studentsPageQ)
+  );
+  renderStudentsPage(filtered);
+}
+
+async function openStudentOrgFeeModal(userId) {
+  const nameEl = document.getElementById('student-orgfee-name');
+  const subEl = document.getElementById('student-orgfee-sub');
+  const summaryEl = document.getElementById('student-orgfee-summary');
+  const tbody = document.getElementById('student-orgfee-tbody');
+
+  nameEl.textContent = 'Student Org Fees';
+  subEl.textContent = 'Loading…';
+  summaryEl.innerHTML = '';
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">Loading…</td></tr>';
+  openModal('modal-student-orgfee');
+
+  try {
+    const res = await fetch('/Home/GetStudentOrgFeeDetails?userId=' + encodeURIComponent(userId));
+    const data = await res.json();
+    if (!data.success) {
+      subEl.textContent = data.message || 'Unable to load org fee details.';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">No data available.</td></tr>';
+      return;
+    }
+
+    const s = data.student;
+    nameEl.textContent = s.name;
+    subEl.textContent = `${s.schoolId} · ${s.courseCode} ${s.yearSection}${s.role === 'Treasurer' ? ' · Treasurer' : ''}${data.schoolYear ? ' · A.Y. ' + data.schoolYear : ''}`;
+
+    summaryEl.innerHTML = `
+      <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Current School Year · ${escapeHtml(data.schoolYear || 'N/A')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${renderSemesterSummaryCard('1st Semester', data.firstSemester, data.schoolYear)}
+        ${renderSemesterSummaryCard('2nd Semester', data.secondSemester, data.schoolYear)}
+      </div>`;
+
+    const txs = data.transactions || [];
+    if (!txs.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">No org fee transactions recorded.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = txs.map(t => {
+      const semLabel = t.semester === 'First' ? '1st' : '2nd';
+      return `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+        <td style="padding:9px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${fd(t.date)}</td>
+        <td style="padding:9px 12px;color:var(--text)">${escapeHtml(t.schoolYear)} · ${semLabel}</td>
+        <td style="padding:9px 12px">${renderReceiptCell(t.paymentId, t.receiptNumber, t.hasReceipt)}</td>
+        <td style="padding:9px 12px;text-align:right;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:#5fdd8e">${p(t.amount)}</td>
+        <td style="padding:9px 12px">${feeStatusBadge(t.paymentStatus)}</td>
+      </tr>`;
+    }).join('');
+  } catch (err) {
+    console.error('Failed to load student org fee details:', err);
+    subEl.textContent = 'Failed to load org fee details.';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">Request failed.</td></tr>';
+  }
+}
 
 // ── MODALS ───────────────────────────────────────────────────────
 function openModal(id) {
@@ -2182,20 +2899,91 @@ async function changeFeeStatus(fullAmountId, currentStatus) {
     } catch { showToast('Request failed.', 'fail'); }
 }
 
-function viewReceipt(type, id, receipt) {
+async function viewReceipt(type, id, receipt) {
   document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
-  if (!receipt || receipt === '—') {
+
+  if (type !== 'OrgFee' || !receipt || receipt === '—') {
     showToast('No receipt number recorded for this entry.', 'fail');
     return;
   }
-  // Simple modal-style alert — you can replace with a real modal later
-  showToast('Receipt / OR #: ' + receipt, 'ok');
+
+  try {
+    const res = await fetch('/Home/GetOrgFeeReceipt?paymentId=' + encodeURIComponent(id));
+    const data = await res.json();
+
+    if (!data.success || !data.receipt) {
+      showToast(data.message || 'Receipt not found.', 'fail');
+      return;
+    }
+
+    const r = data.receipt;
+    const amount = Number(r.amount || 0);
+    const status = r.status || 'Partial';
+    const issueDate = r.paymentDate ? new Date(r.paymentDate) : new Date();
+    const formattedDate = issueDate.toLocaleDateString('en-PH', { month: '2-digit', day: '2-digit', year: '2-digit' });
+    const semLabel = r.semester === 'First' ? '1st Semester' : r.semester === 'Second' ? '2nd Semester' : (r.semester || '');
+    const term = [r.schoolYear, semLabel].filter(Boolean).join(' - ');
+    const courseLine = [r.course, r.yearSection].filter(Boolean).join(' ');
+
+    document.getElementById('tr-receipt-title').textContent = 'Receipt - ' + (term || 'Org Fee');
+    document.getElementById('tr-rp-receipt-no').textContent = r.receiptNumber || receipt;
+    document.getElementById('tr-rp-date').textContent = formattedDate;
+    document.getElementById('tr-rp-name').textContent = (r.studentName || '—').toUpperCase();
+    document.getElementById('tr-rp-id').textContent = r.studentId || '—';
+    document.getElementById('tr-rp-course').textContent = courseLine || '—';
+    document.getElementById('tr-rp-term').textContent = term || '—';
+    document.getElementById('tr-rp-amount').textContent = '₱ ' + amount.toFixed(2);
+    document.getElementById('tr-rp-amount-words').textContent = amountToWords(amount);
+    document.getElementById('tr-rp-received-by').textContent = r.issuedByName || 'Treasurer';
+
+    const statusEl = document.getElementById('tr-rp-status');
+    statusEl.textContent = status;
+    statusEl.className = 'rp-status-badge ' + status.toLowerCase();
+
+    const sigImg = document.getElementById('tr-rp-sig-image');
+    if (sigImg) {
+      sigImg.removeAttribute('src');
+      sigImg.style.display = 'none';
+      if (r.signatureData) {
+        sigImg.src = r.signatureData;
+        sigImg.style.display = 'block';
+      }
+    }
+
+    document.getElementById('treasurerReceiptModal').classList.add('open');
+  } catch (err) {
+    console.error('Failed to load receipt:', err);
+    showToast('Failed to load receipt.', 'fail');
+  }
+}
+
+function closeTreasurerReceipt() {
+  document.getElementById('treasurerReceiptModal').classList.remove('open');
+}
+
+function handleTreasurerReceiptBackdropClick(e) {
+  if (e.target === document.getElementById('treasurerReceiptModal') || e.target.classList.contains('receipt-modal-backdrop')) {
+    closeTreasurerReceipt();
+  }
 }
 
 function editIncome(type, id) {
   document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+
   if (type === 'OrgFee') {
-    showToast('To edit an org fee payment, delete and re-record it.', 'fail');
+    const fee = DB.orgFees.find(f => f.id === id);
+    if (!fee) { showToast('Record not found.', 'fail'); return; }
+
+    document.getElementById('edit-orgfee-id').value          = fee.id;
+    document.getElementById('edit-orgfee-amount').value      = fee.amt;
+    document.getElementById('edit-orgfee-receipt').value     = fee.receipt || '';
+    document.getElementById('edit-orgfee-sub').textContent   = fee.name + ' — ' + fee.sem;
+
+    document.getElementById('edit-orgfee-full-amount').value = REQ_FEE;
+
+    checkEditPaymentStatus();
+    openModal('modal-edit-orgfee');
+
   } else {
     // OtherFund — find record and open the fund modal pre-filled
     const fund = DB.funds.find(f => f.id === id);
@@ -2205,9 +2993,62 @@ function editIncome(type, id) {
     document.getElementById('fn-amount').value = fund.amt   || '';
     document.getElementById('fn-date').value   = fund.date  || today();
     openModal('modal-fund');
-    // Mark as edit mode
     document.querySelector('#modal-fund .btn-primary').setAttribute('data-edit-id', id);
     document.querySelector('#modal-fund .btn-primary').onclick = () => updateFund(id);
+  }
+}
+
+function checkEditPaymentStatus() {
+  const amt      = parseFloat(document.getElementById('edit-orgfee-amount').value) || 0;
+  const required = parseFloat(document.getElementById('edit-orgfee-full-amount').value) || REQ_FEE;
+  const el       = document.getElementById('edit-orgfee-status');
+
+  if (!amt) {
+    el.textContent = 'Enter amount to determine status';
+    el.style.color = '#5fdd8e';
+    el.style.background = 'rgba(39,167,68,.08)';
+    el.style.borderColor = 'rgba(39,167,68,.15)';
+    return;
+  }
+  if (amt >= required) {
+    el.textContent = '✓ Full payment — Status: Paid';
+    el.style.color = '#5fdd8e';
+    el.style.background = 'rgba(39,167,68,.08)';
+    el.style.borderColor = 'rgba(39,167,68,.15)';
+  } else {
+    el.textContent = '⚠ Partial — ₱' + amt.toFixed(2) + ' of ₱' + required.toFixed(2);
+    el.style.color = '#fbbf24';
+    el.style.background = 'rgba(251,191,36,.08)';
+    el.style.borderColor = 'rgba(251,191,36,.15)';
+  }
+}
+
+async function saveEditedOrgFee() {
+  const id            = parseInt(document.getElementById('edit-orgfee-id').value);
+  const amount        = parseFloat(document.getElementById('edit-orgfee-amount').value) || 0;
+  const fullAmount    = parseFloat(document.getElementById('edit-orgfee-full-amount').value) || REQ_FEE;
+  const receiptNumber = document.getElementById('edit-orgfee-receipt').value.trim();
+
+  if (!amount) { showToast('Enter a valid amount.', 'fail'); return; }
+
+  try {
+    const res = await fetch('/Home/UpdateOrgFeePayment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+      body: JSON.stringify({ id, amount, fullAmount, receiptNumber })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal('modal-edit-orgfee');
+      await renderIncome();
+      await renderHistory();
+      await renderDashboard();
+      showToast('Payment updated successfully.', 'ok');
+    } else {
+      showToast(data.message || 'Failed to update.', 'fail');
+    }
+  } catch {
+    showToast('Request failed.', 'fail');
   }
 }
 
@@ -2307,6 +3148,79 @@ async function init() {
 }
 
 init();
+
+// ================================================================
+// AUTO-REFRESH SYSTEM — Treasurer Dashboard (Clean Version)
+// Only triggers on confirmed DB-write buttons
+// ================================================================
+
+const TREASURER_REFRESH_MAP = [
+    { match: el => el.textContent.trim() === 'Save Payment',    pages: ['dashboard','history','income','students'] },
+    { match: el => el.textContent.trim() === 'Save Fund',       pages: ['dashboard','history','income'] },
+    { match: el => el.textContent.trim() === 'Save Expense',    pages: ['dashboard','history','expenses'] },
+    { match: el => el.textContent.trim() === 'Save Changes',    pages: ['dashboard','history','income','students'] },
+    { match: el => el.classList.contains('btn-danger'),         pages: ['dashboard','history','income','expenses','settings'] },
+    { match: el => el.classList.contains('danger'),             pages: ['dashboard','history','income','expenses','settings'] },
+    { match: el => el.textContent.trim() === 'Add School Year', pages: ['settings'] },
+    { match: el => el.textContent.trim() === 'Add Course',      pages: ['settings'] },
+    { match: el => el.textContent.trim() === 'Set Fee Amount',  pages: ['settings','income'] },
+    { match: el => el.textContent.trim() === 'Save Signature',  pages: ['settings'] },
+    { match: el => el.textContent.trim() === 'Edit Amount',     pages: ['settings'] },
+    { match: el => el.textContent.trim().includes('Mark as') || el.textContent.trim().includes('Set as'), pages: ['settings'] },
+];
+
+async function refreshTreasurerPages(pages) {
+    const activePage = document.querySelector('.page.active');
+    const activePageId = activePage?.id?.replace('page-', '') ?? '';
+
+    for (const page of pages) {
+        if (page !== activePageId && page !== 'dashboard') continue;
+
+        switch (page) {
+            case 'dashboard':
+                await loadOrgFeePayments();
+                await loadOtherFunds();
+                await loadExpenses();
+                await renderDashboard();
+                renderCharts();
+                break;
+            case 'history':
+                await renderHistory();
+                break;
+            case 'students':
+                await loadStudentsPage();
+                break;
+            case 'income':
+                await renderIncome();
+                break;
+            case 'expenses':
+                await renderExpenses();
+                break;
+            case 'settings':
+                const activePanel = document.querySelector('.settings-panel.active');
+                if (!activePanel) break;
+                const panelId = activePanel.id.replace('settings-', '');
+                if (panelId === 'sy')        await refreshSchoolYears();
+                if (panelId === 'courses')   await refreshCourses();
+                if (panelId === 'fees')      await refreshFees();
+                if (panelId === 'signature') await refreshSignature();
+                break;
+        }
+    }
+}
+
+document.addEventListener('click', async function(e) {
+    const target = e.target.closest('button, .dropdown-item, .btn-danger');
+    if (!target) return;
+
+    const rule = TREASURER_REFRESH_MAP.find(r => r.match(target));
+    if (!rule) return;
+
+    setTimeout(async () => {
+        await refreshTreasurerPages(rule.pages);
+    }, 700);
+
+}, true);
 
 // ── SESSION ──────
 </script>

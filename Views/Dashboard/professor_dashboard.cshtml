@@ -4,232 +4,725 @@
     var firstName = Context.Session.GetString("FirstName") ?? "Professor";
     var lastName = Context.Session.GetString("LastName") ?? "";
     var schoolId = Context.Session.GetString("SchoolId") ?? "";
+    var initials = (firstName.Length > 0 ? firstName[0].ToString() : "") + (lastName.Length > 0 ? lastName[0].ToString() : "");
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professor Dashboard - SSG Financial Management</title>
+    <title>SSG Finance — Professor</title>
     <link rel="icon" type="image/png" href="~/favicon.png">
-    <link rel="stylesheet" href="~/css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <style>
+        /* ── RESET & ROOT ── */
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{
+          --bg:#071a0c;--sidebar:#081509;
+          --green:#27a744;--green-d:#1a7a4a;
+          --green-glow:rgba(39,167,68,.18);--green-glow2:rgba(39,167,68,.08);
+          --glass:rgba(255,255,255,.045);
+          --text:#e8f5ec;--text-m:rgba(232,245,236,.6);--text-d:rgba(232,245,236,.35);
+          --card:#0f2918;--card-b:rgba(255,255,255,.07);
+          --green-badge:rgba(39,167,68,.18);--green-badge-t:#5fdd8e;
+          --yellow-badge:rgba(251,191,36,.14);--yellow-badge-t:#fbbf24;
+          --red-badge:rgba(239,68,68,.14);--red-badge-t:#f87171;
+          --blue-badge:rgba(59,130,246,.14);--blue-badge-t:#93c5fd;
+        }
+        body{font-family:'DM Sans',sans-serif;background:var(--bg);display:flex;min-height:100vh;color:var(--text);font-size:14px;overflow:hidden}
+
+        /* ── SIDEBAR ── */
+        .sidebar{width:218px;background:var(--sidebar);border-right:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;flex-shrink:0}
+        .sb-brand{display:flex;align-items:center;gap:10px;padding:20px 16px 18px;border-bottom:1px solid rgba(255,255,255,.05)}
+        .sb-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 14px rgba(39,167,68,.3)}
+        .sb-logo svg{width:18px;height:18px}
+        .sb-logo img{width:100%;height:100%;object-fit:cover;border-radius:10px}
+        .sb-brand-name{font-size:13.5px;font-weight:700;color:#fff;letter-spacing:-.01em}
+        .sb-brand-sub{font-size:10px;color:rgba(39,167,68,.85);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
+        .sb-label{font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text-d);padding:16px 16px 5px}
+        .nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text-m);cursor:pointer;transition:all .15s;border:1px solid transparent;user-select:none}
+        .nav-item:hover{background:var(--glass);color:var(--text)}
+        .nav-item.active{background:var(--green-glow);color:#5fdd8e;border-color:rgba(74,222,128,.12)}
+        .nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.85}
+        .sb-spacer{flex:1}
+        .sb-user{padding:10px 8px;border-top:1px solid rgba(255,255,255,.05)}
+        .user-card{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;background:var(--glass)}
+        .user-av{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+        .user-name{font-size:12px;font-weight:600;color:#fff}
+        .user-role{font-size:10.5px;color:var(--text-d)}
+        .signout{display:flex;align-items:center;gap:7px;padding:7px 10px;margin-top:3px;border-radius:8px;font-size:12.5px;font-weight:500;color:var(--text-d);cursor:pointer;transition:all .15s}
+        .signout:hover{background:rgba(239,68,68,.08);color:#f87171}
+        .signout svg{width:14px;height:14px}
+
+        /* ── MAIN ── */
+        .main{flex:1;min-width:0;padding:32px 32px 60px;background:var(--bg);overflow-y:auto;height:100vh;position:relative}
+        .main::before{content:'';position:absolute;top:-80px;right:-80px;width:380px;height:380px;background:radial-gradient(circle,rgba(39,167,68,.06) 0%,transparent 70%);pointer-events:none;border-radius:50%}
+        .top-accent{height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);position:fixed;top:0;left:0;right:0;z-index:10}
+
+        /* ── PAGES ── */
+        .page{display:none}.page.active{display:block}
+        .page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+        .page-title{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.03em}
+        .page-sub{font-size:12px;color:var(--text-m);margin-top:2px}
+
+        /* ── STAT CARDS ── */
+        .stat-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+        .stat-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden}
+        .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px}
+        .stat-card.green::before{background:linear-gradient(90deg,transparent,rgba(39,167,68,.35),transparent)}
+        .stat-card.red::before{background:linear-gradient(90deg,transparent,rgba(239,68,68,.35),transparent)}
+        .stat-card.blue::before{background:linear-gradient(90deg,transparent,rgba(59,130,246,.35),transparent)}
+        .stat-card.yellow::before{background:linear-gradient(90deg,transparent,rgba(251,191,36,.35),transparent)}
+        .stat-lbl{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:8px}
+        .stat-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+        .stat-val{font-size:28px;font-weight:800;color:#fff;line-height:1;letter-spacing:-.04em}
+        .stat-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+        .stat-icon svg{width:15px;height:15px}
+        .stat-icon.g{background:rgba(39,167,68,.15)}
+        .stat-icon.r{background:rgba(239,68,68,.12)}
+        .stat-icon.b{background:rgba(59,130,246,.12)}
+        .stat-icon.y{background:rgba(251,191,36,.12)}
+        .stat-sub{font-size:10.5px;color:var(--text-d);padding-top:6px;border-top:1px solid rgba(255,255,255,.05)}
+
+        /* ── CONTENT CARDS ── */
+        .content-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;margin-bottom:14px;position:relative;overflow:visible}
+        .content-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;border-radius:14px 14px 0 0;background:linear-gradient(90deg,transparent,rgba(39,167,68,.2),transparent)}
+        .cc-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;border-bottom:1px solid rgba(255,255,255,.05)}
+        .cc-title{font-size:13.5px;font-weight:700;color:#fff}
+
+        /* ── TABLES ── */
+        .toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.05);gap:10px;flex-wrap:wrap}
+        .search-box{display:flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:7px 12px;background:rgba(255,255,255,.04);min-width:210px;transition:all .15s}
+        .search-box:focus-within{border-color:var(--green);background:rgba(39,167,68,.06)}
+        .search-box input{border:none;outline:none;font-family:inherit;font-size:12.5px;color:var(--text);width:100%;background:transparent}
+        .search-box input::placeholder{color:var(--text-d)}
+        .search-box svg{width:14px;height:14px;color:var(--text-d);flex-shrink:0}
+        .filter-select{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:7px 28px 7px 11px;font-size:12px;color:var(--text-m);font-family:inherit;cursor:pointer;outline:none;appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23e8f5ec%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 6px center;background-size:18px}
+        .filter-select option{background:#0a1f10}
+        table{width:100%;border-collapse:collapse;font-size:12.5px}
+        thead th{padding:10px 16px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);border-bottom:1px solid rgba(255,255,255,.05);text-align:left;white-space:nowrap;background:rgba(255,255,255,.02)}
+        tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
+        tbody tr:last-child{border-bottom:none}
+        tbody tr:hover{background:rgba(39,167,68,.04)}
+        td{padding:11px 16px;color:var(--text);vertical-align:middle}
+        .td-m{color:var(--text-m)}.td-mono{font-family:'DM Mono',monospace;font-size:11.5px}
+        .empty-row td{text-align:center;padding:40px;color:var(--text-d);font-size:12.5px}
+
+        /* ── BADGES ── */
+        .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600}
+        .bg{background:var(--green-badge);color:var(--green-badge-t)}
+        .by{background:var(--yellow-badge);color:var(--yellow-badge-t)}
+        .br{background:var(--red-badge);color:var(--red-badge-t)}
+        .bb{background:var(--blue-badge);color:var(--blue-badge-t)}
+
+        /* ── STATUS PILLS ── */
+        .status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600}
+        .status-pill .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+        .status-paid{background:var(--green-badge);color:var(--green-badge-t)}.status-paid .dot{background:#5fdd8e}
+        .status-pending{background:var(--yellow-badge);color:var(--yellow-badge-t)}.status-pending .dot{background:#fbbf24}
+        .status-overdue{background:var(--red-badge);color:var(--red-badge-t)}.status-overdue .dot{background:#f87171}
+        .status-partial{background:rgba(139,92,246,.14);color:#c4b5fd}.status-partial .dot{background:#c4b5fd}
+
+        /* ── BUTTONS ── */
+        .btn-primary{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s;background:var(--green);color:#fff}
+        .btn-primary:hover{background:#22963d;transform:translateY(-1px)}
+        .btn-outline{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--text-m)}
+        .btn-outline:hover{border-color:var(--green);color:#5fdd8e;background:var(--green-glow2)}
+
+        /* ── CHARTS ── */
+        .charts-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px}
+        .chart-wrap{padding:16px;height:210px;position:relative}
+        .donut-wrap{padding:16px;display:flex;flex-direction:column;align-items:center;gap:10px}
+        .donut-canvas{width:150px;height:150px}
+        .donut-legend{width:100%;display:flex;flex-direction:column;gap:5px}
+        .dl-row{display:flex;align-items:center;justify-content:space-between;font-size:11.5px}
+        .dl-dot{width:9px;height:9px;border-radius:2px;margin-right:7px;flex-shrink:0}
+        .dl-lbl{display:flex;align-items:center;color:var(--text-m)}
+        .dl-val{font-family:'DM Mono',monospace;font-weight:500;font-size:11.5px}
+
+        /* ── NOTICE ── */
+        .notice{display:flex;align-items:flex-start;gap:10px;padding:13px 16px;border-radius:10px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.18);margin-bottom:16px}
+        .notice svg{width:16px;height:16px;flex-shrink:0;margin-top:1px}
+        .notice-text{font-size:12px;color:var(--text-m);line-height:1.6}
+
+        /* ── PROFILE CARD ── */
+        .profile-info-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+        .info-field{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 16px}
+        .info-field label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);display:block;margin-bottom:4px}
+        .info-field span{font-size:13px;font-weight:500;color:var(--text)}
+
+        /* ── PROGRESS BAR ── */
+        .progress-wrap{margin-top:6px}
+        .progress-bar{height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+        .progress-fill{height:100%;border-radius:3px;transition:width .5s ease}
+        .progress-label{display:flex;justify-content:space-between;font-size:10px;color:var(--text-d);margin-top:4px}
+
+        /* ── TOAST ── */
+        #toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:9px;font-size:12.5px;font-weight:500;background:#1f2937;color:#fff;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;z-index:999;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+        #toast.show{opacity:1;transform:translateY(0)}
+        #toast.ok{background:#052e16;border:1px solid rgba(39,167,68,.3)}
+        #toast.fail{background:#450a0a;border:1px solid rgba(239,68,68,.3)}
+
+        /* ── DROPDOWN ── */
+        .dropdown-wrap{position:relative;display:inline-block}
+        .dot-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .dot-btn:hover{background:rgba(255,255,255,.1);color:var(--text)}
+        .dropdown-menu{display:none;position:absolute;right:0;bottom:34px;top:auto;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:10px;min-width:160px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4);overflow:hidden}
+        .dropdown-menu.open{display:block}
+        .dropdown-item{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12.5px;color:var(--text-m);cursor:pointer;transition:background .1s}
+        .dropdown-item:hover{background:rgba(39,167,68,.08);color:var(--text)}
+    </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<div class="header">
-  <button class="burger-menu" onclick="toggleSidebar()" aria-label="Toggle navigation">
-    <span></span>
-    <span></span>
-    <span></span>
-  </button>
-  <div class="header-logo">
-    <svg viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke="#32b357" stroke-width="2"/>
-      <path d="M8 12l3 3 5-5" stroke="#32b357" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </div>
-  <div class="header-title">Professor Dashboard</div>
-</div>
+<div class="top-accent"></div>
 
-<!-- MOBILE OVERLAY -->
-<div class="mobile-overlay" onclick="closeSidebar()"></div>
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+    <div class="sb-brand">
+        <div class="sb-logo">
+            <img src="~/logo.png" alt="SSG Finance Logo" />
+        </div>
+        <div>
+            <div class="sb-brand-name">SSG Finance</div>
+            <div class="sb-brand-sub">Professor</div>
+        </div>
+    </div>
 
-<!-- SIDEBAR -->
-<div class="sidebar">
-  <div class="nav-list">
-    <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
-      <svg viewBox="0 0 24 24" fill="none">
-        <rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/>
-        <rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/>
-        <rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/>
-        <rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/>
-      </svg>
-      <span class="nav-label">Dashboard</span>
+    <div class="sb-label">Overview</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+        Dashboard
     </div>
-    <div class="nav-item" id="nav-students" onclick="showPage('students')">
-      <svg viewBox="0 0 24 24" fill="none">
-        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8"/>
-        <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/>
-        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8"/>
-      </svg>
-      <span class="nav-label">My Students</span>
-    </div>
-    <div class="nav-item" id="nav-reports" onclick="showPage('reports')">
-      <svg viewBox="0 0 24 24" fill="none">
-        <path d="M9 17H5a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        <path d="M13 21l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M9 7h6M9 11h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <span class="nav-label">Reports</span>
-    </div>
-    <div class="nav-item" id="nav-settings" onclick="showPage('settings')">
-      <svg viewBox="0 0 24 24" fill="none">
-        <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.8"/>
-        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.8"/>
-      </svg>
-      <span class="nav-label">Settings</span>
-    </div>
-  </div>
 
-  <div class="sidebar-bottom">
-    <div class="user-card">
-      <div class="user-avatar">@firstName.Substring(0, 1)</div>
-      <div class="user-info">
-        <div class="user-name">@firstName @lastName</div>
-        <div class="user-role">Professor</div>
-      </div>
+    <div class="sb-label">Students</div>
+    <div class="nav-item" onclick="showPage('students',this)">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        My Students
     </div>
-    <div class="sign-out-btn" onclick="window.location.href='@Url.Action("Logout", "Home")'">
-      <div class="sign-out-icon"></div>
-      <span class="sign-out-label">Sign Out</span>
+    <div class="nav-item" onclick="showPage('payment-status',this)">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M2 10V7a2 2 0 012-2h16a2 2 0 012 2v3" stroke="currentColor" stroke-width="1.8"/></svg>
+        Payment Status
     </div>
-  </div>
-</div>
 
-<!-- MAIN CONTENT -->
+    <div class="sb-label">Account</div>
+    <div class="nav-item" onclick="showPage('profile',this)">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        My Profile
+    </div>
+
+    <div class="sb-spacer"></div>
+    <div class="sb-user">
+        <div class="user-card">
+            <div class="user-av">@initials.ToUpper()</div>
+            <div>
+                <div class="user-name">@firstName @lastName</div>
+                <div class="user-role">Professor</div>
+            </div>
+        </div>
+        <div class="signout" onclick="window.location.href='@Url.Action("Logout", "Home")'">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Sign Out
+        </div>
+    </div>
+</aside>
+
+<!-- ── MAIN ── -->
 <div class="main">
 
-  <!-- DASHBOARD PAGE -->
-  <div class="page active" id="page-dashboard">
-    <div class="section-title">Welcome, Professor @firstName!</div>
+    <!-- ══ DASHBOARD ══ -->
+    <div class="page active" id="page-dashboard">
+        <div class="page-hdr">
+            <div>
+                <div class="page-title">Dashboard</div>
+                <div class="page-sub">Welcome back, @firstName</div>
+            </div>
+            <div style="font-size:11.5px;color:var(--text-m);background:rgba(39,167,68,.1);border:1px solid rgba(39,167,68,.2);padding:6px 13px;border-radius:8px;display:flex;align-items:center;gap:6px">
+                <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;display:inline-block"></span>
+                Live
+            </div>
+        </div>
 
-    <div class="stat-cards">
-      <div class="stat-card blue">
-        <div class="stat-icon-wrap">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#1c8aff" stroke-width="1.8"/>
-            <circle cx="9" cy="7" r="4" stroke="#1c8aff" stroke-width="1.8"/>
-          </svg>
+        <!-- Stat Cards -->
+        <div class="stat-grid-3">
+            <div class="stat-card green">
+                <div class="stat-lbl">Total Students</div>
+                <div class="stat-row">
+                    <div class="stat-val" id="s-total">0</div>
+                    <div class="stat-icon g">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#27a744" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="#27a744" stroke-width="1.8"/></svg>
+                    </div>
+                </div>
+                <div class="stat-sub" id="s-total-sub">Across all sections</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-lbl">Fees Paid</div>
+                <div class="stat-row">
+                    <div class="stat-val" id="s-paid">0</div>
+                    <div class="stat-icon g">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                </div>
+                <div class="stat-sub" id="s-paid-sub">Org fee settled</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-lbl">Fees Pending</div>
+                <div class="stat-row">
+                    <div class="stat-val" id="s-pending">0</div>
+                    <div class="stat-icon r">
+                        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#f87171" stroke-width="1.8"/><path d="M12 8v4l3 3" stroke="#f87171" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    </div>
+                </div>
+                <div class="stat-sub" id="s-pending-sub">Awaiting payment</div>
+            </div>
         </div>
-        <div>
-          <div class="stat-value">0</div>
-          <div class="stat-label">Total Students</div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="content-card">
+                <div class="cc-hdr">
+                    <div class="cc-title">Payment Overview by Section</div>
+                    <select class="filter-select" id="chart-section-filter" onchange="updateBarChart()">
+                        <option value="all">All Sections</option>
+                    </select>
+                </div>
+                <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+            </div>
+            <div class="content-card">
+                <div class="cc-hdr"><div class="cc-title">Payment Breakdown</div></div>
+                <div class="donut-wrap">
+                    <div class="donut-canvas"><canvas id="donutChart"></canvas></div>
+                    <div class="donut-legend" id="donut-legend"></div>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="stat-card green">
-        <div class="stat-icon-wrap">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#32b357" stroke-width="1.8" stroke-linejoin="round"/>
-            <path d="M2 17l10 5 10-5" stroke="#32b357" stroke-width="1.8" stroke-linejoin="round"/>
-            <path d="M2 12l10 5 10-5" stroke="#32b357" stroke-width="1.8" stroke-linejoin="round"/>
-          </svg>
+
+        <!-- Recent Activity -->
+        <div class="content-card">
+            <div class="cc-hdr">
+                <div class="cc-title">Recent Student Activity</div>
+                <span class="badge by" id="recent-badge">Loading…</span>
+            </div>
+            <table>
+                <thead><tr><th>Student</th><th>ID</th><th>Course / Section</th><th>Payment</th><th>Status</th></tr></thead>
+                <tbody id="recent-tbody">
+                    <tr class="empty-row"><td colspan="5">Loading student data…</td></tr>
+                </tbody>
+            </table>
         </div>
-        <div>
-          <div class="stat-value">0</div>
-          <div class="stat-label">Paid Fees</div>
-        </div>
-      </div>
-      <div class="stat-card red">
-        <div class="stat-icon-wrap">
-          <svg viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="#ff3b30" stroke-width="1.8"/>
-            <path d="M12 8v4M12 16h.01" stroke="#ff3b30" stroke-width="1.8" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div>
-          <div class="stat-value">0</div>
-          <div class="stat-label">Pending Fees</div>
-        </div>
-      </div>
     </div>
 
-    <div class="content-card">
-      <div class="card-title">Quick Actions</div>
-      <p style="color: #666; margin-top: 12px;">View student payment status and generate reports from the sidebar menu.</p>
-    </div>
-  </div>
-
-  <!-- STUDENTS PAGE -->
-  <div class="page" id="page-students">
-    <div class="section-title">My Students</div>
-    <div class="content-card">
-      <div class="table-header">
-        <div class="search-box">
-          <input type="text" class="search-input" placeholder="Search students...">
+    <!-- ══ MY STUDENTS ══ -->
+    <div class="page" id="page-students">
+        <div class="page-hdr">
+            <div>
+                <div class="page-title">My Students</div>
+                <div class="page-sub" id="students-sub">All students in your class</div>
+            </div>
         </div>
-      </div>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Student ID</th>
-            <th>Name</th>
-            <th>Course</th>
-            <th>Year Level</th>
-            <th>Payment Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td colspan="5" style="text-align: center; padding: 40px; color: #666;">No students assigned yet.</td>
-          </tr>
-        </tbody>
-      </table>
+        <div class="content-card">
+            <div class="toolbar">
+                <div class="search-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    <input type="text" placeholder="Search by name, ID, course…" oninput="filterStudentsTable(this.value)"/>
+                </div>
+                <select class="filter-select" id="students-status-filter" onchange="filterStudentsTable(document.querySelector('#page-students .search-box input').value)">
+                    <option value="">All Statuses</option>
+                    <option value="paid">Paid</option>
+                    <option value="partial">Partial</option>
+                    <option value="unpaid">Unpaid</option>
+                </select>
+            </div>
+            <table>
+                <thead><tr><th>#</th><th>Name</th><th>School ID</th><th>Course</th><th>Year & Section</th><th>Status</th></tr></thead>
+                <tbody id="students-tbody">
+                    <tr class="empty-row"><td colspan="6">No students loaded yet.</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-  </div>
 
-  <!-- REPORTS PAGE -->
-  <div class="page" id="page-reports">
-    <div class="section-title">Reports</div>
-    <div class="content-card">
-      <div class="card-title">Generate Reports</div>
-      <p style="color: #666; margin-top: 12px;">Report generation features coming soon.</p>
+    <!-- ══ PAYMENT STATUS ══ -->
+    <div class="page" id="page-payment-status">
+        <div class="page-hdr">
+            <div>
+                <div class="page-title">Payment Status</div>
+                <div class="page-sub">Track organizational fee collection progress</div>
+            </div>
+        </div>
+
+        <!-- Payment stat cards -->
+        <div class="stat-grid-3" style="margin-bottom:14px">
+            <div class="stat-card green">
+                <div class="stat-lbl">Fully Paid</div>
+                <div class="stat-row">
+                    <div class="stat-val" id="ps-paid">0</div>
+                    <div class="stat-icon g"><svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                </div>
+                <div class="stat-sub">Complete payment received</div>
+            </div>
+            <div class="stat-card yellow">
+                <div class="stat-lbl">Partial</div>
+                <div class="stat-row">
+                    <div class="stat-val" id="ps-partial">0</div>
+                    <div class="stat-icon y"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#fbbf24" stroke-width="1.8"/><path d="M12 8v4l3 3" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+                </div>
+                <div class="stat-sub">Incomplete payment</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-lbl">Unpaid</div>
+                <div class="stat-row">
+                    <div class="stat-val" id="ps-unpaid">0</div>
+                    <div class="stat-icon r"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#f87171" stroke-width="1.8"/><path d="M15 9l-6 6M9 9l6 6" stroke="#f87171" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+                </div>
+                <div class="stat-sub">No payment recorded</div>
+            </div>
+        </div>
+
+        <!-- Progress bar card -->
+        <div class="content-card" style="margin-bottom:14px">
+            <div class="cc-hdr"><div class="cc-title">Collection Progress</div><span class="badge bg" id="ps-pct-badge">0%</span></div>
+            <div style="padding:16px 20px">
+                <div class="progress-bar"><div class="progress-fill" id="ps-progress" style="width:0%;background:linear-gradient(90deg,#1a7a4a,#27a744)"></div></div>
+                <div class="progress-label"><span id="ps-prog-left">0 students paid</span><span id="ps-prog-right">0 remaining</span></div>
+            </div>
+        </div>
+
+        <div class="content-card">
+            <div class="cc-hdr">
+                <div class="cc-title">Student Payment List</div>
+                <div class="search-box" style="min-width:200px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    <input type="text" placeholder="Search…" oninput="filterPaymentTable(this.value)"/>
+                </div>
+            </div>
+            <table>
+                <thead><tr><th>#</th><th>Name</th><th>School ID</th><th>Course / Yr-Sec</th><th>Amount Paid</th><th>Status</th></tr></thead>
+                <tbody id="payment-tbody">
+                    <tr class="empty-row"><td colspan="6">Loading payment data…</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-  </div>
 
-  <!-- SETTINGS PAGE -->
-  <div class="page" id="page-settings">
-    <div class="section-title">Settings</div>
-    <div class="content-card">
-      <div class="card-title">Account Settings</div>
-      <div style="margin-top: 16px;">
-        <p><strong>Name:</strong> @firstName @lastName</p>
-        <p><strong>School ID:</strong> @schoolId</p>
-        <p><strong>Role:</strong> Professor</p>
-      </div>
+    <!-- ══ PROFILE ══ -->
+    <div class="page" id="page-profile">
+        <div class="page-hdr">
+            <div><div class="page-title">My Profile</div><div class="page-sub">Your account information</div></div>
+        </div>
+        <div class="content-card">
+            <div class="cc-hdr"><div class="cc-title">Personal Information</div><span class="badge bg">Professor</span></div>
+            <div style="padding:20px">
+                <div class="profile-info-row">
+                    <div class="info-field"><label>First Name</label><span>@firstName</span></div>
+                    <div class="info-field"><label>Last Name</label><span>@(lastName.Length > 0 ? lastName : "—")</span></div>
+                    <div class="info-field"><label>School ID</label><span style="font-family:'DM Mono',monospace;font-size:12px">@(schoolId.Length > 0 ? schoolId : "—")</span></div>
+                    <div class="info-field"><label>Role</label><span>Professor</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="notice">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#93c5fd" stroke-width="1.8"/><path d="M12 8v4M12 16h.01" stroke="#93c5fd" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <p class="notice-text">To update your personal information, please contact the SSG administrator.</p>
+        </div>
     </div>
-  </div>
 
-</div>
+</div><!-- /main -->
+
+<div id="toast"></div>
 
 <script>
-  // Page Navigation
-  function showPage(pageName) {
+// ── State ─────────────────────────────────────────────────────────
+let allStudents = [];
+let barChart, donutChart;
+
+// ── Page Navigation ───────────────────────────────────────────────
+function showPage(name, navEl) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-
-    const page = document.getElementById('page-' + pageName);
-    const nav = document.getElementById('nav-' + pageName);
-
+    const page = document.getElementById('page-' + name);
     if (page) page.classList.add('active');
-    if (nav) nav.classList.add('active');
-  }
-
-  // Mobile Sidebar Toggle
-  function toggleSidebar() {
-    document.body.classList.toggle('sidebar-open');
-  }
-
-  function closeSidebar() {
-    document.body.classList.remove('sidebar-open');
-  }
-
-  // Close sidebar when clicking on nav items (mobile)
-  document.querySelectorAll('.nav-item').forEach(item => {
-    item.addEventListener('click', () => {
-      if (window.innerWidth <= 768) {
-        closeSidebar();
-      }
-    });
-  });
-
-  // Close sidebar on window resize to desktop
-  window.addEventListener('resize', () => {
-    if (window.innerWidth > 768) {
-      closeSidebar();
+    if (navEl) navEl.classList.add('active');
+    else {
+        const navItems = document.querySelectorAll('.nav-item');
+        const pageMap = { dashboard: 0, students: 2, 'payment-status': 3, profile: 4 };
+        if (pageMap[name] !== undefined && navItems[pageMap[name]]) {
+            navItems[pageMap[name]].classList.add('active');
+        }
     }
-  });
-</script>
+    if (name === 'dashboard') setTimeout(renderCharts, 100);
+}
 
+// ── Helpers ───────────────────────────────────────────────────────
+function p(n) { return '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2 }); }
+function fd(d) {
+    if (!d) return '—';
+    return new Date(d.split('T')[0] + 'T00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'show ' + type;
+    clearTimeout(t._t); t._t = setTimeout(() => t.className = '', 3000);
+}
+
+function statusBadge(status) {
+    if (!status) status = 'Unpaid';
+    const sl = status.toLowerCase();
+    if (sl === 'paid') return `<span class="status-pill status-paid"><span class="dot"></span>Paid</span>`;
+    if (sl === 'partial') return `<span class="status-pill status-partial"><span class="dot"></span>Partial</span>`;
+    if (sl === 'pending' || sl === 'unpaid') return `<span class="status-pill status-overdue"><span class="dot"></span>Unpaid</span>`;
+    return `<span class="badge by">${status}</span>`;
+}
+
+// ── Load Students from API ────────────────────────────────────────
+async function loadStudents() {
+    try {
+        const res  = await fetch('/Home/GetProfessorStudentPayments');
+        const data = await res.json();
+        if (!data.success) {
+            showToast('Failed to load students.', 'fail');
+            return;
+        }
+
+        allStudents = data.students.map(s => ({
+            userId:          s.userId,
+            schoolId:        s.schoolId,
+            name:            s.name,
+            courseCode:      s.courseCode,
+            yearSection:     s.yearSection,
+            totalPaid:       s.totalPaid,
+            requiredAmount:  s.requiredAmount,
+            status:          s.status,
+            hasPaid:         s.hasPaid,
+            lastPaymentDate: s.lastPaymentDate
+        }));
+
+        updateDashboardStats();
+        renderStudentsTable();
+        renderPaymentTable();
+        renderCharts();
+    } catch (err) {
+        console.error('Failed to load students:', err);
+        showToast('Failed to load students.', 'fail');
+    }
+}
+
+// ── Dashboard Stats ───────────────────────────────────────────────
+function updateDashboardStats() {
+    const total   = allStudents.length;
+    const paid    = allStudents.filter(s => s.status === 'Paid').length;
+    const partial = allStudents.filter(s => s.status === 'Partial').length;
+    const unpaid  = allStudents.filter(s => s.status === 'Unpaid').length;
+    const pending = partial + unpaid;
+
+    document.getElementById('s-total').textContent   = total;
+    document.getElementById('s-paid').textContent    = paid;
+    document.getElementById('s-pending').textContent = pending;
+    document.getElementById('s-total-sub').textContent   = `${total} student${total !== 1 ? 's' : ''} enrolled`;
+    document.getElementById('s-paid-sub').textContent    = `${total > 0 ? Math.round(paid/total*100) : 0}% collection rate`;
+    document.getElementById('s-pending-sub').textContent = `${pending} student${pending !== 1 ? 's' : ''} yet to fully pay`;
+
+    // Payment status page
+    document.getElementById('ps-paid').textContent    = paid;
+    document.getElementById('ps-partial').textContent = partial;
+    document.getElementById('ps-unpaid').textContent  = unpaid;
+
+    const pct = total > 0 ? Math.round(paid / total * 100) : 0;
+    document.getElementById('ps-pct-badge').textContent  = pct + '%';
+    document.getElementById('ps-progress').style.width   = pct + '%';
+    document.getElementById('ps-prog-left').textContent  = `${paid} student${paid !== 1 ? 's' : ''} fully paid`;
+    document.getElementById('ps-prog-right').textContent = `${pending} remaining`;
+}
+
+// ── Students Table ────────────────────────────────────────────────
+function renderStudentsTable(filtered) {
+    const data = filtered ?? allStudents;
+    const tbody = document.getElementById('students-tbody');
+    document.getElementById('students-sub').textContent = `${data.length} student${data.length !== 1 ? 's' : ''} in your class`;
+
+    if (!data.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No students found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = data.map((s, i) => `
+        <tr>
+            <td class="td-mono td-m">${i + 1}</td>
+            <td><strong>${s.name}</strong></td>
+            <td class="td-mono td-m">${s.schoolId}</td>
+            <td><span class="badge bg">${s.courseCode}</span></td>
+            <td class="td-m">${s.yearSection}</td>
+            <td>${statusBadge(s.status)}</td>
+        </tr>
+    `).join('');
+}
+
+function filterStudentsTable(q) {
+    const statusFilter = document.getElementById('students-status-filter').value.toLowerCase();
+    const query = (q || '').toLowerCase().trim();
+    const filtered = allStudents.filter(s => {
+        const matchQ = !query
+            || s.name.toLowerCase().includes(query)
+            || s.schoolId.toLowerCase().includes(query)
+            || s.courseCode.toLowerCase().includes(query)
+            || s.yearSection.toLowerCase().includes(query);
+        const matchStatus = !statusFilter || s.status.toLowerCase() === statusFilter;
+        return matchQ && matchStatus;
+    });
+    renderStudentsTable(filtered);
+}
+
+// ── Payment Table ─────────────────────────────────────────────────
+function renderPaymentTable(filtered) {
+    const data  = filtered ?? allStudents;
+    const tbody = document.getElementById('payment-tbody');
+    if (!data.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No records found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = data.map((s, i) => `
+        <tr>
+            <td class="td-mono td-m">${i + 1}</td>
+            <td><strong>${s.name}</strong></td>
+            <td class="td-mono td-m">${s.schoolId}</td>
+            <td class="td-m">${s.courseCode} ${s.yearSection}</td>
+            <td class="td-mono" style="color:${s.totalPaid > 0 ? '#5fdd8e' : '#f87171'}">
+                ₱${Number(s.totalPaid).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                ${s.requiredAmount > 0 ? `<span style="color:var(--text-d);font-size:10px"> / ₱${Number(s.requiredAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>` : ''}
+            </td>
+            <td>${statusBadge(s.status)}</td>
+        </tr>
+    `).join('');
+}
+
+function filterPaymentTable(q) {
+    const query = (q || '').toLowerCase().trim();
+    const filtered = allStudents.filter(s =>
+        !query
+        || s.name.toLowerCase().includes(query)
+        || s.schoolId.toLowerCase().includes(query)
+    );
+    renderPaymentTable(filtered);
+}
+
+// ── Recent Activity ───────────────────────────────────────────────
+async function renderRecentActivity() {
+    const badge = document.getElementById('recent-badge');
+    const tbody = document.getElementById('recent-tbody');
+
+    try {
+        const res  = await fetch('/Home/GetRecentPayments');
+        const data = await res.json();
+
+        console.log('GetRecentPayments response:', data);
+
+        if (!data.success || !Array.isArray(data.payments) || !data.payments.length) {
+            badge.textContent = '0 recent';
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No recent payments found.</td></tr>';
+            return;
+        }
+
+        badge.textContent = data.payments.length + ' recent';
+        tbody.innerHTML = data.payments.map(p => `
+            <tr>
+                <td><strong>${p.studentName}</strong></td>
+                <td class="td-mono td-m">${p.schoolId}</td>
+                <td class="td-m">${p.courseCode} ${p.yearSection}</td>
+                <td class="td-mono" style="color:#5fdd8e">+₱${Number(p.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                <td>${statusBadge(p.paymentStatus)}</td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        console.error('Failed to load recent payments:', err);
+        badge.textContent = 'Error';
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Failed to load recent activity.</td></tr>';
+    }
+}
+
+// ── Charts ────────────────────────────────────────────────────────
+function renderCharts() {
+    const paid    = allStudents.filter(s => s.status === 'Paid').length;
+    const partial = allStudents.filter(s => s.status === 'Partial').length;
+    const unpaid  = allStudents.filter(s => s.status === 'Unpaid').length;
+
+    // Bar chart — group by section
+    const sections = [...new Set(allStudents.map(s => s.yearSection))].sort();
+    const sectionFilter = document.getElementById('chart-section-filter');
+    const currentSections = Array.from(sectionFilter.options).map(o => o.value);
+    sections.forEach(sec => {
+        if (!currentSections.includes(sec)) {
+            const opt = document.createElement('option');
+            opt.value = sec; opt.textContent = sec;
+            sectionFilter.appendChild(opt);
+        }
+    });
+    updateBarChart();
+
+    // Donut chart
+    const dLabels  = ['Paid', 'Partial', 'Unpaid'];
+    const dData    = [paid, partial, unpaid];
+    const dColors  = ['rgba(39,167,68,.8)', 'rgba(139,92,246,.8)', 'rgba(239,68,68,.7)'];
+    const valColors = ['#5fdd8e', '#c4b5fd', '#f87171'];
+
+    if (donutChart) donutChart.destroy();
+    donutChart = new Chart(document.getElementById('donutChart'), {
+        type: 'doughnut',
+        data: { labels: dLabels, datasets: [{ data: dData, backgroundColor: dColors, borderWidth: 0, hoverOffset: 4 }] },
+        options: { responsive: true, cutout: '68%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed} students` } } } }
+    });
+
+    const total = paid + partial + unpaid;
+    document.getElementById('donut-legend').innerHTML = dLabels.map((l, i) => `
+        <div class="dl-row">
+            <div class="dl-lbl"><div class="dl-dot" style="background:${dColors[i]}"></div>${l}</div>
+            <div class="dl-val" style="color:${valColors[i]}">${total > 0 ? Math.round(dData[i]/total*100) : 0}% · ${dData[i]} students</div>
+        </div>
+    `).join('');
+}
+
+function updateBarChart() {
+    const sectionVal = document.getElementById('chart-section-filter')?.value || 'all';
+    const filtered = sectionVal === 'all' ? allStudents : allStudents.filter(s => s.yearSection === sectionVal);
+
+    const sections = sectionVal === 'all'
+        ? [...new Set(allStudents.map(s => s.yearSection))].sort()
+        : [sectionVal];
+
+    const paidData   = sections.map(sec => allStudents.filter(s => s.yearSection === sec && s.hasPaid).length);
+    const unpaidData = sections.map(sec => allStudents.filter(s => s.yearSection === sec && !s.hasPaid).length);
+
+    if (barChart) barChart.destroy();
+    barChart = new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+            labels: sections.length ? sections : ['No Data'],
+            datasets: [
+                { label: 'Paid',    data: paidData,   backgroundColor: 'rgba(39,167,68,.75)',  borderRadius: 4, borderSkipped: false },
+                { label: 'Pending', data: unpaidData,  backgroundColor: 'rgba(239,68,68,.65)', borderRadius: 4, borderSkipped: false }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, labels: { color: 'rgba(232,245,236,.5)', font: { size: 11 }, boxWidth: 10, padding: 12 } },
+                tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} students` } }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: 'rgba(232,245,236,.4)', font: { size: 10 } } },
+                y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: 'rgba(232,245,236,.4)', font: { size: 10 }, stepSize: 1 } }
+            }
+        }
+    });
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+async function init() {
+    await loadStudents();
+    await renderRecentActivity();
+    setTimeout(renderCharts, 200);
+}
+
+init();
+</script>
 </body>
 </html>
-

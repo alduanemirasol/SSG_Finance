@@ -44,6 +44,7 @@
         .sb-brand{display:flex;align-items:center;gap:10px;padding:20px 16px 18px;border-bottom:1px solid rgba(255,255,255,.05)}
         .sb-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 14px rgba(39,167,68,.3)}
         .sb-logo svg{width:18px;height:18px}
+        .sb-logo img{width:100%;height:100%;object-fit:cover;border-radius:10px}
         .sb-brand-name{font-size:13.5px;font-weight:700;color:#fff;letter-spacing:-.01em}
         .sb-brand-sub{font-size:10px;color:rgba(39,167,68,.85);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
         .sb-label{font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text-d);padding:16px 16px 5px}
@@ -71,7 +72,7 @@
         .page-title{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.03em}
         .page-sub{font-size:12px;color:var(--text-m);margin-top:2px}
 
-        .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;width:100%}
+        .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;width:100%}
         .stat-col{display:flex;flex-direction:column;gap:12px}
         .stat-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;backdrop-filter:blur(8px)}
         .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(39,167,68,.25),transparent)}
@@ -164,7 +165,7 @@
 <aside class="sidebar">
   <div class="sb-brand">
     <div class="sb-logo">
-      <img src="~/logo.png" alt="SSG Finance Logo" style="width:100%;height:100%;object-fit:cover;border-radius:10px;" />
+      <img src="~/logo.png" alt="SSG Finance Logo" />
     </div>
     <div>
       <div class="sb-brand-name">SSG Finance</div>
@@ -184,10 +185,6 @@
     {
         <span class="nav-badge">@Model.RequestedAccounts!.Count</span>
     }
-  </a>
-  <a class="nav-item" id="nav-rejected" onclick="showPage('rejected',this)">
-    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    Rejected
   </a>
 
   <div class="sb-label">Users</div>
@@ -211,7 +208,20 @@
     <div class="user-card">
       <div class="user-av">@initials.ToUpper()</div>
       <div>
-        <div class="user-name">@(firstName.Length > 0 ? $"Prof. {firstName}" : "Administrator")</div>
+        <div class="user-name">
+          @if (firstName.Length > 0 && lastName.Length > 0)
+          {
+            @($"Prof. {firstName} {lastName}")
+          }
+          else if (firstName.Length > 0)
+          {
+            @($"Prof. {firstName}")
+          }
+          else
+          {
+            <span>Administrator</span>
+          }
+        </div>
         <div class="user-role">Administrator</div>
       </div>
     </div>
@@ -241,67 +251,51 @@
       <div class="stat-card">
         <div class="stat-lbl">Registered Accounts</div>
         <div class="stat-row">
-          <div class="stat-val">@Model.ApprovedAccountsCount</div>
+          <div class="stat-val" id="dash-registered">@Model.ApprovedAccountsCount</div>
           <div class="stat-icon g">
             <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#27a744" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="#27a744" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="#27a744" stroke-width="1.8" stroke-linecap="round"/></svg>
           </div>
         </div>
         <div class="stat-trend">All approved accounts</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-lbl">Pending Requests</div>
-        <div class="stat-row">
-          <div class="stat-val">@(Model.RequestedAccounts?.Count ?? 0)</div>
-          <div class="stat-icon y">
-            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#fbbf24" stroke-width="1.8"/><path d="M12 8v4l3 3" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/></svg>
-          </div>
-        </div>
-        <div class="stat-trend @((Model.RequestedAccounts?.Count ?? 0) == 0 ? "" : "warn")">
-    @((Model.RequestedAccounts?.Count ?? 0) == 0 ? "No pending requests" : "Awaiting review")
-</div>
-      </div>
       <div class="stat-col">
         <div class="stat-card stat-card-half">
           <div class="stat-lbl">Students</div>
           <div class="stat-row">
-            <div class="stat-val">@(Model.Students?.Count ?? 0)</div>
+            <div class="stat-val" id="dash-students">@(Model.Students?.Count ?? 0)</div>
             <div class="stat-icon g" onclick="showPage('students',document.getElementById('nav-students'))" style="cursor:pointer" title="View Students">
             <svg viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           </div>
-          <div class="stat-trend">Approved</div>
         </div>
         <div class="stat-card stat-card-half">
           <div class="stat-lbl">Treasurers</div>
           <div class="stat-row">
-            <div class="stat-val">@(Model.Treasurers?.Count ?? 0)</div>
+            <div class="stat-val" id="dash-treasurers">@(Model.Treasurers?.Count ?? 0)</div>
             <div class="stat-icon g" onclick="showPage('treasurers',document.getElementById('nav-treasurers'))" style="cursor:pointer" title="View Treasurers">
               <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="#27a744" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="#27a744" stroke-width="1.8" stroke-linecap="round"/></svg>
             </div>
           </div>
-          <div class="stat-trend">Approved</div>
         </div>
       </div>
       <div class="stat-col">
         <div class="stat-card stat-card-half">
           <div class="stat-lbl">Professors</div>
           <div class="stat-row">
-            <div class="stat-val">@(Model.Professors?.Count ?? 0)</div>
+            <div class="stat-val" id="dash-professors">@(Model.Professors?.Count ?? 0)</div>
             <div class="stat-icon g" onclick="showPage('professors',document.getElementById('nav-professors'))" style="cursor:pointer" title="View Professors">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 14l9-5-9-5-9 5 9 5z" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
           </div>
-          <div class="stat-trend">Approved</div>
         </div>
         <div class="stat-card stat-card-half">
           <div class="stat-lbl">Admins</div>
           <div class="stat-row">
-            <div class="stat-val">@(Model.Admins?.Count ?? 0)</div>
+            <div class="stat-val" id="dash-admins">@(Model.Admins?.Count ?? 0)</div>
             <div class="stat-icon g" onclick="showPage('admins',document.getElementById('nav-admins'))" style="cursor:pointer" title="View Admins">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
           </div>
-          <div class="stat-trend">Approved</div>
         </div>
       </div>
     </div>
@@ -314,7 +308,7 @@
       <div class="tbl-wrap">
         <table>
           <thead>
-            <tr><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Date</th><th>Status</th></tr>
+            <tr><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Date</th></tr>
           </thead>
           <tbody id="recent-tbody">
             @if (Model.AllAccountRequests != null && Model.AllAccountRequests.Any())
@@ -329,25 +323,13 @@
                         <td class="td-m">@(acct.CourseCode ?? "—")</td>
                         <td class="td-m">@(acct.YearLevel ?? "—")-@(acct.Section ?? "—")</td>
                         <td class="td-mono td-m">@acct.CreatedAt.ToString("MM-dd-yyyy")</td>
-                        <td>
-                            @{
-                                var statusClass = acct.Status switch
-                                {
-                                    RequestStatus.Pending  => "by",
-                                    RequestStatus.Approved => "bg",
-                                    RequestStatus.Rejected => "br",
-                                    _                      => "by"
-                                };
-                            }
-                            <span class="badge @statusClass">@acct.Status</span>
-                        </td>
                     </tr>
                     idx++;
                 }
             }
             else
             {
-                <tr class="empty-row"><td colspan="6">No account requests found.</td></tr>
+                <tr class="empty-row"><td colspan="5">No account requests found.</td></tr>
             }
           </tbody>
         </table>
@@ -397,7 +379,7 @@
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                     Approve
                                 </button>
-                                <button class="btn-rj" onclick="updateStatus(@acct.AccountId, 'Rejected')">
+                                <button class="btn-rj" onclick="rejectAndDelete(@acct.AccountId)">
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
                                     Reject
                                 </button>
@@ -410,28 +392,6 @@
             {
                 <tr class="empty-row"><td colspan="6">No pending requests.</td></tr>
             }
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- REJECTED PAGE -->
-  <div class="page" id="page-rejected">
-    <div class="page-hdr">
-      <div>
-        <div class="page-title">Rejected Requests</div>
-        <div class="page-sub" id="rejected-sub">0 rejected accounts</div>
-      </div>
-    </div>
-    <div class="content-card">
-      <div class="tbl-wrap">
-        <table>
-          <thead>
-            <tr><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Date</th><th>Actions</th></tr>
-          </thead>
-          <tbody id="rejected-tbody">
-            <tr class="empty-row"><td colspan="6">No rejected requests.</td></tr>
           </tbody>
         </table>
       </div>
@@ -644,6 +604,10 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/><path d="M12 6v2m0 8v2M9 9.5A3 3 0 0112 8a3 3 0 010 6 3 3 0 00-3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         Set Fee Amount
       </button>
+      <button class="settings-tab" onclick="switchSettingsTab('password',this)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2a5 5 0 00-5 5v4H6a2 2 0 00-2 2v7a2 2 0 002 2h12a2 2 0 002-2v-7a2 2 0 00-2-2h-1V7a5 5 0 00-5-5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12a3 3 0 016 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Change Password
+      </button>
     </div>
 
     <!-- SCHOOL YEAR & SEMESTER -->
@@ -779,6 +743,33 @@
               <tr class="empty-row"><td colspan="5">No fee records found.</td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHANGE PASSWORD -->
+    <div class="settings-panel" id="settings-password">
+      <div class="content-card" style="margin-bottom:14px">
+        <div class="cc-hdr"><div class="cc-title">Change Password</div></div>
+        <div style="padding:20px 24px">
+          <div style="display:grid;gap:12px;margin-bottom:16px">
+            <div>
+              <label class="settings-label">Current Password</label>
+              <input id="pwd-current" type="password" class="settings-input" placeholder="Enter current password" />
+            </div>
+            <div>
+              <label class="settings-label">New Password</label>
+              <input id="pwd-new" type="password" class="settings-input" placeholder="Enter new password" oninput="checkPasswordMatch()" />
+            </div>
+            <div>
+              <label class="settings-label">Confirm New Password</label>
+              <input id="pwd-confirm" type="password" class="settings-input" placeholder="Confirm new password" oninput="checkPasswordMatch()" />
+            </div>
+            <div id="pwd-match-message" style="font-size:12px;color:var(--text-m);min-height:18px"></div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+            <button class="btn-ap" onclick="changeAdminPassword()">Change Password</button>
+          </div>
         </div>
       </div>
     </div>
@@ -934,7 +925,6 @@ async function showPage(name, navEl) {
     // refresh the tab data
     if (name === 'dashboard')   refreshDashboard();
     if (name === 'requests')    refreshRequests();
-    if (name === 'rejected')    refreshRejected();
     if (name === 'students')    refreshStudents();
     if (name === 'professors')  refreshProfessors();
     if (name === 'settings')    await refreshSchoolYears();
@@ -963,30 +953,38 @@ async function updateStatus(accountId, status) {
     }
 }
 
-async function deleteRejected(accountId) {
-    if (!confirm('Are you sure you want to permanently delete this account? This cannot be undone.')) return;
+async function rejectAndDelete(accountId) {
+    if (!confirm('Are you sure you want to reject and permanently delete this account? This cannot be undone.')) return;
 
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
 
     try {
         const res = await fetch('/Home/DeleteAccount', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'RequestVerificationToken': token ?? ''
+                'RequestVerificationToken': token
             },
             body: JSON.stringify({ accountId: accountId })
         });
         const data = await res.json();
 
         if (data.success) {
-            const row = document.getElementById('rej-row-' + accountId);
+            const row = document.getElementById(`req-row-${accountId}`);
             if (row) {
                 row.style.opacity = '0';
-                row.style.transition = 'opacity 0.3s';
+                row.style.transition = 'opacity .3s';
                 setTimeout(() => row.remove(), 300);
             }
-            showToast(data.message, 'ok');
+
+            const badge = document.querySelector('.nav-badge');
+            if (badge) {
+                const count = parseInt(badge.textContent) - 1;
+                if (count <= 0) badge.remove();
+                else badge.textContent = count;
+            }
+
+            showToast('Account rejected and deleted successfully.', 'ok');
         } else {
             showToast(data.message, 'fail');
         }
@@ -1487,7 +1485,7 @@ async function changeRole(accountId, role) {
 
         if (data.success) {
             showToast(data.message, 'ok');
-            // just close dropdown, don't remove the row
+            refreshStudents();
         } else {
             showToast(data.message, 'fail');
         }
@@ -1569,50 +1567,9 @@ async function refreshRequests() {
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             Approve
                         </button>
-                        <button class="btn-rj" onclick="updateStatus(${r.accountId}, 'Rejected')">
+                        <button class="btn-rj" onclick="rejectAndDelete(${r.accountId})">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
                             Reject
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-    } catch {}
-}
-
-async function refreshRejected() {
-    try {
-        const res  = await fetch('/Home/GetRejectedRequests');
-        const data = await res.json();
-        if (!data.success) return;
-
-        const tbody = document.getElementById('rejected-tbody');
-        const sub   = document.getElementById('rejected-sub');
-        if (!tbody) return;
-
-        if (sub) sub.textContent = data.requests.length + ' rejected accounts';
-
-        if (data.requests.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No rejected requests.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = data.requests.map(r => `
-            <tr id="rej-row-${r.accountId}">
-                <td class="td-mono td-m">${r.schoolId ?? '—'}</td>
-                <td><strong>${r.fullname}</strong></td>
-                <td class="td-m">${r.courseCode ?? '—'}</td>
-                <td class="td-m">${r.yearLevel ?? '—'}-${r.section ?? '—'}</td>
-                <td class="td-mono td-m">${r.createdAt}</td>
-                <td>
-                    <div class="action-btns">
-                        <button class="btn-ap" onclick="updateStatus(${r.accountId}, 'Approved')">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            Approve
-                        </button>
-                        <button class="btn-rj" onclick="deleteRejected(${r.accountId})">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            Delete
                         </button>
                     </div>
                 </td>
@@ -1770,9 +1727,80 @@ async function switchSettingsTab(name, btn) {
     document.getElementById('settings-' + name).classList.add('active');
     btn.classList.add('active');
 
-    if (name === 'sy')      await refreshSchoolYears();
-    if (name === 'courses') await refreshCourses();
-    if (name === 'fees')    await refreshFees();
+    if (name === 'sy')       await refreshSchoolYears();
+    if (name === 'courses')  await refreshCourses();
+    if (name === 'fees')     await refreshFees();
+    if (name === 'password') { /* nothing to load */ }
+}
+
+function togglePwdVisibility(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    field.type = field.type === 'password' ? 'text' : 'password';
+}
+
+function checkPasswordMatch() {
+    const newPassword = document.getElementById('pwd-new')?.value || '';
+    const confirmPassword = document.getElementById('pwd-confirm')?.value || '';
+    const message = document.getElementById('pwd-match-message');
+    if (!message) return;
+    if (!newPassword && !confirmPassword) {
+        message.textContent = '';
+        return;
+    }
+
+    if (newPassword === confirmPassword) {
+        message.textContent = 'Passwords match';
+        message.style.color = '#5fdd8e';
+    } else {
+        message.textContent = 'Passwords do not match';
+        message.style.color = '#ff6b6b';
+    }
+}
+
+async function changeAdminPassword() {
+    const currentPassword = document.getElementById('pwd-current')?.value.trim() || '';
+    const newPassword     = document.getElementById('pwd-new')?.value.trim() || '';
+    const confirmPassword = document.getElementById('pwd-confirm')?.value.trim() || '';
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        showToast('Please fill in all password fields.', 'fail');
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        showToast('New password and confirmation do not match.', 'fail');
+        return;
+    }
+
+    if (newPassword.length < 8) {
+        showToast('Password must be at least 8 characters long.', 'fail');
+        return;
+    }
+
+    try {
+        const response = await fetch('/Home/ChangeAdminPassword', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+        });
+
+        const result = await response.json();
+        if (!result.success) {
+            showToast(result.message || 'Unable to update password.', 'fail');
+            return;
+        }
+
+        document.getElementById('pwd-current').value = '';
+        document.getElementById('pwd-new').value = '';
+        document.getElementById('pwd-confirm').value = '';
+        document.getElementById('pwd-match-message').textContent = '';
+
+        showToast(result.message || 'Password updated successfully.', 'success');
+    }
+    catch (ex) {
+        showToast('An error occurred while updating the password.', 'fail');
+    }
 }
 
 async function addSchoolYear() {
@@ -2083,6 +2111,140 @@ document.addEventListener('DOMContentLoaded', function() {
     refreshCourses();
     refreshFees();
 });
+
+// ================================================================
+// AUTO-REFRESH SYSTEM
+// Wraps every button click to trigger a data refresh automatically
+// ================================================================
+
+// Central refresh dispatcher — refreshes whichever page is currently active
+async function refreshCurrentPage() {
+    const activePage = document.querySelector('.page.active');
+    if (!activePage) return;
+
+    const pageId = activePage.id.replace('page-', '');
+
+    switch (pageId) {
+        case 'dashboard':   await refreshDashboard();   break;
+        case 'requests':    await refreshRequests();    break;
+        case 'students':    await refreshStudents();    break;
+        case 'professors':  await refreshProfessors();  break;
+        case 'settings':
+            await refreshSchoolYears();
+            await refreshCourses();
+            await refreshFees();
+            break;
+    }
+}
+
+// Refreshes the dashboard stat cards and recent requests table
+async function refreshDashboard() {
+    try {
+        const res  = await fetch('/Home/GetDashboardStats');
+        const data = await res.json();
+        if (!data.success) return;
+
+        // Update stat cards by ID — safe regardless of card order
+        const registered = document.getElementById('dash-registered');
+        const students   = document.getElementById('dash-students');
+        const treasurers = document.getElementById('dash-treasurers');
+        const professors = document.getElementById('dash-professors');
+        const admins     = document.getElementById('dash-admins');
+
+        if (registered) registered.textContent = data.approvedCount  ?? 0;
+        if (students)   students.textContent   = data.studentCount   ?? 0;
+        if (treasurers) treasurers.textContent = data.treasurerCount ?? 0;
+        if (professors) professors.textContent = data.professorCount ?? 0;
+        if (admins)     admins.textContent     = data.adminCount     ?? 0;
+
+        // Update pending nav badge
+        const badge = document.querySelector('#nav-requests .nav-badge');
+        const pendingCount = data.pendingCount ?? 0;
+        if (pendingCount > 0) {
+            if (badge) {
+                badge.textContent = pendingCount;
+            } else {
+                const navReq = document.getElementById('nav-requests');
+                if (navReq) {
+                    const b = document.createElement('span');
+                    b.className   = 'nav-badge';
+                    b.textContent = pendingCount;
+                    navReq.appendChild(b);
+                }
+            }
+        } else {
+            if (badge) badge.remove();
+        }
+
+        // Update the sub-header pending count
+        const pendingSub = document.querySelector('#page-requests .page-sub');
+        if (pendingSub) pendingSub.textContent = `${pendingCount} pending approval`;
+
+        // Refresh the recent requests table
+        const tbody = document.getElementById('recent-tbody');
+        if (!tbody) return;
+
+        const allRequests = data.recentRequests ?? [];
+
+        if (allRequests.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No account requests found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = allRequests.map((r, i) => {
+            const hidden = i >= 5 ? 'display:none' : '';
+            return `
+                <tr class="recent-row" style="${hidden}">
+                    <td class="td-mono td-m">${r.schoolId ?? '—'}</td>
+                    <td><strong>${r.fullname}</strong></td>
+                    <td class="td-m">${r.courseCode ?? '—'}</td>
+                    <td class="td-m">${r.yearLevel ?? '—'}-${r.section ?? '—'}</td>
+                    <td class="td-mono td-m">${r.createdAt}</td>
+                </tr>`;
+        }).join('');
+
+        // Update "View All" button
+        const viewAllBtn = document.getElementById('view-all-btn');
+        if (viewAllBtn) {
+            const wrap = viewAllBtn.closest('.view-all-wrap');
+            if (allRequests.length > 5) {
+                if (wrap) wrap.style.display = '';
+                viewAllBtn.setAttribute('data-total', allRequests.length);
+                viewAllBtn.textContent = `View All (${allRequests.length})`;
+                viewAllBtn.setAttribute('data-expanded', 'false');
+            } else {
+                if (wrap) wrap.style.display = 'none';
+            }
+        }
+
+        // Update total badge on recent requests card
+        const totalBadge = document.querySelector('#page-dashboard .badge.by');
+        if (totalBadge) totalBadge.textContent = `${allRequests.length} total`;
+
+    } catch(e) { console.error('refreshDashboard failed:', e); }
+}
+
+// ── Global click interceptor ──────────────────────────────────────
+// Attaches to the document so it catches ALL button/action clicks,
+// including dynamically rendered ones (dropdowns, modals, etc.)
+
+document.addEventListener('click', async function(e) {
+    const target = e.target.closest(
+        'button, .btn-ap, .btn-rj, .btn-outline, .dropdown-item, .nav-item, .stat-icon[onclick]'
+    );
+
+    if (!target) return;
+    if (target.id === 'view-all-btn') return;
+    if (target.classList.contains('nav-item')) return;
+    if (target.classList.contains('dot-btn')) return;
+    if (target.textContent.trim() === 'Cancel') return;
+    if (target.onclick && target.getAttribute('onclick')?.includes('close')) return;
+    if (target.classList.contains('has-submenu')) return;
+
+    setTimeout(async () => {
+        await refreshCurrentPage();
+    }, 600);
+}, true); // useCapture = true so we run after the element's own onclick
 
 </script>
 </body>

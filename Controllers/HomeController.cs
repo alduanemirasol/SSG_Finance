@@ -153,8 +153,9 @@ public class HomeController : Controller
                             receiptIssuedByAccountId = receipt.IssuedBy;
                             var issuerUser = await _context.Users
                                 .FirstOrDefaultAsync(u => u.UserId == receipt.IssuedBy);
-                            if (issuerUser != null)
-                                receiptIssuedBy = $"{issuerUser.FirstName} {issuerUser.LastName}".Trim();
+                            receiptIssuedBy = issuerUser != null
+                                ? $"{issuerUser.FirstName ?? ""} {issuerUser.LastName ?? ""}".Trim()
+                                : "";
                         }
                     }
                     
@@ -213,7 +214,7 @@ public class HomeController : Controller
                     StudentName = r.Payment != null && r.Payment.User != null 
                         ? $"{r.Payment.User.FirstName} {r.Payment.User.LastName}".Trim() 
                         : "",
-                    StudentId = r.Payment != null && r.Payment.User != null 
+                    StudentId = r.Payment != null && r.Payment.User != null && r.Payment.User.Account != null
                         ? r.Payment.User.Account.SchoolId 
                         : "",
                     Amount = r.Payment != null ? r.Payment.Amount : 0,
@@ -490,7 +491,7 @@ public class HomeController : Controller
                 return Json(new { success = true, message = genericMessage });
 
             // Generate 6-digit code
-            var verificationCode    = new Random().Next(100000, 999999).ToString();
+        var verificationCode    = System.Security.Cryptography.RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
             var expirationTime      = DateTime.UtcNow.AddMinutes(15);
 
             account.PasswordResetToken        = verificationCode;
@@ -603,22 +604,137 @@ Best regards,<br>SSG Financial Management System";
     [HttpPost]
     public async Task<IActionResult> UpdateAccountStatus([FromBody] UpdateAccountStatusRequest request)
     {
-        try
-        {
-            // Guard: only Admin can approve/reject accounts
-            var account = await _context.Accounts.FindAsync(request.AccountId);
-            if (account == null)
-                return Json(new { success = false, message = "Account not found." });
+                try
+                {
+                        var account = await _context.Accounts
+                                .Include(a => a.User)
+                                .FirstOrDefaultAsync(a => a.AccountId == request.AccountId);
 
-            account.RequestStatus = request.Status;
-            await _context.SaveChangesAsync();
+                        if (account == null)
+                                return Json(new { success = false, message = "Account not found." });
 
-            return Json(new { success = true, message = $"Account {request.Status} successfully." });
-        }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, message = $"Failed to update account status: {ex.Message}" });
-        }
+                        account.RequestStatus = request.Status;
+                        await _context.SaveChangesAsync();
+
+                        // Send email notification if the account has an email
+                        if (!string.IsNullOrWhiteSpace(account.Email))
+                        {
+                                var firstName = account.User?.FirstName ?? account.SchoolId;
+                                var lastName  = account.User?.LastName  ?? "";
+                                var fullName  = $"{firstName} {lastName}".Trim();
+
+                                string subject, body;
+
+                                if (request.Status == RequestStatus.Approved)
+                                {
+                                        subject = "Your SSG Finance Account Has Been Approved";
+                                        body = $@"
+<html>
+<body style='font-family:Arial,sans-serif;background:#f4f4f4;padding:30px;'>
+    <div style='max-width:500px;margin:auto;background:#ffffff;border-radius:12px;
+                            padding:32px;box-shadow:0 4px 20px rgba(0,0,0,0.08);'>
+
+        <div style='text-align:center;margin-bottom:24px;'>
+            <div style='display:inline-block;background:#1a7a4a;border-radius:10px;padding:10px 18px;'>
+                <span style='color:#fff;font-size:18px;font-weight:700;'>SSG Finance</span>
+            </div>
+        </div>
+
+        <h2 style='color:#1a1a1a;margin-bottom:6px;'>Hello, {fullName}!</h2>
+        <p style='color:#555;margin-bottom:24px;'>
+            Great news — your account request has been <strong style='color:#1a7a4a;'>approved</strong>!
+            You can now log in to the SSG Finance system using your School ID and password.
+        </p>
+
+        <table style='width:100%;border-collapse:collapse;margin-bottom:24px;'>
+            <tr style='background:#f0f9f4;'>
+                <td style='padding:12px 16px;font-weight:600;color:#1a7a4a;width:40%;'>School ID</td>
+                <td style='padding:12px 16px;color:#1a1a1a;'>{account.SchoolId}</td>
+            </tr>
+            <tr>
+                <td style='padding:12px 16px;font-weight:600;color:#1a7a4a;'>Status</td>
+                <td style='padding:12px 16px;'>
+                    <span style='background:#dcfce7;color:#166534;padding:3px 10px;border-radius:20px;
+                                             font-size:13px;font-weight:600;'>Approved</span>
+                </td>
+            </tr>
+        </table>
+
+        <p style='color:#888;font-size:12px;text-align:center;'>
+            If you have any concerns, please contact your SSG administrator.
+        </p>
+
+        <div style='text-align:center;margin-top:20px;'>
+            <span style='color:#1a7a4a;font-weight:600;font-size:13px;'>SSG Finance System</span>
+        </div>
+    </div>
+</body>
+</html>";
+                                }
+                                else // Rejected
+                                {
+                                        subject = "Your SSG Finance Account Request Was Not Approved";
+                                        body = $@"
+<html>
+<body style='font-family:Arial,sans-serif;background:#f4f4f4;padding:30px;'>
+    <div style='max-width:500px;margin:auto;background:#ffffff;border-radius:12px;
+                            padding:32px;box-shadow:0 4px 20px rgba(0,0,0,0.08);'>
+
+        <div style='text-align:center;margin-bottom:24px;'>
+            <div style='display:inline-block;background:#1a7a4a;border-radius:10px;padding:10px 18px;'>
+                <span style='color:#fff;font-size:18px;font-weight:700;'>SSG Finance</span>
+            </div>
+        </div>
+
+        <h2 style='color:#1a1a1a;margin-bottom:6px;'>Hello, {fullName}!</h2>
+        <p style='color:#555;margin-bottom:24px;'>
+            Unfortunately, your account request has been <strong style='color:#dc2626;'>rejected</strong>.
+            Please contact your SSG administrator for more information or to re-apply.
+        </p>
+
+        <table style='width:100%;border-collapse:collapse;margin-bottom:24px;'>
+            <tr style='background:#fff5f5;'>
+                <td style='padding:12px 16px;font-weight:600;color:#dc2626;width:40%;'>School ID</td>
+                <td style='padding:12px 16px;color:#1a1a1a;'>{account.SchoolId}</td>
+            </tr>
+            <tr>
+                <td style='padding:12px 16px;font-weight:600;color:#dc2626;'>Status</td>
+                <td style='padding:12px 16px;'>
+                    <span style='background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:20px;
+                                             font-size:13px;font-weight:600;'>Not Approved</span>
+                </td>
+            </tr>
+        </table>
+
+        <p style='color:#888;font-size:12px;text-align:center;'>
+            If you believe this is a mistake, please reach out to your SSG administrator.
+        </p>
+
+        <div style='text-align:center;margin-top:20px;'>
+            <span style='color:#1a7a4a;font-weight:600;font-size:13px;'>SSG Finance System</span>
+        </div>
+    </div>
+</body>
+</html>";
+                                }
+
+                                try
+                                {
+                                        await _emailService.SendEmailAsync(account.Email, subject, body);
+                                }
+                                catch
+                                {
+                                        // Don't fail the whole request if email fails — status was already saved
+                                        return Json(new { success = true, message = $"Account {request.Status} successfully, but email notification could not be sent." });
+                                }
+                        }
+
+                        return Json(new { success = true, message = $"Account {request.Status} successfully. Email notification sent." });
+                }
+                catch (Exception ex)
+                {
+                        return Json(new { success = false, message = $"Failed to update account status: {ex.Message}" });
+                }
     }
 
     [HttpPost]
@@ -1220,7 +1336,78 @@ Best regards,<br>SSG Financial Management System";
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return Json(new { success = true, message = "Professor added successfully." });
+            // Send welcome email if an email address was provided
+            if (!string.IsNullOrWhiteSpace(request.Email))
+            {
+                var middlePart = string.IsNullOrWhiteSpace(request.MiddleName) ? "" : $" {request.MiddleName}";
+                var fullName = $"{request.FirstName}{middlePart} {request.LastName}";
+
+                var emailBody = $@"
+<html>
+<body style='font-family:Arial,sans-serif;background:#f4f4f4;padding:30px;'>
+  <div style='max-width:500px;margin:auto;background:#ffffff;border-radius:12px;
+              padding:32px;box-shadow:0 4px 20px rgba(0,0,0,0.08);'>
+
+    <div style='text-align:center;margin-bottom:24px;'>
+      <div style='display:inline-block;background:#1a7a4a;border-radius:10px;padding:10px 18px;'>
+        <span style='color:#fff;font-size:18px;font-weight:700;'>SSG Finance</span>
+      </div>
+    </div>
+
+    <h2 style='color:#1a1a1a;margin-bottom:6px;'>Welcome, {fullName}!</h2>
+    <p style='color:#555;margin-bottom:24px;'>
+      Your professor account has been created. Here are your login credentials:
+    </p>
+
+    <table style='width:100%;border-collapse:collapse;margin-bottom:24px;'>
+      <tr style='background:#f0f9f4;'>
+        <td style='padding:12px 16px;font-weight:600;color:#1a7a4a;width:40%;'>Full Name</td>
+        <td style='padding:12px 16px;color:#1a1a1a;'>{fullName}</td>
+      </tr>
+      <tr>
+        <td style='padding:12px 16px;font-weight:600;color:#1a7a4a;'>School ID</td>
+        <td style='padding:12px 16px;color:#1a1a1a;'>{request.SchoolId}</td>
+      </tr>
+      <tr style='background:#f0f9f4;'>
+        <td style='padding:12px 16px;font-weight:600;color:#1a7a4a;'>Email</td>
+        <td style='padding:12px 16px;color:#1a1a1a;'>{request.Email}</td>
+      </tr>
+      <tr>
+        <td style='padding:12px 16px;font-weight:600;color:#1a7a4a;'>Password</td>
+        <td style='padding:12px 16px;color:#1a1a1a;font-family:monospace;font-size:15px;'>
+          {request.Password}
+        </td>
+      </tr>
+    </table>
+
+    <p style='color:#888;font-size:12px;text-align:center;'>
+      Please keep your credentials secure. You can change your password after logging in.
+    </p>
+
+    <div style='text-align:center;margin-top:20px;'>
+      <span style='color:#1a7a4a;font-weight:600;font-size:13px;'>SSG Finance Admin Panel</span>
+    </div>
+  </div>
+</body>
+</html>";
+
+                try
+                {
+                    await _emailService.SendEmailAsync(
+                        request.Email,
+                        "Your SSG Finance Professor Account",
+                        emailBody
+                    );
+                }
+                catch
+                {
+                    return Json(new { success = true, message = "Professor added successfully, but welcome email could not be sent." });
+                }
+            }
+
+            return Json(new { success = true, message = string.IsNullOrWhiteSpace(request.Email)
+                ? "Professor added successfully."
+                : "Professor added and welcome email sent successfully." });
         }
         catch (Exception ex)
         {
@@ -1492,6 +1679,46 @@ Best regards,<br>SSG Financial Management System";
         }
     }
 
+    [HttpPost]
+    public async Task<IActionResult> ChangeAdminPassword([FromBody] ChangePasswordRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.CurrentPassword) ||
+                string.IsNullOrWhiteSpace(request.NewPassword) ||
+                string.IsNullOrWhiteSpace(request.ConfirmPassword))
+            {
+                return Json(new { success = false, message = "All password fields are required." });
+            }
+
+            if (request.NewPassword != request.ConfirmPassword)
+                return Json(new { success = false, message = "New password and confirmation do not match." });
+
+            if (request.NewPassword.Length < 8)
+                return Json(new { success = false, message = "Password must be at least 8 characters long." });
+
+            var accountIdStr = HttpContext.Session.GetString("AccountId");
+            if (!int.TryParse(accountIdStr, out var accountId))
+                return Json(new { success = false, message = "Unable to determine your account. Please sign in again." });
+
+            var account = await _context.Accounts.FindAsync(accountId);
+            if (account == null)
+                return Json(new { success = false, message = "Account not found." });
+
+            if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, account.PasswordHash))
+                return Json(new { success = false, message = "Current password is incorrect." });
+
+            account.PasswordHash = AuthService.HashPassword(request.NewPassword);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Password changed successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
     [HttpGet]
     public async Task<IActionResult> DebugFullAmounts()
     {
@@ -1625,7 +1852,7 @@ Best regards,<br>SSG Financial Management System";
                         ? $"{(p.User.LastName  != null ? p.User.LastName.ToUpper()  : "")}, " +
                           $"{(p.User.FirstName != null ? p.User.FirstName.ToUpper() : "")}"
                         : "Unknown",
-                    schoolId = p.User.Account.SchoolId,
+                    schoolId = p.User != null && p.User.Account != null ? p.User.Account.SchoolId ?? "" : "",
                     courseCode = p.User.AcademicProfile != null && p.User.AcademicProfile.Course != null
                         ? p.User.AcademicProfile.Course.CourseCode : "N/A",
                     yearSection = p.User.AcademicProfile != null
@@ -1654,6 +1881,380 @@ Best regards,<br>SSG Financial Management System";
     }
 
     [HttpGet]
+    public async Task<IActionResult> GetRecentPayments()
+    {
+        try
+        {
+            var recentPayments = await _context.OrgFeePayments
+                .Include(p => p.User)
+                    .ThenInclude(u => u.Account)
+                .Include(p => p.User)
+                    .ThenInclude(u => u.AcademicProfile)
+                        .ThenInclude(ap => ap!.Course)
+                .Where(p => p.PaymentStatus == PaymentStatus.Paid
+                         || p.PaymentStatus == PaymentStatus.Partial)
+                .OrderByDescending(p => p.PaymentDate)
+                .Take(10)
+                .ToListAsync();
+
+            var result = recentPayments.Select(p => new
+            {
+                p.PaymentId,
+                p.UserId,
+                studentName = p.User != null
+                    ? $"{(p.User.LastName ?? "").ToUpper()}, {(p.User.FirstName ?? "") }"
+                      + (!string.IsNullOrWhiteSpace(p.User.MiddleName)
+                          ? " " + p.User.MiddleName.Substring(0, 1) + "."
+                          : "")
+                    : "Unknown",
+                schoolId = p.User?.Account?.SchoolId ?? "",
+                courseCode = p.User?.AcademicProfile?.Course?.CourseCode ?? "N/A",
+                yearSection = p.User?.AcademicProfile != null
+                    ? $"{(p.User.AcademicProfile.YearLevel?.ToString() ?? "N/A")}-{(p.User.AcademicProfile.Section ?? "N/A")}"
+                    : "N/A",
+                amount = p.Amount,
+                paymentStatus = p.PaymentStatus.ToString(),
+                paymentDate = p.PaymentDate
+            }).ToList();
+
+            return Json(new { success = true, payments = result });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetProfessorStudentPayments()
+    {
+        try
+        {
+            var students = await _context.Users
+                .Include(u => u.Account)
+                .Include(u => u.AcademicProfile)
+                    .ThenInclude(ap => ap!.Course)
+                .Where(u => u.Account != null
+                         && (u.Account.Role == UserRole.Student || u.Account.Role == UserRole.Treasurer)
+                         && u.Account.IsActive
+                         && u.Account.RequestStatus == RequestStatus.Approved)
+                .ToListAsync();
+
+            var currentFee = await _context.FullAmounts
+                .Include(f => f.SchoolYear)
+                .FirstOrDefaultAsync(f => f.SemesterStatus == SemesterStatus.Current);
+
+            var payments = currentFee != null
+                ? await _context.OrgFeePayments
+                    .Where(p => p.FullAmountId == currentFee.FullAmountId)
+                    .ToListAsync()
+                : new List<OrgFeePayment>();
+
+            var result = students.Select(u =>
+            {
+                var studentPayments = payments
+                    .Where(p => p.UserId == u.UserId)
+                    .ToList();
+
+                var totalPaid = studentPayments.Sum(p => p.Amount);
+                var requiredAmount = currentFee?.Amount ?? 0;
+                var lastPayment = studentPayments.OrderByDescending(p => p.PaymentDate).FirstOrDefault();
+
+                string status;
+                if (totalPaid <= 0)
+                    status = "Unpaid";
+                else if (totalPaid >= requiredAmount)
+                    status = "Paid";
+                else
+                    status = "Partial";
+
+                return new
+                {
+                    userId = u.UserId,
+                    schoolId = u.Account!.SchoolId,
+                    name = $"{(u.LastName ?? "").ToUpper()}, {(u.FirstName ?? "") }"
+                          + (!string.IsNullOrWhiteSpace(u.MiddleName)
+                              ? " " + u.MiddleName.Substring(0, 1) + "."
+                              : ""),
+                    courseCode = u.AcademicProfile?.Course?.CourseCode ?? "N/A",
+                    yearSection = u.AcademicProfile != null
+                        ? $"{(u.AcademicProfile.YearLevel?.ToString() ?? "N/A")}-{(u.AcademicProfile.Section ?? "N/A")}"
+                        : "N/A",
+                    totalPaid,
+                    requiredAmount,
+                    status,
+                    hasPaid = status == "Paid",
+                    lastPaymentDate = lastPayment?.PaymentDate
+                };
+            })
+            .OrderBy(s => s.name)
+            .ToList();
+
+            return Json(new { success = true, students = result });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    private static string ComputeOrgFeeStatus(decimal totalPaid, decimal requiredAmount)
+    {
+        if (requiredAmount <= 0) return "N/A";
+        if (totalPaid <= 0) return "Unpaid";
+        if (totalPaid >= requiredAmount) return "Paid";
+        return "Partial";
+    }
+
+    private static object? BuildSemesterFeeSummary(FullAmount? fee, IEnumerable<OrgFeePayment> payments)
+    {
+        if (fee == null) return null;
+
+        var totalPaid = payments.Sum(p => p.Amount);
+        var requiredAmount = fee.Amount;
+
+        return new
+        {
+            requiredAmount,
+            totalPaid,
+            balance = Math.Max(0, requiredAmount - totalPaid),
+            feeStatus = ComputeOrgFeeStatus(totalPaid, requiredAmount),
+            semesterStatus = fee.SemesterStatus.ToString()
+        };
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetTreasurerStudentsWithFees()
+    {
+        try
+        {
+            var students = await GetStudentsAsync();
+
+            var currentSchoolYear = await _context.SchoolYears
+                .FirstOrDefaultAsync(sy => sy.YearStatus == YearStatus.Current);
+
+            var semesterFees = currentSchoolYear != null
+                ? await _context.FullAmounts
+                    .Where(f => f.SchoolYearId == currentSchoolYear.SchoolYearId)
+                    .ToListAsync()
+                : new List<FullAmount>();
+
+            var firstSemFee  = semesterFees.FirstOrDefault(f => f.Semester == Semester.First);
+            var secondSemFee = semesterFees.FirstOrDefault(f => f.Semester == Semester.Second);
+
+            var feeIds = semesterFees.Select(f => f.FullAmountId).ToList();
+            var allSemPayments = feeIds.Count > 0
+                ? await _context.OrgFeePayments
+                    .Where(p => feeIds.Contains(p.FullAmountId))
+                    .ToListAsync()
+                : new List<OrgFeePayment>();
+
+            var schoolYearLabel = currentSchoolYear != null
+                ? $"{currentSchoolYear.YearStart}–{currentSchoolYear.YearEnd}"
+                : "N/A";
+
+            var result = students.Select(s =>
+            {
+                var studentPayments = allSemPayments.Where(p => p.UserId == s.StudentId).ToList();
+
+                var firstPaid = firstSemFee != null
+                    ? studentPayments.Where(p => p.FullAmountId == firstSemFee.FullAmountId).Sum(p => p.Amount)
+                    : 0m;
+                var secondPaid = secondSemFee != null
+                    ? studentPayments.Where(p => p.FullAmountId == secondSemFee.FullAmountId).Sum(p => p.Amount)
+                    : 0m;
+
+                return new
+                {
+                    userId = s.StudentId,
+                    schoolId = s.SchoolId,
+                    name = s.FullName,
+                    courseCode = s.CourseCode,
+                    yearSection = s.YearSection,
+                    role = s.Role,
+                    isActive = s.IsActive,
+                    schoolYear = schoolYearLabel,
+                    firstSemStatus  = ComputeOrgFeeStatus(firstPaid,  firstSemFee?.Amount  ?? 0),
+                    secondSemStatus = ComputeOrgFeeStatus(secondPaid, secondSemFee?.Amount ?? 0),
+                    firstSemPaid    = firstPaid,
+                    secondSemPaid   = secondPaid,
+                    firstSemRequired  = firstSemFee?.Amount  ?? 0,
+                    secondSemRequired = secondSemFee?.Amount ?? 0
+                };
+            }).ToList();
+
+            return Json(new { success = true, students = result, schoolYear = schoolYearLabel });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetStudentOrgFeeDetails(int userId)
+    {
+        try
+        {
+            var student = await _context.Users
+                .Include(u => u.Account)
+                .Include(u => u.AcademicProfile)
+                    .ThenInclude(ap => ap!.Course)
+                .FirstOrDefaultAsync(u => u.UserId == userId
+                                       && u.Account != null
+                                       && (u.Account.Role == UserRole.Student || u.Account.Role == UserRole.Treasurer)
+                                       && u.Account.RequestStatus == RequestStatus.Approved);
+
+            if (student == null)
+                return Json(new { success = false, message = "Student not found." });
+
+            var currentSchoolYear = await _context.SchoolYears
+                .FirstOrDefaultAsync(sy => sy.YearStatus == YearStatus.Current);
+
+            var semesterFees = currentSchoolYear != null
+                ? await _context.FullAmounts
+                    .Where(f => f.SchoolYearId == currentSchoolYear.SchoolYearId)
+                    .ToListAsync()
+                : new List<FullAmount>();
+
+            var firstSemFee  = semesterFees.FirstOrDefault(f => f.Semester == Semester.First);
+            var secondSemFee = semesterFees.FirstOrDefault(f => f.Semester == Semester.Second);
+
+            var payments = await _context.OrgFeePayments
+                .Include(p => p.FullAmount)
+                    .ThenInclude(f => f.SchoolYear)
+                .Include(p => p.Receipts)
+                .Where(p => p.UserId == userId)
+                .OrderByDescending(p => p.PaymentDate)
+                .ToListAsync();
+
+            var schoolYearLabel = currentSchoolYear != null
+                ? $"{currentSchoolYear.YearStart}–{currentSchoolYear.YearEnd}"
+                : "N/A";
+
+            var firstSemPayments  = firstSemFee  != null ? payments.Where(p => p.FullAmountId == firstSemFee.FullAmountId).ToList()  : new List<OrgFeePayment>();
+            var secondSemPayments = secondSemFee != null ? payments.Where(p => p.FullAmountId == secondSemFee.FullAmountId).ToList() : new List<OrgFeePayment>();
+
+            var transactions = payments.Select(p => new
+            {
+                paymentId = p.PaymentId,
+                date = p.PaymentDate,
+                amount = p.Amount,
+                paymentStatus = p.PaymentStatus.ToString(),
+                receiptNumber = p.Receipts.FirstOrDefault()?.ReceiptNumber,
+                hasReceipt = p.Receipts.Any(r => !string.IsNullOrWhiteSpace(r.ReceiptNumber)),
+                schoolYear = p.FullAmount.SchoolYear != null
+                    ? $"{p.FullAmount.SchoolYear.YearStart}–{p.FullAmount.SchoolYear.YearEnd}"
+                    : "N/A",
+                semester = p.FullAmount.Semester.ToString(),
+                amountRequired = p.FullAmount.Amount
+            }).ToList();
+
+            return Json(new
+            {
+                success = true,
+                student = new
+                {
+                    userId = student.UserId,
+                    schoolId = student.Account!.SchoolId,
+                    name = student.LastName != null && student.FirstName != null
+                        ? $"{student.LastName.ToUpper()}, {student.FirstName.ToUpper()}"
+                        : "N/A",
+                    courseCode = student.AcademicProfile?.Course?.CourseCode ?? "N/A",
+                    yearSection = student.AcademicProfile != null
+                        ? $"{(student.AcademicProfile.YearLevel?.ToString() ?? "N/A")}-{(student.AcademicProfile.Section ?? "N/A")}"
+                        : "N/A",
+                    role = student.Account.Role.ToString()
+                },
+                schoolYear = schoolYearLabel,
+                firstSemester  = BuildSemesterFeeSummary(firstSemFee,  firstSemPayments),
+                secondSemester = BuildSemesterFeeSummary(secondSemFee, secondSemPayments),
+                transactions
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetOrgFeeReceipt(int paymentId)
+    {
+        try
+        {
+            var payment = await _context.OrgFeePayments
+                .Include(p => p.User)
+                    .ThenInclude(u => u.Account)
+                .Include(p => p.User)
+                    .ThenInclude(u => u.AcademicProfile)
+                        .ThenInclude(ap => ap.Course)
+                .Include(p => p.FullAmount)
+                    .ThenInclude(f => f.SchoolYear)
+                .Include(p => p.Receipts)
+                .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
+
+            if (payment == null)
+                return Json(new { success = false, message = "Payment record not found." });
+
+            var receipt = payment.Receipts
+                .OrderBy(r => r.ReceiptId)
+                .FirstOrDefault();
+
+            if (receipt == null || string.IsNullOrWhiteSpace(receipt.ReceiptNumber))
+                return Json(new { success = false, message = "No receipt number recorded for this payment." });
+
+            var issuerUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.UserId == receipt.IssuedBy);
+
+            issuerUser ??= await _context.Users
+                .FirstOrDefaultAsync(u => u.AccountId == receipt.IssuedBy);
+
+            var issuerName = issuerUser != null
+                ? $"{issuerUser.FirstName ?? ""} {issuerUser.LastName ?? ""}".Trim()
+                : "Treasurer";
+            var issuerAccountId = issuerUser?.AccountId ?? receipt.IssuedBy;
+            var signature = await GetActiveTreasurerSignatureAsync(issuerAccountId);
+
+            var profile = payment.User?.AcademicProfile;
+            var yearSection = profile != null
+                ? $"{(profile.YearLevel.HasValue ? profile.YearLevel.Value.ToString() : "N/A")}-{(profile.Section ?? "N/A")}"
+                : "N/A";
+
+            return Json(new
+            {
+                success = true,
+                receipt = new
+                {
+                    receipt.ReceiptId,
+                    receipt.ReceiptNumber,
+                    payment.PaymentId,
+                    payment.PaymentDate,
+                    payment.Amount,
+                    status = payment.PaymentStatus.ToString(),
+                    semester = payment.FullAmount.Semester.ToString(),
+                    schoolYear = payment.FullAmount.SchoolYear != null
+                        ? $"{payment.FullAmount.SchoolYear.YearStart}–{payment.FullAmount.SchoolYear.YearEnd}"
+                        : "",
+                    studentName = payment.User != null
+                        ? $"{payment.User.FirstName ?? ""} {payment.User.LastName ?? ""}".Trim()
+                        : "",
+                    studentId = payment.User?.Account?.SchoolId ?? "",
+                    course = payment.User?.AcademicProfile?.Course?.CourseCode ?? "",
+                    yearSection,
+                    issuedByName = string.IsNullOrWhiteSpace(issuerName) ? "Treasurer" : issuerName,
+                    issuedByAccountId = issuerAccountId,
+                    signatureData = signature?.SignatureData
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
     public async Task<IActionResult> GetOtherFunds()
     {
         try
@@ -1670,7 +2271,7 @@ Best regards,<br>SSG Financial Management System";
                     f.Amount,
                     f.ReceivedDate,
                     receivedBy = f.Receiver != null && f.Receiver.User != null
-                        ? $"{(f.Receiver.User.LastName != null ? f.Receiver.User.LastName.ToUpper() : "")}, {(f.Receiver.User.FirstName != null ? f.Receiver.User.FirstName.ToUpper() : "")}"
+                        ? $"{(f.Receiver.User.LastName ?? "").ToUpper()}, {(f.Receiver.User.FirstName ?? "").ToUpper()}"
                         : "Unknown"
                 })
                 .ToListAsync();
@@ -1785,7 +2386,7 @@ Best regards,<br>SSG Financial Management System";
             recentTransactions.AddRange(recentPayments);
             recentTransactions.AddRange(recentFunds);
             recentTransactions.AddRange(recentExpenses);
-            recentTransactions = recentTransactions.OrderByDescending(t => ((DateTime)t.GetType().GetProperty("date").GetValue(t))).Take(6).ToList();
+            recentTransactions = recentTransactions.OrderByDescending(t => ((DateTime)(t.GetType().GetProperty("date")?.GetValue(t) ?? DateTime.MinValue))).Take(6).ToList();
 
             return Json(new
             {
@@ -1863,12 +2464,19 @@ Best regards,<br>SSG Financial Management System";
             if (existingPayment != null)
                 return Json(new { success = false, message = $"This student has already fully paid for the {semesterInput} Semester." });
 
+            // ── KEY FIX: sum all previous partial payments first ──
+            var previouslyPaid = await _context.OrgFeePayments
+                .Where(p => p.UserId == request.UserId && p.FullAmountId == targetFee.FullAmountId)
+                .SumAsync(p => p.Amount);
+
+            var cumulativeTotal = previouslyPaid + request.Amount;
+
             var payment = new OrgFeePayment
             {
                 UserId        = request.UserId,
                 FullAmountId  = targetFee.FullAmountId,
                 Amount        = request.Amount,
-                PaymentStatus = request.Amount >= targetFee.Amount
+                PaymentStatus = cumulativeTotal >= targetFee.Amount
                                     ? PaymentStatus.Paid
                                     : PaymentStatus.Partial,
                 ReceivedBy    = receivedBy,
@@ -2029,6 +2637,50 @@ Best regards,<br>SSG Financial Management System";
     }
 
     [HttpPost]
+    public async Task<IActionResult> UpdateOrgFeePayment([FromBody] UpdateOrgFeePaymentRequest request)
+    {
+        try
+        {
+            var payment = await _context.OrgFeePayments
+                .Include(p => p.Receipts)
+                .FirstOrDefaultAsync(p => p.PaymentId == request.Id);
+
+            if (payment == null)
+                return Json(new { success = false, message = "Payment not found." });
+
+            payment.Amount = request.Amount;
+            payment.PaymentStatus = request.Amount >= request.FullAmount
+                ? PaymentStatus.Paid
+                : PaymentStatus.Partial;
+
+            if (!string.IsNullOrWhiteSpace(request.ReceiptNumber))
+            {
+                var receipt = payment.Receipts.FirstOrDefault();
+                if (receipt != null)
+                    receipt.ReceiptNumber = request.ReceiptNumber;
+                else
+                {
+                    var userIdStr = HttpContext.Session.GetString("UserId");
+                    int.TryParse(userIdStr, out var issuedBy);
+                    _context.Receipts.Add(new Receipt
+                    {
+                        ReceiptNumber = request.ReceiptNumber,
+                        PaymentId     = payment.PaymentId,
+                        IssuedBy      = issuedBy
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = "Payment updated successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
     public async Task<IActionResult> DeleteExpense([FromBody] DeleteTransactionRequest request)
     {
         try
@@ -2149,8 +2801,9 @@ Best regards,<br>SSG Financial Management System";
         {
             var fees = await _context.FullAmounts
                 .Include(f => f.SchoolYear)
-                .OrderByDescending(f => f.SchoolYear.YearStart)
-                .ThenBy(f => f.Semester)
+                .OrderByDescending(f => f.SemesterStatus == SemesterStatus.Current) // Current first
+                .ThenByDescending(f => f.SchoolYear.YearStart)
+                .ThenByDescending(f => f.Semester)
                 .Select(f => new {
                     fullAmountId   = f.FullAmountId,
                     schoolYearId   = f.SchoolYearId,
@@ -2171,6 +2824,85 @@ Best regards,<br>SSG Financial Management System";
         {
             return Json(new { success = false, message = ex.Message });
         }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetCollectableOrgFee()
+    {
+        try
+        {
+            // Only the current active semester fee
+            var currentFee = await _context.FullAmounts
+                .FirstOrDefaultAsync(f => f.SemesterStatus == SemesterStatus.Current);
+
+            if (currentFee == null)
+                return Json(new { success = true, collectable = 0 });
+
+            // Only ENROLLED active students
+            var students = await _context.Users
+                .Include(u => u.Account)
+                .Include(u => u.AcademicProfile)
+                .Where(u => u.Account != null
+                         && (u.Account.Role == UserRole.Student || u.Account.Role == UserRole.Treasurer)
+                         && u.Account.IsActive
+                         && u.Account.RequestStatus == RequestStatus.Approved
+                         && (u.AcademicProfile == null 
+                             || u.AcademicProfile.AcademicStatus == AcademicStatus.Enrolled))
+                .Select(u => u.UserId)
+                .ToListAsync();
+
+            // All payments for the current fee
+            var payments = await _context.OrgFeePayments
+                .Where(p => p.FullAmountId == currentFee.FullAmountId)
+                .ToListAsync();
+
+            decimal totalCollectable = 0;
+
+            foreach (var studentId in students)
+            {
+                var totalPaid = payments
+                    .Where(p => p.UserId == studentId)
+                    .Sum(p => p.Amount);
+
+                // Only count if they haven't fully paid yet
+                if (totalPaid < currentFee.Amount)
+                    totalCollectable += currentFee.Amount - totalPaid;
+            }
+
+            return Json(new { success = true, collectable = totalCollectable });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message, collectable = 0 });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> DebugCollectable()
+    {
+        var fees = await _context.FullAmounts
+            .Include(f => f.SchoolYear)
+            .Select(f => new {
+                f.FullAmountId,
+                schoolYear = f.SchoolYear.YearStart + "-" + f.SchoolYear.YearEnd,
+                f.Semester,
+                f.Amount,
+                status = f.SemesterStatus.ToString()
+            })
+            .ToListAsync();
+
+        var studentCount = await _context.Users
+            .Include(u => u.Account)
+            .Include(u => u.AcademicProfile)
+            .Where(u => u.Account != null
+                     && (u.Account.Role == UserRole.Student || u.Account.Role == UserRole.Treasurer)
+                     && u.Account.IsActive
+                     && u.Account.RequestStatus == RequestStatus.Approved
+                     && (u.AcademicProfile == null 
+                         || u.AcademicProfile.AcademicStatus == AcademicStatus.Enrolled))
+            .CountAsync();
+
+        return Json(new { fees, enrolledStudentCount = studentCount });
     }
 
     // ----------------------------------------------------------------
@@ -2484,6 +3216,88 @@ Best regards,<br>SSG Financial Management System";
         }
     }
 
+    [HttpGet]
+    public async Task<IActionResult> SearchAllStudentsWithPaymentStatus(string? q = null)
+    {
+        try
+        {
+            var currentFee = await _context.FullAmounts
+                .Include(f => f.SchoolYear)
+                .FirstOrDefaultAsync(f => f.SemesterStatus == SemesterStatus.Current);
+
+            var studentsQuery = _context.Users
+                .Include(u => u.Account)
+                .Include(u => u.AcademicProfile)
+                    .ThenInclude(ap => ap!.Course)
+                .Where(u => u.Account != null
+                         && (u.Account.Role == UserRole.Student || u.Account.Role == UserRole.Treasurer)
+                         && u.Account.IsActive
+                         && u.Account.RequestStatus == RequestStatus.Approved);
+
+            var query = (q ?? string.Empty).Trim().ToLower();
+            if (!string.IsNullOrEmpty(query))
+            {
+                studentsQuery = studentsQuery.Where(u =>
+                    (u.FirstName != null && u.FirstName.ToLower().Contains(query)) ||
+                    (u.LastName  != null && u.LastName.ToLower().Contains(query))  ||
+                    (u.Account!.SchoolId != null && u.Account.SchoolId.ToLower().Contains(query)) ||
+                    (u.AcademicProfile != null && u.AcademicProfile.Course != null &&
+                     u.AcademicProfile.Course.CourseCode.ToLower().Contains(query)));
+            }
+
+            var students = await studentsQuery.ToListAsync();
+
+            var payments = currentFee != null
+                ? await _context.OrgFeePayments
+                    .Include(p => p.Receipts)
+                    .Where(p => p.FullAmountId == currentFee.FullAmountId)
+                    .ToListAsync()
+                : new List<OrgFeePayment>();
+
+            var result = students.Select(u =>
+            {
+                var studentPayments = payments.Where(p => p.UserId == u.UserId).ToList();
+                var totalPaid       = studentPayments.Sum(p => p.Amount);
+                var required        = currentFee?.Amount ?? 0;
+                var lastPayment     = studentPayments.OrderByDescending(p => p.PaymentDate).FirstOrDefault();
+
+                string status = totalPaid <= 0       ? "Unpaid"
+                              : totalPaid >= required ? "Paid"
+                                                      : "Partial";
+
+                var receipt = lastPayment?.Receipts?.OrderBy(r => r.ReceiptId).FirstOrDefault();
+
+                return new
+                {
+                    userId         = u.UserId,
+                    schoolId       = u.Account!.SchoolId,
+                    name           = $"{(u.LastName ?? "").ToUpper()}, {(u.FirstName ?? "").ToUpper()}",
+                    courseCode     = u.AcademicProfile?.Course?.CourseCode ?? "N/A",
+                    yearSection    = u.AcademicProfile != null
+                        ? $"{u.AcademicProfile.YearLevel?.ToString() ?? "N/A"}-{u.AcademicProfile.Section ?? "N/A"}"
+                        : "N/A",
+                    role           = u.Account.Role.ToString(),
+                    status,
+                    totalPaid,
+                    requiredAmount = required,
+                    paymentDate    = lastPayment?.PaymentDate,
+                    receiptNumber  = receipt?.ReceiptNumber,
+                    schoolYear     = currentFee != null
+                        ? $"{currentFee.SchoolYear.YearStart}–{currentFee.SchoolYear.YearEnd}" : null,
+                    semester       = currentFee?.Semester.ToString()
+                };
+            })
+            .OrderBy(s => s.name)
+            .ToList();
+
+            return Json(new { success = true, students = result });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
     }
 
 // ----------------------------------------------------------------
@@ -2520,6 +3334,13 @@ public class ResetPasswordRequest
     public string Token       { get; set; } = string.Empty;
     public string StudentId   { get; set; } = string.Empty;
     public string NewPassword { get; set; } = string.Empty;
+}
+
+public class ChangePasswordRequest
+{
+    public string CurrentPassword { get; set; } = string.Empty;
+    public string NewPassword     { get; set; } = string.Empty;
+    public string ConfirmPassword { get; set; } = string.Empty;
 }
 
 public class ResetPasswordViewModel
@@ -2644,6 +3465,14 @@ public class UpdateOtherFundRequest
     public string?   Description  { get; set; }
     public decimal   Amount       { get; set; }
     public DateTime? ReceivedDate { get; set; }
+}
+
+public class UpdateOrgFeePaymentRequest
+{
+    public int     Id            { get; set; }
+    public decimal Amount        { get; set; }
+    public decimal FullAmount    { get; set; }
+    public string? ReceiptNumber { get; set; }
 }
 
 public class UpdateExpenseRequest
