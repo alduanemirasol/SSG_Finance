@@ -8,8 +8,8 @@ namespace MyMvcApp.Models
     {
         [Key]
         [Column("full_amount_id")]
-        public int FullAmountId { get; set; }
 
+        public int FullAmountId { get; set; }
         [Required]
         [Column("school_year_id")]
         public int SchoolYearId { get; set; }
@@ -19,7 +19,7 @@ namespace MyMvcApp.Models
         public Semester Semester { get; set; }
 
         [Required]
-        [Column("full_amount")]
+        [Column("amount")]
         public decimal Amount { get; set; }
 
         [Required]

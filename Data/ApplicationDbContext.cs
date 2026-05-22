@@ -129,7 +129,7 @@ namespace MyMvcApp.Data
                     .IsRequired()
                     .HasColumnName("semester")
                     .HasConversion<string>();
-                entity.Property(e => e.Amount).IsRequired().HasPrecision(10, 2).HasColumnName("full_amount");
+                entity.Property(e => e.Amount).IsRequired().HasPrecision(10, 2).HasColumnName("amount");
                 entity.Property(e => e.SemesterStatus)
                     .IsRequired()
                     .HasConversion<string>()

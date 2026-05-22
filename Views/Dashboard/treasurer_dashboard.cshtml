@@ -432,14 +432,6 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
           <input type="text" placeholder="Search by description, student name, school ID, course…" oninput="filterHistory(this.value)"/>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <select class="filter-select" id="hist-filter-sy" onchange="applyHistoryFilters()">
-            <option value="">All School Years</option>
-          </select>
-          <select class="filter-select" id="hist-filter-sem" onchange="applyHistoryFilters()">
-            <option value="">All Semesters</option>
-            <option value="First">1st Semester</option>
-            <option value="Second">2nd Semester</option>
-          </select>
           <select class="filter-select" id="hist-filter-type" onchange="applyHistoryFilters()">
             <option value="">All Types</option>
             <option value="income">Income</option>
@@ -472,8 +464,13 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
           <select class="filter-select" id="students-filter-course" onchange="applyStudentsPageFilters()">
             <option value="">All Courses</option>
           </select>
-          <select class="filter-select" id="students-filter-year" onchange="applyStudentsPageFilters()">
-            <option value="">All Years</option>
+          <select class="filter-select" id="students-filter-sy" onchange="applyStudentsPageFilters()">
+            <option value="">All School Years</option>
+          </select>
+          <select class="filter-select" id="students-filter-sem" onchange="applyStudentsPageFilters()">
+            <option value="">All Semesters</option>
+            <option value="First">1st Semester</option>
+            <option value="Second">2nd Semester</option>
           </select>
         </div>
       </div>
@@ -543,14 +540,8 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
         </div>
         <div class="form-group">
           <label class="form-label">Receipt Number</label>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input class="form-input" id="page-of-receipt" placeholder="Generating…" style="flex:1;font-family:'DM Mono',monospace"/>
-            <button type="button" onclick="pageAutoFillReceiptNumber()"
-              style="padding:8px 12px;background:var(--green-glow);border:1px solid rgba(39,167,68,.2);border-radius:8px;color:#5fdd8e;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit">
-              ↻ Regenerate
-            </button>
-          </div>
-          <div style="font-size:10.5px;color:var(--text-d);margin-top:4px">Auto-generated · Treasurer can still edit manually if needed</div>
+          <input class="form-input" id="page-of-receipt" placeholder="Generating…" style="font-family:'DM Mono',monospace"/>
+          <div style="font-size:10.5px;color:var(--text-d);margin-top:4px">Auto-generated</div>
         </div>
         <div style="display:flex;justify-content:flex-end;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)">
           <button class="btn-primary" onclick="pageSubmitOrgFee()">
@@ -942,17 +933,8 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
     <div class="form-group"><label class="form-label">Payment Status</label><div class="status-box" id="of-status">Enter amount to determine status</div></div>
     <div class="form-group">
     <label class="form-label">Receipt Number</label>
-    <div style="display:flex;gap:8px;align-items:center">
-        <input class="form-input" id="of-receipt" placeholder="Generating…" 
-               style="flex:1;font-family:'DM Mono',monospace"/>
-        <button type="button" onclick="autoFillReceiptNumber()" 
-                style="padding:8px 12px;background:var(--green-glow);border:1px solid rgba(39,167,68,.2);border-radius:8px;color:#5fdd8e;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit">
-            ↻ Regenerate
-        </button>
-    </div>
-    <div style="font-size:10.5px;color:var(--text-d);margin-top:4px">
-        Auto-generated · Treasurer can still edit manually if needed
-    </div>
+    <input class="form-input" id="of-receipt" placeholder="Generating…" style="font-family:'DM Mono',monospace"/>
+    <div style="font-size:10.5px;color:var(--text-d);margin-top:4px">Auto-generated</div>
 </div>
     <div class="modal-footer"><button class="btn-outline" onclick="closeModal('modal-orgfee')">Cancel</button><button class="btn-primary" onclick="saveOrgFee()">Save Payment</button></div>
   </div>
@@ -1185,7 +1167,6 @@ let STUDENTS = [];
 let ALL_STUDENTS_PAGE = [];
 let studentsPageQ = '';
 let studentsPageCourse = '';
-let studentsPageYear = '';
 let CURRENT_SCHOOL_YEAR = null;
 let CURRENT_SEMESTER = null;
 let STUDENTS_LAST_FETCH = 0;
@@ -1194,28 +1175,11 @@ let STUDENTS_LAST_FETCH = 0;
 let histQ = '', histType = '', expQ = '';
 let histSY = '', histSem = '';
 
-// Load school years into history filter dropdown
-async function loadHistorySchoolYears() {
-  try {
-    const res = await fetch('/Home/GetSchoolYears');
-    const data = await res.json();
-    if (!data.success) return;
-    const sel = document.getElementById('hist-filter-sy');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">All School Years</option>' +
-      data.schoolYears.map(sy =>
-        `<option value="${sy.yearStart} – ${sy.yearEnd}">${sy.yearStart}–${sy.yearEnd}</option>`
-      ).join('');
-  } catch (err) {
-    console.error('Failed to load school years for filter:', err);
-  }
-}
-
 // Apply all history filters (school year, semester, type)
 function applyHistoryFilters() {
-  histSY   = document.getElementById('hist-filter-sy')?.value  ?? '';
-  histSem  = document.getElementById('hist-filter-sem')?.value ?? '';
   histType = document.getElementById('hist-filter-type')?.value ?? '';
+  histSY   = '';
+  histSem  = '';
   renderHistory();
 }
 let selStudent = null;
@@ -1352,8 +1316,10 @@ async function loadExpenses() {
 
 async function loadStudents() {
   try {
-    const sem = document.getElementById('of-sem')?.value || '';
-    const res = await fetch(`/Home/GetStudentsForPayment?semester=${encodeURIComponent(sem)}`);
+    const sel = document.getElementById('of-sem');
+    const opt = sel?.options[sel.selectedIndex];
+    const fullAmountId = opt?.dataset?.fullAmountId || '';
+    const res = await fetch(`/Home/GetStudentsForPayment?fullAmountId=${encodeURIComponent(fullAmountId)}`);
     const data = await res.json();
     if (data.success) {
       STUDENTS = data.students.map(s => ({
@@ -1402,7 +1368,7 @@ async function loadAvailableSemesters() {
                             data-year-end="${f.yearEnd}"
                             data-amount="${f.amount}"
                             data-status="${f.semesterStatus}">
-                        ${f.yearStart}–${f.yearEnd} · ${semLabel} Semester · ₱${parseFloat(f.amount).toFixed(2)} · ${f.semesterStatus}
+                        ${f.yearStart}–${f.yearEnd} · ${semLabel} Semester · ${f.semesterStatus}
                     </option>`;
         }).join('');
 
@@ -1703,7 +1669,7 @@ async function showPage(name, el) {
   document.getElementById('page-' + name).classList.add('active');
   if (el) el.classList.add('active');
   if (name === 'dashboard') { await renderDashboard(); setTimeout(renderCharts, 100); }
-  if (name === 'history')   { await loadHistorySchoolYears(); await renderHistory(); }
+  if (name === 'history')   await renderHistory();
   if (name === 'students')  await loadStudentsPage();
   if (name === 'income')    await initIncomePage();
   if (name === 'expenses')  await renderExpenses();
@@ -1767,6 +1733,7 @@ async function renderIncome() {
 // ── INLINE INCOME PAGE ───────────────────────────────────────────
 let pageSelStudent = null;
 let pageReqFee = 200;
+let pagePreviouslyPaid = 0;
 
 function switchIncomeTab(tab) {
   document.getElementById('income-panel-orgfee').style.display = tab === 'orgfee' ? 'block' : 'none';
@@ -1799,7 +1766,7 @@ async function initIncomePage() {
                         data-year-end="${f.yearEnd}"
                         data-amount="${f.amount}"
                         data-status="${f.semesterStatus}">
-                    ${f.yearStart}–${f.yearEnd} · ${semLabel} Semester · ₱${parseFloat(f.amount).toFixed(2)} · ${f.semesterStatus}
+                    ${f.yearStart}–${f.yearEnd} · ${semLabel} Semester · ${f.semesterStatus}
                 </option>`;
       }).join('');
       // ── AUTO-SELECT the Current semester ──
@@ -1809,39 +1776,91 @@ async function initIncomePage() {
     }
   } catch {}
   // Auto-fill receipt
-  await pageAutoFillReceiptNumber();
+  try {
+    const receiptRes = await fetch('/Home/GetNextReceiptNumber');
+    const receiptData = await receiptRes.json();
+    if (receiptData.success) document.getElementById('page-of-receipt').value = receiptData.receiptNumber;
+  } catch {}
   // Set date
   const dateEl = document.getElementById('page-fn-date');
   if (dateEl && !dateEl.value) dateEl.value = today();
 }
 
-function pageUpdateSemesterStatusLabel() {
+async function pageUpdateSemesterStatusLabel(studentId = null) {
   const sel = document.getElementById('page-of-sem');
   const opt = sel.options[sel.selectedIndex];
   const statusEl = document.getElementById('page-of-sem-status');
-  if (!opt || !opt.dataset.status) { statusEl.textContent = ''; return; }
-  const status = opt.dataset.status;
-  const color  = status === 'Current' ? '#5fdd8e' : '#fbbf24';
-  statusEl.innerHTML = `<span style="color:${color};font-weight:600">● ${status}</span> &nbsp;·&nbsp; A.Y. ${opt.dataset.yearStart}–${opt.dataset.yearEnd} &nbsp;·&nbsp; ${opt.value === 'First' ? '1st' : '2nd'} Semester`;
+  if (!opt || !opt.dataset.status) { statusEl.textContent = ''; return null; }
+
   pageReqFee = parseFloat(opt.dataset.amount) || pageReqFee;
   document.getElementById('page-of-amount').placeholder = pageReqFee.toFixed(2);
   document.getElementById('page-fee-amount').textContent = '₱' + pageReqFee.toFixed(2);
-  if (document.getElementById('page-of-amount').value) pageCheckPaymentStatus();
+
+  if (!studentId) {
+    pagePreviouslyPaid = 0;
+    const status = opt.dataset.status;
+    const color  = status === 'Current' ? '#5fdd8e' : '#fbbf24';
+    statusEl.innerHTML = `<span style="color:${color};font-weight:600">● ${status}</span>
+      &nbsp;·&nbsp; A.Y. ${opt.dataset.yearStart}–${opt.dataset.yearEnd}
+      &nbsp;·&nbsp; ${opt.value === 'First' ? '1st' : '2nd'} Semester`;
+    return pageReqFee;
+  }
+
+  try {
+    const fullAmountId = opt.dataset.fullAmountId;
+    const res = await fetch(
+      '/Home/GetStudentFeeStatus?userId=' + encodeURIComponent(studentId) +
+      '&fullAmountId=' + encodeURIComponent(fullAmountId)
+    );
+    const data = await res.json();
+    if (!data.success) { statusEl.textContent = ''; return null; }
+
+    const paid = Number(data.totalPaid) || 0;
+    const unpaid = Number(data.balance) || 0;
+
+    if (data.status === 'Paid') {
+      pagePreviouslyPaid = paid;
+      statusEl.innerHTML = `<span style="color:#5fdd8e;font-weight:600">● Fully Paid</span>`;
+      document.getElementById('page-of-amount').value = '';
+      pageCheckPaymentStatus();
+      return 0;
+    } else if (data.status === 'Partial') {
+      pagePreviouslyPaid = paid;
+      statusEl.innerHTML = `
+        <span style="color:#fbbf24;font-weight:600">● Partial</span>
+        &nbsp;·&nbsp;
+        <span style="color:#5fdd8e">Paid = ₱${paid.toFixed(2)}</span>
+        &nbsp;·&nbsp;
+        <span style="color:#f87171">Unpaid = ₱${unpaid.toFixed(2)}</span>`;
+      document.getElementById('page-of-amount').value = unpaid.toFixed(2);
+    } else {
+      pagePreviouslyPaid = 0;
+      statusEl.innerHTML = `
+        <span style="color:#f87171;font-weight:600">● Unpaid</span>
+        &nbsp;·&nbsp;
+        <span style="color:#f87171">Unpaid = ₱${pageReqFee.toFixed(2)}</span>`;
+      document.getElementById('page-of-amount').value = pageReqFee.toFixed(2);
+    }
+
+    pageCheckPaymentStatus();
+    return unpaid;
+  } catch {
+    statusEl.textContent = '';
+    return null;
+  }
 }
 
-function pageOnSemesterChange() {
-  pageUpdateSemesterStatusLabel();
-  document.getElementById('page-of-list').style.display = 'none';
+async function pageOnSemesterChange() {
+  pagePreviouslyPaid = 0;
+  const searchVal = document.getElementById('page-of-search').value.trim();
   document.getElementById('page-of-amount').value = '';
   document.getElementById('page-of-status').textContent = 'Enter amount to determine status';
-}
-
-async function pageAutoFillReceiptNumber() {
-  try {
-    const res  = await fetch('/Home/GetNextReceiptNumber');
-    const data = await res.json();
-    if (data.success) document.getElementById('page-of-receipt').value = data.receiptNumber;
-  } catch {}
+  await pageUpdateSemesterStatusLabel(pageSelStudent?.userId ?? null);
+  if (searchVal) {
+    pageSearchStudents(searchVal);
+  } else {
+    document.getElementById('page-of-list').style.display = 'none';
+  }
 }
 
 async function pageSearchStudents(q) {
@@ -1849,8 +1868,10 @@ async function pageSearchStudents(q) {
   const query = (q || '').trim();
   if (!query) { list.style.display = 'none'; return; }
   try {
-    const sem = document.getElementById('page-of-sem')?.value || '';
-    const res  = await fetch('/Home/GetStudentsForPayment?q=' + encodeURIComponent(query) + '&semester=' + encodeURIComponent(sem));
+    const sel = document.getElementById('page-of-sem');
+    const opt = sel?.options[sel.selectedIndex];
+    const fullAmountId = opt?.dataset?.fullAmountId || '';
+    const res  = await fetch('/Home/GetStudentsForPayment?q=' + encodeURIComponent(query) + '&fullAmountId=' + encodeURIComponent(fullAmountId));
     const data = await res.json();
     list.style.display = 'block';
     if (!data.success || !data.students.length) {
@@ -1861,7 +1882,11 @@ async function pageSearchStudents(q) {
       <div class="student-item${s.hasPaid ? ' paid' : ''}"
            onclick="${s.hasPaid ? '' : `pageSelectStudent(${s.userId},'${s.name.replace(/'/g,"\\'")}','${s.courseCode.replace(/'/g,"\\'")}','${s.yearSection.replace(/'/g,"\\'")}','${s.schoolId.replace(/'/g,"\\'")}')`}">
         <div>
-          <div class="student-name">${s.name} ${s.hasPaid ? '<span class="badge by" style="font-size:9px">Paid</span>' : ''}</div>
+          <div class="student-name">
+            ${s.name}
+            ${s.hasPaid ? '<span class="badge by" style="font-size:9px">Paid</span>' : ''}
+            ${s.hasPartial ? '<span class="badge by" style="font-size:9px;background:rgba(251,191,36,.18);color:#fbbf24">Partial</span>' : ''}
+          </div>
           <div class="student-info">${s.schoolId} · ${s.courseCode} ${s.yearSection}</div>
         </div>
       </div>`).join('');
@@ -1870,7 +1895,7 @@ async function pageSearchStudents(q) {
   }
 }
 
-function pageSelectStudent(uid, name, course, yr, sid) {
+async function pageSelectStudent(uid, name, course, yr, sid) {
   pageSelStudent = { userId: uid };
   document.getElementById('page-of-uid').value = uid;
   document.getElementById('page-of-sel-name').textContent = name;
@@ -1878,22 +1903,68 @@ function pageSelectStudent(uid, name, course, yr, sid) {
   document.getElementById('page-of-selected').style.display = 'block';
   document.getElementById('page-of-list').style.display = 'none';
   document.getElementById('page-of-search').value = name;
-  if (!document.getElementById('page-of-amount').value)
-    document.getElementById('page-of-amount').value = pageReqFee;
-  pageCheckPaymentStatus();
+  document.getElementById('page-of-amount').value = '';
+  document.getElementById('page-of-status').textContent = 'Enter amount to determine status';
+  await pageUpdateSemesterStatusLabel(uid);
 }
 
 function pageCheckPaymentStatus() {
   const amt = parseFloat(document.getElementById('page-of-amount').value) || 0;
   const el  = document.getElementById('page-of-status');
-  if (!amt) { el.textContent = 'Enter amount to determine status'; el.style.color='#5fdd8e'; el.style.background='rgba(39,167,68,.08)'; el.style.borderColor='rgba(39,167,68,.15)'; return; }
-  if (amt >= pageReqFee) { el.textContent = '✓ Full payment — Status: Paid'; el.style.color='#5fdd8e'; el.style.background='rgba(39,167,68,.08)'; el.style.borderColor='rgba(39,167,68,.15)'; }
-  else                   { el.textContent = '⚠ Partial — ₱'+amt.toFixed(2)+' of ₱'+pageReqFee; el.style.color='#fbbf24'; el.style.background='rgba(251,191,36,.08)'; el.style.borderColor='rgba(251,191,36,.15)'; }
+
+  if (!amt) {
+    el.textContent = 'Enter amount to determine status';
+    el.style.color = '#5fdd8e';
+    el.style.background = 'rgba(39,167,68,.08)';
+    el.style.borderColor = 'rgba(39,167,68,.15)';
+    return;
+  }
+
+  const cumulative = pagePreviouslyPaid + amt;
+
+  if (cumulative >= pageReqFee) {
+    if (pagePreviouslyPaid > 0) {
+      el.innerHTML = `✓ Fully Paid &nbsp;·&nbsp;
+        <span style="color:#5fdd8e">₱${pagePreviouslyPaid.toFixed(2)}</span>
+        <span style="color:var(--text-m)"> + </span>
+        <span style="color:#5fdd8e">₱${amt.toFixed(2)}</span>
+        <span style="color:var(--text-m)"> = </span>
+        <span style="color:#5fdd8e">₱${cumulative.toFixed(2)}</span>`;
+    } else {
+      el.innerHTML = `✓ Fully Paid &nbsp;·&nbsp;
+        <span style="color:#5fdd8e">₱${amt.toFixed(2)}</span>`;
+    }
+    el.style.color = '#5fdd8e';
+    el.style.background = 'rgba(39,167,68,.08)';
+    el.style.borderColor = 'rgba(39,167,68,.15)';
+  } else {
+    if (pagePreviouslyPaid > 0) {
+      el.innerHTML = `⚠ Partial &nbsp;·&nbsp;
+        <span style="color:#fbbf24">₱${pagePreviouslyPaid.toFixed(2)}</span>
+        <span style="color:var(--text-m)"> + </span>
+        <span style="color:#fbbf24">₱${amt.toFixed(2)}</span>
+        <span style="color:var(--text-m)"> = </span>
+        <span style="color:#fbbf24">₱${cumulative.toFixed(2)}</span>
+        <span style="color:var(--text-m)"> of </span>
+        <span style="color:#fff">₱${pageReqFee.toFixed(2)}</span>`;
+    } else {
+      el.innerHTML = `⚠ Partial &nbsp;·&nbsp;
+        <span style="color:#fbbf24">₱${amt.toFixed(2)}</span>
+        <span style="color:var(--text-m)"> of </span>
+        <span style="color:#fff">₱${pageReqFee.toFixed(2)}</span>`;
+    }
+    el.style.color = '#fbbf24';
+    el.style.background = 'rgba(251,191,36,.08)';
+    el.style.borderColor = 'rgba(251,191,36,.15)';
+  }
 }
 
 async function pageSubmitOrgFee() {
   if (!pageSelStudent) { showToast('Please select a student first.', 'fail'); return; }
-  const sem     = document.getElementById('page-of-sem').value;
+  const sel     = document.getElementById('page-of-sem');
+  const opt     = sel.options[sel.selectedIndex];
+  const sem     = sel.value;
+  const fullAmountId = parseInt(opt?.dataset?.fullAmountId) || 0;
   const amt     = parseFloat(document.getElementById('page-of-amount').value) || 0;
   const receipt = document.getElementById('page-of-receipt').value.trim();
   if (!sem) { showToast('Please select a semester.', 'fail'); return; }
@@ -1903,17 +1974,20 @@ async function pageSubmitOrgFee() {
     const res  = await fetch('/Home/AddOrgFeePayment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
-      body: JSON.stringify({ userId: pageSelStudent.userId, amount: amt, semester: sem, receiptNumber: receipt })
+      body: JSON.stringify({ userId: pageSelStudent.userId, amount: amt, semester: sem, fullAmountId, receiptNumber: receipt })
     });
     const data = await res.json();
     if (data.success) {
       showToast('Org fee payment recorded successfully.', 'ok');
       // Reset form
       pageSelStudent = null;
+      pagePreviouslyPaid = 0;
       ['page-of-search','page-of-amount','page-of-receipt'].forEach(f => document.getElementById(f).value = '');
       document.getElementById('page-of-selected').style.display = 'none';
       document.getElementById('page-of-status').textContent = 'Enter amount to determine status';
-      await pageAutoFillReceiptNumber();
+      const nextRes = await fetch('/Home/GetNextReceiptNumber');
+      const nextData = await nextRes.json();
+      if (nextData.success) document.getElementById('page-of-receipt').value = nextData.receiptNumber;
       await renderDashboard();
       renderCharts();
     } else {
@@ -2089,45 +2163,54 @@ function filterStudentsPage(q) {
 
 function populateStudentsPageFilters() {
   const courseSel = document.getElementById('students-filter-course');
-  const yearSel = document.getElementById('students-filter-year');
-  if (!courseSel || !yearSel) return;
+  if (!courseSel) return;
 
   const courses = [...new Set(ALL_STUDENTS_PAGE.map(s => (s.courseCode || '').trim()).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-  const years = [...new Set(ALL_STUDENTS_PAGE.map(s => {
-    const ys = (s.yearSection || '').split('-')[0];
-    return (ys || '').trim();
-  }).filter(v => v && v.toLowerCase() !== 'n/a'))].sort((a, b) => Number(a) - Number(b));
 
   courseSel.innerHTML = '<option value="">All Courses</option>' + courses.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-  yearSel.innerHTML = '<option value="">All Years</option>' + years.map(y => `<option value="${escapeHtml(y)}">Year ${escapeHtml(y)}</option>`).join('');
 
   if (studentsPageCourse && courses.includes(studentsPageCourse)) courseSel.value = studentsPageCourse;
   else studentsPageCourse = '';
-  if (studentsPageYear && years.includes(studentsPageYear)) yearSel.value = studentsPageYear;
-  else studentsPageYear = '';
+
+  fetch('/Home/GetSchoolYears')
+    .then(r => r.json())
+    .then(data => {
+      const sySel = document.getElementById('students-filter-sy');
+      if (!sySel || !data.success) return;
+      sySel.innerHTML = '<option value="">All School Years</option>' +
+        data.schoolYears.map(sy =>
+          `<option value="${sy.yearStart}–${sy.yearEnd}">${sy.yearStart}–${sy.yearEnd}</option>`
+        ).join('');
+    })
+    .catch(() => {});
 }
 
 function applyStudentsPageFilters() {
   studentsPageCourse = document.getElementById('students-filter-course')?.value || '';
-  studentsPageYear = document.getElementById('students-filter-year')?.value || '';
+  const filterSY  = document.getElementById('students-filter-sy')?.value  || '';
+  const filterSem = document.getElementById('students-filter-sem')?.value || '';
 
   const filtered = ALL_STUDENTS_PAGE.filter(s => {
-    const name = (s.name || '').toLowerCase();
-    const schoolId = (s.schoolId || '').toLowerCase();
-    const course = (s.courseCode || '').toLowerCase();
+    const name        = (s.name        || '').toLowerCase();
+    const schoolId    = (s.schoolId    || '').toLowerCase();
+    const course      = (s.courseCode  || '').toLowerCase();
     const yearSection = (s.yearSection || '').toLowerCase();
-    const yearOnly = (s.yearSection || '').split('-')[0].trim();
 
-    const matchesQ = !studentsPageQ
+    const matchesQ      = !studentsPageQ
       || name.includes(studentsPageQ)
       || schoolId.includes(studentsPageQ)
       || course.includes(studentsPageQ)
       || yearSection.includes(studentsPageQ);
-    const matchesCourse = !studentsPageCourse || (s.courseCode || '') === studentsPageCourse;
-    const matchesYear = !studentsPageYear || yearOnly === studentsPageYear;
 
-    return matchesQ && matchesCourse && matchesYear;
+    const matchesCourse = !studentsPageCourse || (s.courseCode || '') === studentsPageCourse;
+    const matchesSY = !filterSY || (s.schoolYear || '') === filterSY;
+    const matchesSem = !filterSem || (
+      filterSem === 'First'  ? s.firstSemStatus  !== undefined :
+      filterSem === 'Second' ? s.secondSemStatus !== undefined : true
+    );
+
+    return matchesQ && matchesCourse && matchesSY && matchesSem;
   });
 
   renderStudentsPage(filtered);
@@ -2218,8 +2301,10 @@ async function searchStudents(q) {
   if (!query) { list.style.display = 'none'; return; }
 
   try {
-    const sem = document.getElementById('of-sem')?.value || '';
-    const response = await fetch('/Home/GetStudentsForPayment?q=' + encodeURIComponent(query) + '&semester=' + encodeURIComponent(sem));
+    const sel = document.getElementById('of-sem');
+    const opt = sel?.options[sel.selectedIndex];
+    const fullAmountId = opt?.dataset?.fullAmountId || '';
+    const response = await fetch('/Home/GetStudentsForPayment?q=' + encodeURIComponent(query) + '&fullAmountId=' + encodeURIComponent(fullAmountId));
     const data = await response.json();
     if (!data.success) {
       list.style.display = 'block';
@@ -2234,7 +2319,8 @@ async function searchStudents(q) {
       name: s.name,
       courseCode: s.courseCode,
       yearSection: s.yearSection,
-      hasPaid: s.hasPaid
+      hasPaid: s.hasPaid,
+      hasPartial: s.hasPartial
     }));
 
     list.style.display = 'block';
@@ -2245,6 +2331,7 @@ async function searchStudents(q) {
           <div class="student-name">
             ${s.name} 
             ${s.hasPaid ? '<span class="badge by" style="font-size:9px">Paid</span>' : ''}
+            ${s.hasPartial ? '<span class="badge by" style="font-size:9px;background:rgba(251,191,36,.18);color:#fbbf24">Partial</span>' : ''}
           </div>
           <div class="student-info">${s.schoolId} · ${s.courseCode} ${s.yearSection}</div>
         </div>
@@ -2283,6 +2370,8 @@ async function saveOrgFee() {
 
   const sel     = document.getElementById('of-sem');
   const sem     = sel.value;
+  const opt     = sel.options[sel.selectedIndex];
+  const fullAmountId = parseInt(opt?.dataset?.fullAmountId) || 0;
   if (!sem) { showToast('Please select a semester.', 'fail'); return; }
 
   const amt     = parseFloat(document.getElementById('of-amount').value) || 0;
@@ -2298,6 +2387,7 @@ async function saveOrgFee() {
         userId: selStudent.userId,
         amount: amt,
         semester: sem,
+        fullAmountId,
         receiptNumber: receipt
       })
     });

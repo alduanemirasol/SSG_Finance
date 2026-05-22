@@ -1399,24 +1399,27 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\ronal\\.nuget\\packages\\": {}
+    "C:\\Users\\Janrey\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\ronal\\IdeaProjects\\Nadd\\SSG-System-Ferrerbranch2.6\\MyMvcApp.csproj",
+      "projectUniqueName": "C:\\Users\\Janrey\\ssg_system2.7\\MyMvcApp.csproj",
       "projectName": "MyMvcApp",
-      "projectPath": "C:\\Users\\ronal\\IdeaProjects\\Nadd\\SSG-System-Ferrerbranch2.6\\MyMvcApp.csproj",
-      "packagesPath": "C:\\Users\\ronal\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\ronal\\IdeaProjects\\Nadd\\SSG-System-Ferrerbranch2.6\\obj\\",
+      "projectPath": "C:\\Users\\Janrey\\ssg_system2.7\\MyMvcApp.csproj",
+      "packagesPath": "C:\\Users\\Janrey\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Janrey\\ssg_system2.7\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\ronal\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\Janrey\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net10.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -1481,7 +1484,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.108/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.102/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.AspNetCore": "(,10.0.32767]",
           "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

@@ -174,3 +174,33 @@ CREATE TABLE treasurer_signatures (
     FOREIGN KEY (account_id) REFERENCES accounts (account_id)
     ON UPDATE CASCADE ON DELETE RESTRICT
 );
+
+ALTER TABLE academic_profile
+  ADD COLUMN school_year_id    INT                    NULL AFTER course_id,
+  ADD COLUMN semester_entered  ENUM('First','Second') NULL AFTER school_year_id,
+  ADD CONSTRAINT fk_academic_school_year
+    FOREIGN KEY (school_year_id)
+    REFERENCES school_years (school_year_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+-- Add school_year_id to other_funds
+ALTER TABLE other_funds
+  ADD COLUMN school_year_id INT NULL AFTER received_date,
+  ADD CONSTRAINT fk_fund_school_year
+    FOREIGN KEY (school_year_id)
+    REFERENCES school_years (school_year_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT;
+
+-- Add school_year_id to expenses
+ALTER TABLE expenses
+  ADD COLUMN school_year_id INT NULL AFTER expense_date,
+  ADD CONSTRAINT fk_expense_school_year
+    FOREIGN KEY (school_year_id)
+    REFERENCES school_years (school_year_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT;
+
+-- Rename full_amount column to amount in full_amount table
+-- (your C# model uses f.Amount but the column is named full_amount)
+ALTER TABLE full_amount
+  CHANGE COLUMN full_amount amount DECIMAL(10,2) NOT NULL;

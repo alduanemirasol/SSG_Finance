@@ -177,9 +177,9 @@ public class HomeController : Controller
                 // Add each payment transaction so receipts can line up by payment id.
                 foreach (var paymentRecord in feePayments)
                 {
-                    // Directly query the Users table using ReceivedBy (treasurer's UserId)
+                    // ReceivedBy stores the treasurer's account_id.
                     var treasurerUser = await _context.Users
-                        .FirstOrDefaultAsync(u => u.UserId == paymentRecord.ReceivedBy);
+                        .FirstOrDefaultAsync(u => u.AccountId == paymentRecord.ReceivedBy);
                     var treasurerName = treasurerUser != null
                         ? $"{treasurerUser.FirstName} {treasurerUser.LastName}".Trim()
                         : "";
@@ -194,12 +194,12 @@ public class HomeController : Controller
                         var receipt = paymentRecord.Receipts.OrderBy(r => r.ReceiptId).FirstOrDefault();
                         receiptNumber = receipt?.ReceiptNumber ?? "";
 
-                        // Directly query using IssuedBy (also a UserId pointing to the treasurer)
+                        // IssuedBy stores the treasurer's account_id.
                         if (receipt != null)
                         {
                             receiptIssuedByAccountId = receipt.IssuedBy;
                             var issuerUser = await _context.Users
-                                .FirstOrDefaultAsync(u => u.UserId == receipt.IssuedBy);
+                                .FirstOrDefaultAsync(u => u.AccountId == receipt.IssuedBy);
                             receiptIssuedBy = issuerUser != null
                                 ? $"{issuerUser.FirstName ?? ""} {issuerUser.LastName ?? ""}".Trim()
                                 : "";
@@ -256,7 +256,7 @@ public class HomeController : Controller
                     IssueDate = r.Payment != null ? r.Payment.PaymentDate : null,
                     IssuedByAccountId = r.IssuedBy,
                     IssuedByName = _context.Users
-                        .Where(u => u.UserId == r.IssuedBy)
+                        .Where(u => u.AccountId == r.IssuedBy)
                         .Select(u => u.FirstName + " " + u.LastName)
                         .FirstOrDefault() ?? "",
                     StudentName = r.Payment != null && r.Payment.User != null 
@@ -2254,30 +2254,33 @@ Best regards,<br>SSG Financial Management System";
                         .ThenInclude(ap => ap.Course)
                 .Include(p => p.FullAmount)
                     .ThenInclude(f => f.SchoolYear)
-                .Include(p => p.Receipts)
                 .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
 
             if (payment == null)
                 return Json(new { success = false, message = "Payment record not found." });
 
-            var receipt = payment.Receipts
-                .OrderBy(r => r.ReceiptId)
-                .FirstOrDefault();
+            var receipt = await _context.Receipts
+                .FirstOrDefaultAsync(r => r.PaymentId == paymentId);
 
             if (receipt == null || string.IsNullOrWhiteSpace(receipt.ReceiptNumber))
                 return Json(new { success = false, message = "No receipt number recorded for this payment." });
 
             var issuerUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.UserId == receipt.IssuedBy);
-
-            issuerUser ??= await _context.Users
                 .FirstOrDefaultAsync(u => u.AccountId == receipt.IssuedBy);
 
             var issuerName = issuerUser != null
                 ? $"{issuerUser.FirstName ?? ""} {issuerUser.LastName ?? ""}".Trim()
                 : "Treasurer";
-            var issuerAccountId = issuerUser?.AccountId ?? receipt.IssuedBy;
-            var signature = await GetActiveTreasurerSignatureAsync(issuerAccountId);
+            var issuerAccountId = receipt.IssuedBy;
+            var signature = await _context.TreasurerSignatures
+                .Where(s => s.AccountId == receipt.IssuedBy)
+                .OrderByDescending(s => s.CreatedAt)
+                .FirstOrDefaultAsync(s => s.CreatedAt <= payment.PaymentDate);
+
+            signature ??= await _context.TreasurerSignatures
+                .Where(s => s.AccountId == receipt.IssuedBy)
+                .OrderByDescending(s => s.CreatedAt)
+                .FirstOrDefaultAsync();
 
             var profile = payment.User?.AcademicProfile;
             var yearSection = profile != null
@@ -2506,18 +2509,31 @@ Best regards,<br>SSG Financial Management System";
             else
                 return Json(new { success = false, message = "Invalid semester selected." });
 
-            // Find current school year
-            var currentSchoolYear = await _context.SchoolYears
-                .FirstOrDefaultAsync(sy => sy.YearStatus == YearStatus.Current);
+            FullAmount? targetFee = null;
+            SchoolYear? currentSchoolYear = null;
 
-            if (currentSchoolYear == null)
-                return Json(new { success = false, message = "No active school year found. Please contact the administrator." });
+            if (request.FullAmountId > 0)
+            {
+                targetFee = await _context.FullAmounts
+                    .Include(f => f.SchoolYear)
+                    .FirstOrDefaultAsync(f => f.FullAmountId == request.FullAmountId);
+            }
+            else
+            {
+                currentSchoolYear = await _context.SchoolYears
+                    .FirstOrDefaultAsync(sy => sy.YearStatus == YearStatus.Current);
 
-            // Find fee for selected semester in current school year
-            var targetFee = await _context.FullAmounts
-                .Include(f => f.SchoolYear)
-                .FirstOrDefaultAsync(f => f.SchoolYearId == currentSchoolYear.SchoolYearId
-                                       && f.Semester     == semester);
+                if (currentSchoolYear == null)
+                    return Json(new { success = false, message = "No active school year found. Please contact the administrator." });
+
+                targetFee = await _context.FullAmounts
+                    .Include(f => f.SchoolYear)
+                    .FirstOrDefaultAsync(f => f.SchoolYearId == currentSchoolYear.SchoolYearId
+                                           && f.Semester     == semester);
+            }
+
+            if (targetFee == null && request.FullAmountId > 0)
+                return Json(new { success = false, message = "Fee not found." });
 
             if (targetFee == null)
                 return Json(new { success = false, message = $"No fee set for {semesterInput} Semester of {currentSchoolYear.YearStart}–{currentSchoolYear.YearEnd}. Please set the fee in Settings first." });
@@ -2537,8 +2553,8 @@ Best regards,<br>SSG Financial Management System";
             if (!IsFeeApplicableToStudent(student.AcademicProfile, targetFee))
                 return Json(new { success = false, message = "This student is not charged for this semester because they entered after it." });
 
-            var userIdStr = HttpContext.Session.GetString("UserId");
-            if (!int.TryParse(userIdStr, out var receivedBy))
+            var accountIdStr = HttpContext.Session.GetString("AccountId");
+            if (!int.TryParse(accountIdStr, out var receivedBy))
                 return Json(new { success = false, message = "Invalid session." });
 
             // Check if student already has a Paid record for this fee
@@ -2601,8 +2617,8 @@ Best regards,<br>SSG Financial Management System";
     {
         try
         {
-            var userIdStr = HttpContext.Session.GetString("UserId");
-            if (!int.TryParse(userIdStr, out var receivedBy))
+            var accountIdStr = HttpContext.Session.GetString("AccountId");
+            if (!int.TryParse(accountIdStr, out var receivedBy))
                 return Json(new { success = false, message = "Invalid session." });
 
             var currentSchoolYear = await _context.SchoolYears
@@ -2634,8 +2650,8 @@ Best regards,<br>SSG Financial Management System";
     {
         try
         {
-            var userIdStr = HttpContext.Session.GetString("UserId");
-            if (!int.TryParse(userIdStr, out var recordedBy))
+            var accountIdStr = HttpContext.Session.GetString("AccountId");
+            if (!int.TryParse(accountIdStr, out var recordedBy))
                 return Json(new { success = false, message = "Invalid session." });
 
             var currentSchoolYear = await _context.SchoolYears
@@ -2754,8 +2770,8 @@ Best regards,<br>SSG Financial Management System";
                     receipt.ReceiptNumber = request.ReceiptNumber;
                 else
                 {
-                    var userIdStr = HttpContext.Session.GetString("UserId");
-                    int.TryParse(userIdStr, out var issuedBy);
+                    var accountIdStr = HttpContext.Session.GetString("AccountId");
+                    int.TryParse(accountIdStr, out var issuedBy);
                     _context.Receipts.Add(new Receipt
                     {
                         ReceiptNumber = request.ReceiptNumber,
@@ -2817,30 +2833,36 @@ Best regards,<br>SSG Financial Management System";
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetStudentsForPayment(string? q = null, string? semester = null)
+    public async Task<IActionResult> GetStudentsForPayment(string? q = null, string? semester = null, int? fullAmountId = null)
     {
         try
         {
-            // Parse semester filter if provided
-            Semester? semFilter = null;
-            if (!string.IsNullOrWhiteSpace(semester))
-            {
-                if (semester.Equals("First", StringComparison.OrdinalIgnoreCase)) semFilter = Semester.First;
-                if (semester.Equals("Second", StringComparison.OrdinalIgnoreCase)) semFilter = Semester.Second;
-            }
-
-            // Get current school year
-            var currentSchoolYear = await _context.SchoolYears
-                .FirstOrDefaultAsync(sy => sy.YearStatus == YearStatus.Current);
-
-            // Find fee for selected semester
             FullAmount? targetFee = null;
-            if (currentSchoolYear != null && semFilter.HasValue)
+
+            if (fullAmountId.HasValue && fullAmountId.Value > 0)
             {
                 targetFee = await _context.FullAmounts
                     .Include(f => f.SchoolYear)
-                    .FirstOrDefaultAsync(f => f.SchoolYearId == currentSchoolYear.SchoolYearId
-                                           && f.Semester     == semFilter.Value);
+                    .FirstOrDefaultAsync(f => f.FullAmountId == fullAmountId.Value);
+            }
+            else if (!string.IsNullOrWhiteSpace(semester))
+            {
+                Semester? semFilter = semester.Equals("First", StringComparison.OrdinalIgnoreCase)
+                    ? Semester.First
+                    : semester.Equals("Second", StringComparison.OrdinalIgnoreCase)
+                        ? Semester.Second
+                        : null;
+
+                var currentSchoolYear = await _context.SchoolYears
+                    .FirstOrDefaultAsync(sy => sy.YearStatus == YearStatus.Current);
+
+                if (currentSchoolYear != null && semFilter.HasValue)
+                {
+                    targetFee = await _context.FullAmounts
+                        .Include(f => f.SchoolYear)
+                        .FirstOrDefaultAsync(f => f.SchoolYearId == currentSchoolYear.SchoolYearId
+                                               && f.Semester     == semFilter.Value);
+                }
             }
 
             var query = (q ?? string.Empty).Trim().ToLower();
@@ -2869,6 +2891,15 @@ Best regards,<br>SSG Financial Management System";
                     .ToListAsync()
                 : new List<int>();
 
+            var partialUserIds = targetFee != null
+                ? await _context.OrgFeePayments
+                    .Where(p => p.FullAmountId == targetFee.FullAmountId
+                             && p.PaymentStatus == PaymentStatus.Partial)
+                    .Select(p => p.UserId)
+                    .Distinct()
+                    .ToListAsync()
+                : new List<int>();
+
             var students = users
                 .Where(u => targetFee == null || IsFeeApplicableToStudent(u.AcademicProfile, targetFee))
                 .Select(u => new {
@@ -2887,12 +2918,51 @@ Best regards,<br>SSG Financial Management System";
                                   : "N/A",
                     // hasPaid is now specific to selected semester's fee
                     hasPaid = targetFee != null
-                              && paidUserIds.Contains(u.UserId)
+                              && paidUserIds.Contains(u.UserId),
+                    hasPartial = targetFee != null
+                              && partialUserIds.Contains(u.UserId)
                 })
                 .OrderBy(s => s.name)
                 .ToList();
 
             return Json(new { success = true, students });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetStudentFeeStatus(int userId, int fullAmountId)
+    {
+        try
+        {
+            var fee = await _context.FullAmounts
+                .FirstOrDefaultAsync(f => f.FullAmountId == fullAmountId);
+
+            if (fee == null)
+                return Json(new { success = false, message = "Fee not found." });
+
+            var totalPaid = await _context.OrgFeePayments
+                .Where(p => p.UserId == userId && p.FullAmountId == fullAmountId)
+                .SumAsync(p => p.Amount);
+
+            var balance = Math.Max(0, fee.Amount - totalPaid);
+            var status = totalPaid <= 0
+                ? "Unpaid"
+                : totalPaid >= fee.Amount
+                    ? "Paid"
+                    : "Partial";
+
+            return Json(new
+            {
+                success = true,
+                totalPaid,
+                balance,
+                required = fee.Amount,
+                status
+            });
         }
         catch (Exception ex)
         {
@@ -3543,6 +3613,7 @@ public class AddOrgFeePaymentRequest
     public int     UserId        { get; set; }
     public decimal Amount        { get; set; }
     public string? Semester      { get; set; }  // add this
+    public int     FullAmountId  { get; set; }
     public string? ReceiptNumber { get; set; }
 }
 
