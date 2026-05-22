@@ -789,6 +789,7 @@ body.login-open .lp-right { transform: translateX(0); }
                   <option value="">Select a course</option>
                 </select>
               </div>
+              
               <div class="form-group">
                 <label class="form-label" for="yearLevel">Year Level</label>
                 <select id="yearLevel" name="yearLevel" class="form-input" style="appearance:none; background-image:url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M7%2010l5%205%205-5z%22/%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:right 10px center; background-size:20px; padding-right:40px;">
@@ -807,6 +808,22 @@ body.login-open .lp-right { transform: translateX(0); }
               <div class="form-group">
                 <label class="form-label" for="email">Email</label>
                 <input type="email" id="email" name="email" class="form-input" placeholder="Enter here" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="schoolYear">School Year Entered</label>
+                <select id="schoolYear" name="schoolYear" class="form-input" style="appearance:none; background-image:url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M7%2010l5%205%205-5z%22/%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:right 10px center; background-size:20px; padding-right:40px;">
+                  <option value="">Select school year</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="semesterEntered">Semester Entered</label>
+                <select id="semesterEntered" name="semesterEntered" class="form-input" style="appearance:none; background-image:url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M7%2010l5%205%205-5z%22/%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:right 10px center; background-size:20px; padding-right:40px;">
+                  <option value="">Select semester</option>
+                  <option value="First">First</option>
+                  <option value="Second">Second</option>
+                </select>
               </div>
             </div>
           </div>
@@ -1064,6 +1081,8 @@ function handleSignUp() {
   const password        = document.getElementById('password')?.value || '';
   const confirmPassword = document.getElementById('confirmPassword')?.value || '';
   const course          = document.getElementById('course')?.value || '';
+  const schoolYear      = document.getElementById('schoolYear')?.value || '';
+  const semesterEntered = document.getElementById('semesterEntered')?.value || '';
   const section         = document.getElementById('section')?.value.trim() || '';
   const yearLevel       = document.getElementById('yearLevel')?.value || '';
   const studentId       = document.getElementById('studentId')?.value.trim() || '';
@@ -1072,6 +1091,9 @@ function handleSignUp() {
   // --- Validation ---
   if (!firstName || !lastName || !email || !schoolId || !password || !confirmPassword) {
     alert('Please fill in all required fields'); return;
+  }
+  if (!course || !schoolYear || !semesterEntered || !yearLevel) {
+    alert('Please complete the school information fields'); return;
   }
   if (password !== confirmPassword) { alert('Passwords do not match'); return; }
   if (password.length < 6)          { alert('Password must be at least 6 characters'); return; }
@@ -1082,6 +1104,8 @@ function handleSignUp() {
     schoolId, firstName, lastName, middleName, email,
     password, role: 'Student',
     courseCode: course,
+    schoolYearId: schoolYear ? parseInt(schoolYear) : null,
+    semesterEntered: semesterEntered || null,
     yearLevel: yearLevel ? parseInt(yearLevel) : null,
     section, studentId
   };
@@ -1274,8 +1298,28 @@ async function loadCourses() {
   } catch(e) { console.error('Error loading courses:', e); }
 }
 
+async function loadSchoolYears() {
+  try {
+    const r = await fetch('/Home/GetSchoolYears');
+    const data = await r.json();
+    if (data.success) {
+      const sel = document.getElementById('schoolYear');
+      sel.innerHTML = '<option value="">Select school year</option>';
+      data.schoolYears.forEach(sy => {
+        const opt = document.createElement('option');
+        opt.value = sy.schoolYearId ?? sy.SchoolYearId;
+        const yearStart = sy.yearStart ?? sy.YearStart;
+        const yearEnd = sy.yearEnd ?? sy.YearEnd;
+        opt.textContent = `A.Y. ${yearStart}-${yearEnd}`;
+        sel.appendChild(opt);
+      });
+    }
+  } catch(e) { console.error('Error loading school years:', e); }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   loadCourses();
+  loadSchoolYears();
 
   /* About/Contacts navbar uses /Home/Login, which redirects here with ?login=1 */
   (function openLoginFromDeepLink() {

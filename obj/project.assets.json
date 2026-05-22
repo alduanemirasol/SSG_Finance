@@ -1399,19 +1399,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\bossf\\.nuget\\packages\\": {}
+    "C:\\Users\\ronal\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\SSG-System-Ferrerbranch2.5\\MyMvcApp.csproj",
+      "projectUniqueName": "C:\\Users\\ronal\\IdeaProjects\\Nadd\\SSG-System-Ferrerbranch2.6\\MyMvcApp.csproj",
       "projectName": "MyMvcApp",
-      "projectPath": "C:\\SSG-System-Ferrerbranch2.5\\MyMvcApp.csproj",
-      "packagesPath": "C:\\Users\\bossf\\.nuget\\packages\\",
-      "outputPath": "C:\\SSG-System-Ferrerbranch2.5\\obj\\",
+      "projectPath": "C:\\Users\\ronal\\IdeaProjects\\Nadd\\SSG-System-Ferrerbranch2.6\\MyMvcApp.csproj",
+      "packagesPath": "C:\\Users\\ronal\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\ronal\\IdeaProjects\\Nadd\\SSG-System-Ferrerbranch2.6\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\bossf\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\ronal\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net10.0"

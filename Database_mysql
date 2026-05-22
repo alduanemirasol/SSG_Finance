@@ -48,6 +48,8 @@ CREATE TABLE academic_profile (
   academic_profile_id INT         NOT NULL AUTO_INCREMENT,
   user_id             INT         NOT NULL,
   course_id           INT         NOT NULL,
+  school_year_id      INT         NULL,           -- year they entered/transferred
+  semester_entered    ENUM('First','Second') NULL, -- semester they entered/transferred
   year_level          INT         NULL,
   section             VARCHAR(50) NULL,
   academic_status     ENUM('Enrolled','Transferred','Graduated','Dropped') NOT NULL DEFAULT 'Enrolled',
@@ -59,6 +61,9 @@ CREATE TABLE academic_profile (
     ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT fk_academic_course
     FOREIGN KEY (course_id) REFERENCES courses (course_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_academic_school_year
+    FOREIGN KEY (school_year_id) REFERENCES school_years (school_year_id)
     ON UPDATE CASCADE ON DELETE RESTRICT
 );
 

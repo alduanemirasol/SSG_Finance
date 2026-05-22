@@ -26,6 +26,7 @@ namespace MyMvcApp.Models
     public class StudentPaymentHistoryViewModel
     {
         public string Term { get; set; } = string.Empty;
+        public string Semester { get; set; } = string.Empty;
         public string Course { get; set; } = string.Empty;
         public string OverallStatus { get; set; } = string.Empty;
         public List<StudentPaymentViewModel> Payments { get; set; } = new();

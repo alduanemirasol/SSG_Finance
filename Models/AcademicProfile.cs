@@ -16,6 +16,11 @@ namespace MyMvcApp.Models
         [Required]
         public int CourseId { get; set; }
 
+        public int? SchoolYearId { get; set; }
+
+        [Column("semester_entered")]
+        public Semester? SemesterEntered { get; set; }
+
         [Column("year_level")]
         public int? YearLevel { get; set; }
 
@@ -32,6 +37,9 @@ namespace MyMvcApp.Models
 
         [ForeignKey("CourseId")]
         public Course Course { get; set; } = null!;
+
+        [ForeignKey("SchoolYearId")]
+        public SchoolYear? SchoolYear { get; set; }
     }
 
     public enum AcademicStatus

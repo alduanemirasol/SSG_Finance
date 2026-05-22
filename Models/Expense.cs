@@ -23,8 +23,14 @@ namespace MyMvcApp.Models
         [Column("expense_date")]
         public DateTime ExpenseDate { get; set; } = DateTime.Now;
 
+        [Column("school_year_id")]
+        public int? SchoolYearId { get; set; }
+
         // Navigation properties
         [ForeignKey("RecordedBy")]
         public Account Recorder { get; set; } = null!;
+
+        [ForeignKey(nameof(SchoolYearId))]
+        public SchoolYear? SchoolYear { get; set; }
     }
 }

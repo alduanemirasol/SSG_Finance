@@ -40,6 +40,8 @@ namespace MyMvcApp.Services
         
         // Student specific fields
         public string? CourseCode { get; set; }
+        public int? SchoolYearId { get; set; }
+        public Semester? SemesterEntered { get; set; }
         public int? YearLevel { get; set; }
         public string? Section { get; set; }
         public string? StudentId { get; set; }

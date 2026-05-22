@@ -432,54 +432,6 @@
       </div>
     </div>
 
-    <div class="content-card">
-      <div class="cc-hdr">
-        <div class="cc-title">Recent Fee Summary</div>
-        <span class="badge by">
-          @(Model.PaymentHistory != null && Model.PaymentHistory.Any()
-            ? "SY " + Model.PaymentHistory.First().Term
-            : "No active term")
-        </span>
-      </div>
-      <div class="tbl-wrap">
-        <table>
-          <thead>
-            <tr><th>School Year</th><th>Course</th><th>Total Amount</th><th>Balance</th><th>Status</th></tr>
-          </thead>
-          <tbody>
-            @if (Model.PaymentHistory != null && Model.PaymentHistory.Any())
-            {
-              @foreach (var h in Model.PaymentHistory.Take(4))
-              {
-                var total = h.Payments.Where(p => p.Status == "Total").Sum(p => p.Amount);
-                var paid  = h.Payments.Where(p => p.Status != "Total").Sum(p => p.Amount);
-                var bal   = total - paid;
-                string sc;
-                switch (h.OverallStatus.ToLower())
-                {
-                  case "paid":    sc = "bg"; break;
-                  case "pending": sc = "by"; break;
-                  case "overdue": sc = "br"; break;
-                  default:        sc = "by"; break;
-                }
-                <tr>
-                  <td class="td-mono td-m">@h.Term</td>
-                  <td class="td-m">@h.Course</td>
-                  <td>₱@total.ToString("N2")</td>
-                  <td class="td-mono" style="color:@(bal > 0 ? "#f87171" : "#5fdd8e")">₱@bal.ToString("N2")</td>
-                  <td><span class="badge @sc">@h.OverallStatus</span></td>
-                </tr>
-              }
-            }
-            else
-            {
-              <tr class="empty-row"><td colspan="5">No fee records found.</td></tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-
     <div class="notice">
       <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#fbbf24" stroke-width="1.8"/><path d="M12 8v4M12 16h.01" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/></svg>
       <p class="notice-text">This dashboard is <strong>view-only</strong>. Contact your SSG office to update payment records or dispute a balance.</p>
@@ -502,7 +454,7 @@
       <div class="tbl-wrap">
         <table>
           <thead>
-            <tr><th>School Year</th><th>Balance</th><th>Amount</th><th>Status</th><th>Action</th></tr>
+            <tr><th>School Year</th><th>Semester</th><th>Balance</th><th>Amount</th><th>Status</th><th>Action</th></tr>
           </thead>
           <tbody>
             @if (Model.PaymentHistory != null && Model.PaymentHistory.Any())
@@ -522,6 +474,7 @@
                 }
                 <tr>
                   <td class="td-mono td-m">@h.Term</td>
+                  <td class="td-m">@(!string.IsNullOrWhiteSpace(h.Semester) ? h.Semester : "-")</td>
                   <td class="td-mono" style="color:@(bal > 0 ? "#f87171" : "#5fdd8e")">₱@bal.ToString("N2")</td>
                   <td>₱@total.ToString("N2")</td>
                   <td><span class="badge @sc">@h.OverallStatus</span></td>

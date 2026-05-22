@@ -13,8 +13,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SSG Finance — Treasurer</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 /* ── RESET & ROOT ── */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -241,36 +243,50 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 .receipt-modal.open{display:flex}
 .receipt-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px)}
 .receipt-modal-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:12px;max-height:95vh;overflow-y:auto;padding:16px}
-.receipt-controls{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 14px;width:100%;max-width:620px}
+.receipt-controls{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 14px;width:100%;max-width:360px}
 .receipt-ctrl-title{flex:1;font-size:12.5px;font-weight:600;color:var(--text-m)}
+.btn-pdf{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(39,167,68,.3);background:rgba(39,167,68,.15);color:#5fdd8e;transition:all .15s;font-family:inherit;flex-shrink:0}
+.btn-pdf:hover{background:rgba(39,167,68,.25);transform:translateY(-1px)}
 .btn-receipt-close{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;font-family:inherit;flex-shrink:0}
 .btn-receipt-close:hover{background:rgba(239,68,68,.12);color:#f87171}
-.receipt-paper{width:620px;min-height:952px;background:#ffffff;border:1px solid #ccc;box-shadow:0 8px 40px rgba(0,0,0,.45);padding:60px 64px 72px;font-family:'Libre Baskerville',Georgia,serif;color:#111;position:relative;flex-shrink:0}
+.receipt-paper{width:360px;min-height:560px;background:#ffffff;border:1px solid #ccc;box-shadow:0 8px 40px rgba(0,0,0,.45);padding:30px 28px 34px;font-family:'Libre Baskerville',Georgia,serif;color:#111;position:relative;flex-shrink:0}
 .receipt-paper::before{display:none}
-.rp-header{text-align:center;margin-bottom:32px;position:relative;z-index:1}
-.rp-org{font-size:20px;font-weight:700;letter-spacing:.01em;margin-bottom:2px}
-.rp-campus{font-size:13px;font-weight:400}
-.rp-divider{border:none;border-top:1px solid #555;margin:14px 0 10px}
-.rp-type{font-size:14px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-top:10px}
-.rp-copy{font-size:12px;font-style:italic;color:#444;margin-top:2px}
-.rp-meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px;position:relative;z-index:1}
-.rp-meta-label{font-size:12.5px;font-weight:400}
-.rp-meta-value{font-size:13px;font-weight:700;color:#111;border-bottom:1px solid #888;min-width:140px;display:inline-block;padding-bottom:2px;text-align:center}
+.rp-header{text-align:center;margin-bottom:18px;position:relative;z-index:1}
+.rp-org{font-size:13px;font-weight:700;letter-spacing:.01em;margin-bottom:2px}
+.rp-campus{font-size:10.5px;font-weight:400}
+.rp-divider{border:none;border-top:1px solid #555;margin:10px 0 8px}
+.rp-type{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-top:8px}
+.rp-copy{font-size:9.5px;font-style:italic;color:#444;margin-top:2px}
+.rp-meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;position:relative;z-index:1;gap:8px}
+.rp-meta-label{font-size:10px;font-weight:400}
+.rp-meta-value{font-size:10.5px;font-weight:700;color:#111;border-bottom:1px solid #888;min-width:88px;display:inline-block;padding-bottom:2px;text-align:center}
 .rp-meta-value.date-val{color:#111}
-.rp-section-title{text-align:center;font-size:13.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:22px;position:relative;z-index:1}
-.rp-field{display:flex;align-items:baseline;margin-bottom:16px;position:relative;z-index:1}
-.rp-field-label{font-size:13px;font-weight:400;min-width:160px;flex-shrink:0}
-.rp-field-value{flex:1;font-size:13.5px;font-weight:700;border-bottom:1px solid #888;padding-bottom:2px;min-height:22px;padding-left:6px;font-family:'Libre Baskerville',Georgia,serif}
-.rp-field-value.handwritten{font-style:italic;font-size:14px;letter-spacing:.01em}
-.rp-status-badge{display:inline-block;padding:0;border:none;border-radius:0;font-size:13px;font-weight:700;font-style:italic;color:#111;background:none}
+.rp-section-title{text-align:center;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;position:relative;z-index:1}
+.rp-field{display:flex;align-items:baseline;margin-bottom:10px;position:relative;z-index:1}
+.rp-field-label{font-size:10px;font-weight:400;min-width:115px;flex-shrink:0}
+.rp-field-value{flex:1;font-size:10.5px;font-weight:700;border-bottom:1px solid #888;padding-bottom:2px;min-height:16px;padding-left:4px;font-family:'Libre Baskerville',Georgia,serif}
+.rp-field-value.handwritten{font-style:italic;font-size:11px;letter-spacing:.01em}
+.rp-status-badge{display:inline-block;padding:0;border:none;border-radius:0;font-size:10.5px;font-weight:700;font-style:italic;color:#111;background:none}
 .rp-status-badge.paid{border:none;color:#111;background:none}
 .rp-status-badge.partial{border:none;color:#111;background:none}
-.rp-signature-section{margin-top:52px;display:flex;justify-content:flex-end;position:relative;z-index:1}
-.rp-sig-block{text-align:center;min-width:220px}
-.rp-sig-label{font-size:12.5px;margin-bottom:6px}
+.rp-signature-section{margin-top:26px;display:flex;justify-content:flex-end;position:relative;z-index:1}
+.rp-sig-block{text-align:center;min-width:150px}
+.rp-sig-label{font-size:10px;margin-bottom:5px}
 .rp-sig-line{display:none}
-.rp-sig-name-label{font-size:11px;color:#555}
+.rp-sig-name-label{font-size:9px;color:#555}
 .rp-watermark{display:none}
+
+@@media (max-width: 768px){
+  .receipt-modal-inner{padding:10px}
+  .receipt-controls{max-width:96vw;padding:8px 10px;gap:6px}
+  .receipt-ctrl-title{font-size:11px}
+  .btn-pdf{padding:6px 10px;font-size:10.5px}
+  .receipt-paper{width:94vw;min-height:auto;padding:22px 16px 26px}
+  .rp-org{font-size:12px}
+  .rp-campus{font-size:10px}
+  .rp-field-label{min-width:98px;font-size:9.5px}
+  .rp-field-value,.rp-status-badge{font-size:10px}
+}
 </style>
 </head>
 <body>
@@ -451,6 +467,14 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
           <input type="text" placeholder="Search by name, school ID, course…" oninput="filterStudentsPage(this.value)"/>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select class="filter-select" id="students-filter-course" onchange="applyStudentsPageFilters()">
+            <option value="">All Courses</option>
+          </select>
+          <select class="filter-select" id="students-filter-year" onchange="applyStudentsPageFilters()">
+            <option value="">All Years</option>
+          </select>
         </div>
       </div>
       <table>
@@ -1035,6 +1059,10 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
   <div class="receipt-modal-inner">
     <div class="receipt-controls">
       <span class="receipt-ctrl-title" id="tr-receipt-title">Official Receipt</span>
+      <button class="btn-pdf" onclick="downloadTreasurerReceiptPDF()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Save PDF
+      </button>
       <button class="btn-receipt-close" onclick="closeTreasurerReceipt()">✕</button>
     </div>
 
@@ -1045,8 +1073,8 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
         <div class="rp-org">SUPREME STUDENT GOVERNMENT</div>
         <div class="rp-campus">Cebu Technological University - Ginatilan Campus</div>
         <hr class="rp-divider" />
-        <div class="rp-type">Official Receipt</div>
-        <div class="rp-copy">Treasurer Copy</div>
+        <div class="rp-type">Organization Fee</div>
+        <div class="rp-copy">(Owner's Copy)</div>
       </div>
 
       <div class="rp-meta">
@@ -1054,18 +1082,18 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
         <div><span class="rp-meta-label">Date </span><span class="rp-meta-value date-val" id="tr-rp-date">—</span></div>
       </div>
 
-      <div class="rp-section-title">Payment Acknowledgement</div>
+      <div class="rp-section-title">Acknowledgement Receipt</div>
 
       <div class="rp-field">
-        <span class="rp-field-label">Received from:</span>
+        <span class="rp-field-label">Name:</span>
         <span class="rp-field-value handwritten" id="tr-rp-name">—</span>
       </div>
       <div class="rp-field">
-        <span class="rp-field-label">Student ID:</span>
+        <span class="rp-field-label">ID Number:</span>
         <span class="rp-field-value" id="tr-rp-id">—</span>
       </div>
       <div class="rp-field">
-        <span class="rp-field-label">Course / Year:</span>
+        <span class="rp-field-label">Course/Year/Section:</span>
         <span class="rp-field-value" id="tr-rp-course">—</span>
       </div>
       <div class="rp-field">
@@ -1156,6 +1184,8 @@ let DB = {
 let STUDENTS = [];
 let ALL_STUDENTS_PAGE = [];
 let studentsPageQ = '';
+let studentsPageCourse = '';
+let studentsPageYear = '';
 let CURRENT_SCHOOL_YEAR = null;
 let CURRENT_SEMESTER = null;
 let STUDENTS_LAST_FETCH = 0;
@@ -1174,7 +1204,7 @@ async function loadHistorySchoolYears() {
     if (!sel) return;
     sel.innerHTML = '<option value="">All School Years</option>' +
       data.schoolYears.map(sy =>
-        `<option value="${sy.yearStart}-${sy.yearEnd}">${sy.yearStart}–${sy.yearEnd}</option>`
+        `<option value="${sy.yearStart} – ${sy.yearEnd}">${sy.yearStart}–${sy.yearEnd}</option>`
       ).join('');
   } catch (err) {
     console.error('Failed to load school years for filter:', err);
@@ -1292,7 +1322,8 @@ async function loadOtherFunds() {
         desc: f.description,
         cat: 'Other Fund',
         amt: f.amount,
-        date: f.receivedDate.split('T')[0]
+        date: f.receivedDate.split('T')[0],
+        schoolYear: f.schoolYear || null
       }));
     }
   } catch (err) {
@@ -1310,7 +1341,8 @@ async function loadExpenses() {
         desc: e.description,
         amt: e.amount,
         date: e.expenseDate.split('T')[0],
-        recordedBy: e.recordedBy
+        recordedBy: e.recordedBy,
+        schoolYear: e.schoolYear || null
       }));
     }
   } catch (err) {
@@ -1468,6 +1500,7 @@ function allTransactions() {
     receipt:x.receipt||'—', 
     src:'OrgFee', 
     sid:x.id,
+    schoolYear: x.schoolYear || null,
     studentName: x.name,
     schoolId: x.schoolId,
     course: x.course,
@@ -1482,6 +1515,7 @@ function allTransactions() {
     receipt:'—', 
     src:'OtherFund', 
     sid:x.id,
+    schoolYear: x.schoolYear || null,
     studentName: '',
     schoolId: '',
     course: '',
@@ -1496,6 +1530,7 @@ function allTransactions() {
     receipt:'—', 
     src:'Expense', 
     sid:x.id,
+    schoolYear: x.schoolYear || null,
     studentName: '',
     schoolId: '',
     course: '',
@@ -1547,21 +1582,23 @@ async function renderHistory() {
     .filter(t => {
       if (!histSY && !histSem) return true;
 
-      // Expenses and OtherFunds: show them unless a SY/Sem filter is active
-      // (they have no semester, so include them when only type filter is active,
-      //  but hide them when SY or Sem filter is applied — or show always, your call)
-      // Most natural: always show expenses/funds regardless of SY filter
-      if (t.src === 'Expense' || t.src === 'OtherFund') return true;
-
-      const fee = DB.orgFees.find(f => f.id === t.sid);
-      if (!fee) return false;
-
-      // histSY is "2025-2026", fee.schoolYear is "2025 – 2026"
-      // Normalize both to "20252026" for comparison
       const normalize = s => (s || '').replace(/\s*[–-]\s*/g, '');
-      const syMatch  = !histSY  || normalize(fee.schoolYear) === normalize(histSY);
-      const semMatch = !histSem || fee.sem === histSem;
-      return syMatch && semMatch;
+
+      if (t.src === 'OrgFee') {
+        const fee = DB.orgFees.find(f => f.id === t.sid);
+        if (!fee) return false;
+        const syMatch  = !histSY  || normalize(fee.schoolYear) === normalize(histSY);
+        const semMatch = !histSem || fee.sem === histSem;
+        return syMatch && semMatch;
+      }
+
+      if (t.src === 'Expense' || t.src === 'OtherFund') {
+        if (!histSY) return true;
+        if (!t.schoolYear) return false;
+        return normalize(t.schoolYear) === normalize(histSY);
+      }
+
+      return true;
     })
     .filter(t =>
       !histQ ||
@@ -1812,7 +1849,8 @@ async function pageSearchStudents(q) {
   const query = (q || '').trim();
   if (!query) { list.style.display = 'none'; return; }
   try {
-    const res  = await fetch('/Home/GetStudentsForPayment?q=' + encodeURIComponent(query));
+    const sem = document.getElementById('page-of-sem')?.value || '';
+    const res  = await fetch('/Home/GetStudentsForPayment?q=' + encodeURIComponent(query) + '&semester=' + encodeURIComponent(sem));
     const data = await res.json();
     list.style.display = 'block';
     if (!data.success || !data.students.length) {
@@ -1975,8 +2013,8 @@ function renderReceiptCell(paymentId, receiptNumber, hasReceipt) {
     return '<span style="color:var(--text-d)">—</span>';
   }
   const safeReceipt = escapeHtml(receiptNumber);
-  const receiptArg = JSON.stringify(receiptNumber);
-  return `<button type="button" class="btn-outline" style="padding:3px 8px;font-size:10.5px;font-family:'DM Mono',monospace" onclick="viewReceipt('OrgFee', ${paymentId}, ${receiptArg})">${safeReceipt}</button>`;
+  const receiptArg = String(receiptNumber).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return `<button type="button" class="btn-outline" style="padding:3px 8px;font-size:10.5px;font-family:'DM Mono',monospace" onclick="viewReceipt('OrgFee', ${paymentId}, '${receiptArg}')">${safeReceipt}</button>`;
 }
 
 async function loadStudentsPage() {
@@ -1995,7 +2033,8 @@ async function loadStudentsPage() {
     if (sub && data.schoolYear && data.schoolYear !== 'N/A') {
       sub.textContent = `${ALL_STUDENTS_PAGE.length} approved student${ALL_STUDENTS_PAGE.length !== 1 ? 's' : ''} · A.Y. ${data.schoolYear}`;
     }
-    renderStudentsPage();
+    populateStudentsPageFilters();
+    applyStudentsPageFilters();
   } catch (err) {
     console.error('Failed to load students page:', err);
     if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Failed to load students.</td></tr>';
@@ -2003,7 +2042,9 @@ async function loadStudentsPage() {
 }
 
 function renderStudentsPage(filtered) {
-  const data = filtered ?? ALL_STUDENTS_PAGE;
+  const data = (filtered ?? ALL_STUDENTS_PAGE)
+    .slice()
+    .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' }));
   const tbody = document.getElementById('students-page-tbody');
   const sub = document.getElementById('students-page-sub');
   if (!tbody) return;
@@ -2043,16 +2084,52 @@ function renderStudentsPage(filtered) {
 
 function filterStudentsPage(q) {
   studentsPageQ = (q || '').toLowerCase().trim();
-  if (!studentsPageQ) {
-    renderStudentsPage();
-    return;
-  }
-  const filtered = ALL_STUDENTS_PAGE.filter(s =>
-    (s.name || '').toLowerCase().includes(studentsPageQ)
-    || (s.schoolId || '').toLowerCase().includes(studentsPageQ)
-    || (s.courseCode || '').toLowerCase().includes(studentsPageQ)
-    || (s.yearSection || '').toLowerCase().includes(studentsPageQ)
-  );
+  applyStudentsPageFilters();
+}
+
+function populateStudentsPageFilters() {
+  const courseSel = document.getElementById('students-filter-course');
+  const yearSel = document.getElementById('students-filter-year');
+  if (!courseSel || !yearSel) return;
+
+  const courses = [...new Set(ALL_STUDENTS_PAGE.map(s => (s.courseCode || '').trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  const years = [...new Set(ALL_STUDENTS_PAGE.map(s => {
+    const ys = (s.yearSection || '').split('-')[0];
+    return (ys || '').trim();
+  }).filter(v => v && v.toLowerCase() !== 'n/a'))].sort((a, b) => Number(a) - Number(b));
+
+  courseSel.innerHTML = '<option value="">All Courses</option>' + courses.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  yearSel.innerHTML = '<option value="">All Years</option>' + years.map(y => `<option value="${escapeHtml(y)}">Year ${escapeHtml(y)}</option>`).join('');
+
+  if (studentsPageCourse && courses.includes(studentsPageCourse)) courseSel.value = studentsPageCourse;
+  else studentsPageCourse = '';
+  if (studentsPageYear && years.includes(studentsPageYear)) yearSel.value = studentsPageYear;
+  else studentsPageYear = '';
+}
+
+function applyStudentsPageFilters() {
+  studentsPageCourse = document.getElementById('students-filter-course')?.value || '';
+  studentsPageYear = document.getElementById('students-filter-year')?.value || '';
+
+  const filtered = ALL_STUDENTS_PAGE.filter(s => {
+    const name = (s.name || '').toLowerCase();
+    const schoolId = (s.schoolId || '').toLowerCase();
+    const course = (s.courseCode || '').toLowerCase();
+    const yearSection = (s.yearSection || '').toLowerCase();
+    const yearOnly = (s.yearSection || '').split('-')[0].trim();
+
+    const matchesQ = !studentsPageQ
+      || name.includes(studentsPageQ)
+      || schoolId.includes(studentsPageQ)
+      || course.includes(studentsPageQ)
+      || yearSection.includes(studentsPageQ);
+    const matchesCourse = !studentsPageCourse || (s.courseCode || '') === studentsPageCourse;
+    const matchesYear = !studentsPageYear || yearOnly === studentsPageYear;
+
+    return matchesQ && matchesCourse && matchesYear;
+  });
+
   renderStudentsPage(filtered);
 }
 
@@ -2141,7 +2218,8 @@ async function searchStudents(q) {
   if (!query) { list.style.display = 'none'; return; }
 
   try {
-    const response = await fetch('/Home/GetStudentsForPayment?q=' + encodeURIComponent(query));
+    const sem = document.getElementById('of-sem')?.value || '';
+    const response = await fetch('/Home/GetStudentsForPayment?q=' + encodeURIComponent(query) + '&semester=' + encodeURIComponent(sem));
     const data = await response.json();
     if (!data.success) {
       list.style.display = 'block';
@@ -2964,6 +3042,44 @@ function closeTreasurerReceipt() {
 function handleTreasurerReceiptBackdropClick(e) {
   if (e.target === document.getElementById('treasurerReceiptModal') || e.target.classList.contains('receipt-modal-backdrop')) {
     closeTreasurerReceipt();
+  }
+}
+
+async function downloadTreasurerReceiptPDF() {
+  const receiptEl = document.getElementById('trReceiptPaper');
+  const receiptNo = (document.getElementById('tr-rp-receipt-no')?.textContent || 'receipt')
+    .replace(/[^\w-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  showToast('Generating PDF...', 'ok');
+  try {
+    const canvas = await html2canvas(receiptEl, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#f9f8f5',
+      logging: false
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: [216, 330]
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 8;
+    const imgWidth = pageWidth - margin * 2;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, Math.min(imgHeight, pageHeight - margin * 2));
+    pdf.save(`SSG-Receipt-${receiptNo}.pdf`);
+    showToast('PDF downloaded successfully.', 'ok');
+  } catch (err) {
+    console.error('Failed to export receipt PDF:', err);
+    showToast('Failed to generate PDF.', 'fail');
   }
 }
 

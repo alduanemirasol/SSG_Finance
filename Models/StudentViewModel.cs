@@ -30,5 +30,9 @@ namespace MyMvcApp.Models
         
         [StringLength(50)]
         public string AcademicStatus { get; set; } = string.Empty;
+
+        public int? SchoolYearId { get; set; }
+
+        public Semester? SemesterEntered { get; set; }
     }
 }

@@ -79,6 +79,8 @@ namespace MyMvcApp.Data
                 entity.Property(e => e.AcademicProfileId).HasColumnName("academic_profile_id");
                 entity.Property(e => e.UserId).IsRequired().HasColumnName("user_id");
                 entity.Property(e => e.CourseId).IsRequired().HasColumnName("course_id");
+                entity.Property(e => e.SchoolYearId).HasColumnName("school_year_id");
+                entity.Property(e => e.SemesterEntered).HasConversion<string>().HasColumnName("semester_entered");
                 entity.Property(e => e.YearLevel).HasColumnName("year_level");
                 entity.Property(e => e.Section).HasMaxLength(50).HasColumnName("section");
                 entity.Property(e => e.AcademicStatus).IsRequired().HasConversion<string>().HasDefaultValue(AcademicStatus.Enrolled).HasColumnName("academic_status");
@@ -93,6 +95,11 @@ namespace MyMvcApp.Data
                 entity.HasOne(e => e.Course)
                     .WithMany(c => c.AcademicProfiles)
                     .HasForeignKey(e => e.CourseId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.SchoolYear)
+                    .WithMany()
+                    .HasForeignKey(e => e.SchoolYearId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -181,11 +188,17 @@ namespace MyMvcApp.Data
                 entity.Property(e => e.Amount).IsRequired().HasPrecision(10, 2).HasColumnName("amount");
                 entity.Property(e => e.ReceivedBy).IsRequired().HasColumnName("received_by");
                 entity.Property(e => e.ReceivedDate).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("received_date");
+                entity.Property(e => e.SchoolYearId).HasColumnName("school_year_id");
 
                 entity.HasOne(e => e.Receiver)
                     .WithMany(a => a.ReceivedFunds)
                     .HasForeignKey(e => e.ReceivedBy)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.SchoolYear)
+                    .WithMany()
+                    .HasForeignKey(e => e.SchoolYearId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             // Expense configuration
@@ -197,11 +210,17 @@ namespace MyMvcApp.Data
                 entity.Property(e => e.Amount).IsRequired().HasPrecision(10, 2).HasColumnName("amount");
                 entity.Property(e => e.RecordedBy).IsRequired().HasColumnName("recorded_by");
                 entity.Property(e => e.ExpenseDate).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("expense_date");
+                entity.Property(e => e.SchoolYearId).HasColumnName("school_year_id");
 
                 entity.HasOne(e => e.Recorder)
                     .WithMany(a => a.RecordedExpenses)
                     .HasForeignKey(e => e.RecordedBy)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.SchoolYear)
+                    .WithMany()
+                    .HasForeignKey(e => e.SchoolYearId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             // Receipt configuration

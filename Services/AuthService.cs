@@ -288,12 +288,14 @@ namespace MyMvcApp.Services
                 if (regRequest.Role == UserRole.Student)
                 {
                     if (string.IsNullOrWhiteSpace(regRequest.CourseCode) ||
-                        !regRequest.YearLevel.HasValue)
+                        !regRequest.YearLevel.HasValue ||
+                        !regRequest.SchoolYearId.HasValue ||
+                        !regRequest.SemesterEntered.HasValue)
                     {
                         return new RegistrationResult 
                         { 
                             Success = false, 
-                            Message = "Course code and year level are required for student registration." 
+                            Message = "Course, school year entered, semester entered, and year level are required for student registration." 
                         };
                     }
                 }
@@ -368,6 +370,8 @@ namespace MyMvcApp.Services
                     {
                         UserId = user.UserId,
                         CourseId = course.CourseId,
+                        SchoolYearId = request.SchoolYearId,
+                        SemesterEntered = request.SemesterEntered,
                         YearLevel = request.YearLevel,
                         Section = request.Section ?? "A", // Default section if null
                         AcademicStatus = AcademicStatus.Enrolled

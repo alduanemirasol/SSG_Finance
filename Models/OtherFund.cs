@@ -27,8 +27,14 @@ namespace MyMvcApp.Models
         [Column("received_date")]
         public DateTime ReceivedDate { get; set; } = DateTime.Now;
 
+        [Column("school_year_id")]
+        public int? SchoolYearId { get; set; }
+
         // Navigation properties
         [ForeignKey("ReceivedBy")]
         public Account Receiver { get; set; } = null!;
+
+        [ForeignKey(nameof(SchoolYearId))]
+        public SchoolYear? SchoolYear { get; set; }
     }
 }
