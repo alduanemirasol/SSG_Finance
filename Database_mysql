@@ -100,13 +100,15 @@ CREATE TABLE full_amount (
 
 -- 7. org_fee_payments
 CREATE TABLE org_fee_payments (
-  payment_id     INT           NOT NULL AUTO_INCREMENT,
-  user_id        INT           NOT NULL,
-  full_amount_id INT           NOT NULL,
-  amount         DECIMAL(10,2) NOT NULL,
-  payment_status ENUM('Partial','Paid') NOT NULL,
-  received_by    INT           NOT NULL,
-  payment_date   TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  payment_id            INT           NOT NULL AUTO_INCREMENT,
+  user_id               INT           NOT NULL,
+  full_amount_id        INT           NOT NULL,
+  amount                DECIMAL(10,2) NOT NULL,
+  payment_status        ENUM('Partial','Paid') NOT NULL,
+  received_by           INT           NOT NULL,
+  payment_date          TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  year_level_at_payment INT           NULL,
+  section_at_payment    VARCHAR(50)   NULL,
 
   PRIMARY KEY (payment_id),
   CONSTRAINT fk_payment_user
@@ -122,13 +124,13 @@ CREATE TABLE org_fee_payments (
 
 -- 8. other_funds
 CREATE TABLE other_funds (
-  fund_id       INT           NOT NULL AUTO_INCREMENT,
-  source        VARCHAR(200)  NULL,
-  description   TEXT          NULL,
-  amount        DECIMAL(10,2) NOT NULL,
-  received_by   INT           NOT NULL,
-  received_date TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  school_year_id INT          NULL,
+  fund_id        INT           NOT NULL AUTO_INCREMENT,
+  source         VARCHAR(200)  NULL,
+  description    TEXT          NULL,
+  amount         DECIMAL(10,2) NOT NULL,
+  received_by    INT           NOT NULL,
+  received_date  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  school_year_id INT           NULL,
 
   PRIMARY KEY (fund_id),
   CONSTRAINT fk_fund_receiver
@@ -141,12 +143,12 @@ CREATE TABLE other_funds (
 
 -- 9. expenses
 CREATE TABLE expenses (
-  expense_id    INT           NOT NULL AUTO_INCREMENT,
-  description   TEXT          NULL,
-  amount        DECIMAL(10,2) NOT NULL,
-  recorded_by   INT           NOT NULL,
-  expense_date  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  school_year_id INT          NULL,
+  expense_id     INT           NOT NULL AUTO_INCREMENT,
+  description    TEXT          NULL,
+  amount         DECIMAL(10,2) NOT NULL,
+  recorded_by    INT           NOT NULL,
+  expense_date   TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  school_year_id INT           NULL,
 
   PRIMARY KEY (expense_id),
   CONSTRAINT fk_expense_recorder

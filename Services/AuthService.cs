@@ -210,10 +210,11 @@ namespace MyMvcApp.Services
         {
             try
             {
-                Console.WriteLine("RegisterAccountAsync called");
-                
+                // Intentionally no sensitive data logging here.
+
                 // Test database connection
                 if (_context == null)
+
                 {
                     Console.WriteLine("Database context is null");
                     return new RegistrationResult 
@@ -223,12 +224,11 @@ namespace MyMvcApp.Services
                     };
                 }
 
-                Console.WriteLine($"Starting registration for: {request?.SchoolId}");
-
                 // Add null check for request
+
                 if (request == null)
                 {
-                    Console.WriteLine("Registration request is null");
+
                     return new RegistrationResult 
                     { 
                         Success = false, 
@@ -236,42 +236,48 @@ namespace MyMvcApp.Services
                     };
                 }
 
-                Console.WriteLine($"Request details: SchoolId={request.SchoolId}, Email={request.Email}, Role={request.Role}");
-                Console.WriteLine($"User fields: FirstName={request.FirstName}, LastName={request.LastName}");
-
                 // Use local variable to avoid null reference warnings
+
                 var regRequest = request;
 
-                // Check if school ID already exists
-                var schoolIdLower = regRequest.SchoolId?.ToLower() ?? "";
-                var existingSchoolId = await _context.Accounts
-                    .FirstOrDefaultAsync(a => a.SchoolId.ToLower() == schoolIdLower);
-                
-                if (existingSchoolId != null)
+                // Layer 4 — Duplicate Detection
+                // Prevent the same person from spamming multiple accounts with the same School ID or email.
+
+                // Already registered by School ID?
+                var existingById = await _context.Accounts
+                    .FirstOrDefaultAsync(a =>
+                        a.SchoolId != null &&
+                        regRequest.SchoolId != null &&
+                        a.SchoolId.ToLower() == regRequest.SchoolId.ToLower());
+
+                if (existingById != null)
                 {
-                    return new RegistrationResult 
-                    { 
-                        Success = false, 
-                        Message = "School ID already exists." 
+                    return new RegistrationResult
+                    {
+                        Success = false,
+                        Message = "School ID is already registered."
                     };
                 }
 
-                // Check if email already exists (if provided)
+                // Already registered by Email? (only if provided)
                 if (!string.IsNullOrWhiteSpace(regRequest.Email))
                 {
-                    var emailLower = regRequest.Email?.ToLower() ?? "";
-                    var existingEmail = await _context.Accounts
-                        .FirstOrDefaultAsync(a => a.Email != null && a.Email.ToLower() == emailLower);
-                    
-                    if (existingEmail != null)
+                    var existingByEmail = await _context.Accounts
+                        .FirstOrDefaultAsync(a =>
+                            a.Email != null &&
+                            regRequest.Email != null &&
+                            a.Email.ToLower() == regRequest.Email.ToLower());
+
+                    if (existingByEmail != null)
                     {
-                        return new RegistrationResult 
-                        { 
-                            Success = false, 
-                            Message = "Email already exists." 
+                        return new RegistrationResult
+                        {
+                            Success = false,
+                            Message = "Email address is already registered."
                         };
                     }
                 }
+
 
                 // Validate user-specific fields
                 if (string.IsNullOrWhiteSpace(regRequest.FirstName) || 
@@ -314,7 +320,7 @@ namespace MyMvcApp.Services
 
                 _context.Accounts.Add(account);
                 await _context.SaveChangesAsync();
-                Console.WriteLine($"✓ Account saved: {account.AccountId}");
+
 
                 // Create user record
                 var user = new User
@@ -327,7 +333,7 @@ namespace MyMvcApp.Services
 
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
-                Console.WriteLine($"✓ User saved: {user.UserId}");
+
 
                 // Create academic profile if role is Student
                 if (request.Role == UserRole.Student)
@@ -349,7 +355,7 @@ namespace MyMvcApp.Services
                             };
                             _context.Courses.Add(course);
                             await _context.SaveChangesAsync();
-                            Console.WriteLine($"✓ Course saved: {course.CourseId}");
+
                         }
                     }
                     else
@@ -362,7 +368,7 @@ namespace MyMvcApp.Services
                         };
                         _context.Courses.Add(course);
                         await _context.SaveChangesAsync();
-                        Console.WriteLine($"✓ Default course saved: {course.CourseId}");
+
                     }
 
                     // Create academic profile
@@ -379,7 +385,7 @@ namespace MyMvcApp.Services
 
                     _context.AcademicProfiles.Add(academicProfile);
                     await _context.SaveChangesAsync();
-                    Console.WriteLine($"✓ Academic profile saved: {academicProfile.UserId}");
+
                 }
 
                 return new RegistrationResult 

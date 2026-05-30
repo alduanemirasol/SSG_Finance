@@ -11,7 +11,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSG Finance — Admin Panel</title>
+    <title>SSG Finance - Admin Panel</title>
     <link rel="icon" type="image/png" href="~/favicon.png">
     <style>
         @@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
@@ -155,6 +155,20 @@
         .settings-label{font-size:11px;color:var(--text-m);display:block;margin-bottom:4px}
         .settings-input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none;transition:border-color .2s}
         .settings-input:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-glow2)}
+        /* ── ORG FEE MODAL + FILTER (added) ── */
+        .modal-overlay{display:none;position:fixed;inset:0;z-index:600;align-items:center;justify-content:center}
+        .modal-overlay.open{display:flex}
+        .modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px)}
+        .modal-box{position:relative;z-index:1;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 30px;width:100%;max-width:500px;box-shadow:0 24px 60px rgba(0,0,0,.5);max-height:90vh;overflow-y:auto}
+        .modal-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px}
+        .modal-title{font-size:16px;font-weight:700;color:#fff}
+        .modal-sub{font-size:11.5px;color:var(--text-m);margin-top:2px}
+        .modal-close{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)}
+        .btn-outline{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--text-m)}
+        .btn-outline:hover{border-color:var(--green);color:#5fdd8e;background:rgba(39,167,68,.08)}
+        .filter-select{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:7px 28px 7px 11px;font-size:12px;color:var(--text-m);font-family:inherit;cursor:pointer;outline:none;appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23e8f5ec%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 6px center;background-size:18px}
+        .filter-select option{background:#0a1f10}
     </style>
 </head>
 <body>
@@ -307,8 +321,8 @@
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead>
-            <tr><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Date</th></tr>
+<thead>
+            <tr><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Role</th><th>Date</th></tr>
           </thead>
           <tbody id="recent-tbody">
             @if (Model.AllAccountRequests != null && Model.AllAccountRequests.Any())
@@ -317,19 +331,21 @@
                 @foreach (var acct in Model.AllAccountRequests)
                 {
                     var hidden = idx >= 5 ? "display:none" : "";
-                    <tr class="recent-row" style="@hidden">
+                        <tr class="recent-row" style="@hidden">
                         <td class="td-mono td-m">@(acct.SchoolId ?? "—")</td>
                         <td><strong>@acct.Fullname</strong></td>
                         <td class="td-m">@(acct.CourseCode ?? "—")</td>
-                        <td class="td-m">@(acct.YearLevel ?? "—")-@(acct.Section ?? "—")</td>
+                        <td class="td-m">@(acct.YearLevel == "5" ? "4 Completed" : $"{(acct.YearLevel ?? "—")}-{(acct.Section ?? "—")}")</td>
+                        <td class="td-m">@(acct.Role ?? "—")</td>
                         <td class="td-mono td-m">@acct.CreatedAt.ToString("MM-dd-yyyy")</td>
                     </tr>
+
                     idx++;
                 }
             }
             else
             {
-                <tr class="empty-row"><td colspan="5">No account requests found.</td></tr>
+                <tr class="empty-row"><td colspan="6">No account requests found.</td></tr>
             }
           </tbody>
         </table>
@@ -360,7 +376,7 @@
       <div class="tbl-wrap">
         <table>
           <thead>
-            <tr><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Date</th><th>Actions</th></tr>
+            <tr><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Role</th><th>Date</th><th>Actions</th></tr>
           </thead>
           <tbody>
             @if (Model.RequestedAccounts != null && Model.RequestedAccounts.Any())
@@ -371,9 +387,11 @@
                         <td class="td-mono td-m">@(acct.SchoolId ?? "—")</td>
                         <td><strong>@acct.Fullname</strong></td>
                         <td class="td-m">@(acct.CourseCode ?? "—")</td>
-                        <td class="td-m">@(acct.YearLevel ?? "—")-@(acct.Section ?? "—")</td>
+                        <td class="td-m">@(acct.YearLevel == "5" ? "4 Completed" : $"{(acct.YearLevel ?? "—")}-{(acct.Section ?? "—")}")</td>
+                        <td class="td-m">@(acct.Role ?? "—")</td>
                         <td class="td-mono td-m">@acct.CreatedAt.ToString("MM-dd-yyyy")</td>
                         <td>
+
                             <div class="action-btns">
                                 <button class="btn-ap" onclick="updateStatus(@acct.AccountId, 'Approved')">
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -390,7 +408,7 @@
             }
             else
             {
-                <tr class="empty-row"><td colspan="6">No pending requests.</td></tr>
+                <tr class="empty-row"><td colspan="7">No pending requests.</td></tr>
             }
           </tbody>
         </table>
@@ -410,88 +428,21 @@
       <div class="toolbar">
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
-          <input type="text" placeholder="Search by name or course…" oninput="filterTable(this,'students-tb')" />
+          <input type="text" placeholder="Search by name, school ID, course…" oninput="filterStudentsPage(this.value)" />
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select class="filter-select" id="students-filter-course" onchange="applyStudentsPageFilters()">
+            <option value="">All Courses</option>
+          </select>
+          <select class="filter-select" id="students-filter-sy" onchange="applyStudentsPageFilters()">
+            <option value="">All School Years</option>
+          </select>
         </div>
       </div>
       <div class="tbl-wrap">
-        <table><thead><tr><th>#</th><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Status</th><th></th></tr></thead>
+        <table><thead><tr><th>#</th><th>School ID</th><th>Name</th><th>Course · Year &amp; Section</th><th>1st Sem</th><th>2nd Sem</th><th>Org Fees</th><th></th></tr></thead>
         <tbody id="students-tb">
-          @if (Model.Students != null && Model.Students.Any())
-          {
-              int i = 1;
-              @foreach (var s in Model.Students)
-              {
-                  <tr data-account="@s.AccountId" data-active="@s.IsActive.ToString().ToLower()">
-                      <td class="td-mono td-m">@(i++)</td>
-                      <td class="td-mono td-m">@s.SchoolId</td>
-                      <td style="color: @(s.IsActive ? "inherit" : "#f87171")">
-    <strong>@s.FullName</strong>
-    @if (s.Role == "Treasurer") {
-        <span style="font-size:10px;font-weight:600;background:rgba(249,115,22,.15);color:#fdba74;border:1px solid rgba(249,115,22,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Treasurer</span>
-    }
-    @if (!s.IsActive) {
-        <span style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>
-    }
-</td>
-                      <td><span class="badge bg">@s.CourseCode</span></td>
-                      <td class="td-m">@s.YearSection</td>
-                      <td>
-    @{
-        var statusClass = s.AcademicStatus switch
-        {
-            "Enrolled"    => "bg",
-            "Transferred" => "by",
-            "Graduated"   => "by",
-            "Dropped"     => "br",
-            _             => "by"
-        };
-    }
-    <span class="badge @statusClass">@s.AcademicStatus</span>
-</td>
-                  <td style="width:40px;text-align:right">
-                    <div class="dropdown-wrap">
-                        <button class="dot-btn" onclick="toggleDropdown(this)">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-                        </button>
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item" onclick="editStudent(@s.AccountId)">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                Edit
-                            </div>
-                            <div class="dropdown-item has-submenu" onclick="showRoleSubmenu(this, @s.AccountId)">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                Change Role
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                <!-- submenu -->
-                                <div class="dropdown-menu" id="role-submenu-@s.AccountId" style="display:none;position:absolute;left:-140px;top:0;min-width:130px">
-                                    <div class="dropdown-item" onclick="changeRole(@s.AccountId, 'Student'); event.stopPropagation()">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                        Student
-                                    </div>
-                                    <div class="dropdown-item" onclick="changeRole(@s.AccountId, 'Treasurer'); event.stopPropagation()">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                                        Treasurer
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="dropdown-item @(s.IsActive ? "danger" : "reactivate")" onclick="toggleActivation(@s.AccountId, this)">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                <span>@(s.IsActive ? "Deactivate Account" : "Reactivate Account")</span>
-                            </div>
-                            <div class="dropdown-item danger" onclick="deleteStudent(@s.AccountId)">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                Delete Account
-                            </div>
-                        </div>
-                    </div>
-                </td>
-                  </tr>
-              }
-          }
-          else
-          {
-              <tr class="empty-row"><td colspan="7">No students found.</td></tr>
-          }
+          <tr class="empty-row"><td colspan="8">Loading students…</td></tr>
         </tbody></table>
       </div>
     </div>
@@ -625,6 +576,32 @@
               <input id="sy-yearEnd" type="number" class="settings-input" placeholder="e.g. 2026" />
             </div>
           </div>
+          <div style="margin-bottom:16px;padding:14px 16px;background:rgba(39,167,68,.05);border:1px solid rgba(39,167,68,.12);border-radius:10px">
+            <div style="font-size:11px;font-weight:700;color:#5fdd8e;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px">First Semester</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label class="settings-label">Semester Starts</label>
+                <input id="sy-first-start" type="date" class="settings-input" />
+              </div>
+              <div>
+                <label class="settings-label">Semester Ends</label>
+                <input id="sy-first-end" type="date" class="settings-input" />
+              </div>
+            </div>
+          </div>
+          <div style="margin-bottom:16px;padding:14px 16px;background:rgba(251,191,36,.04);border:1px solid rgba(251,191,36,.12);border-radius:10px">
+            <div style="font-size:11px;font-weight:700;color:#fbbf24;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px">Second Semester</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label class="settings-label">Semester Starts</label>
+                <input id="sy-second-start" type="date" class="settings-input" />
+              </div>
+              <div>
+                <label class="settings-label">Semester Ends</label>
+                <input id="sy-second-end" type="date" class="settings-input" />
+              </div>
+            </div>
+          </div>
           <div style="display:flex;justify-content:flex-end">
             <button class="btn-ap" onclick="addSchoolYear()">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
@@ -689,18 +666,11 @@
       <div class="content-card" style="margin-bottom:14px">
         <div class="cc-hdr"><div class="cc-title">Set Organization Fee</div></div>
         <div style="padding:20px 24px">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:16px">
             <div>
-              <label class="settings-label">School Year</label>
-              <select id="fee-schoolYear" class="settings-input" style="appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23fff%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;background-size:20px;background-color:#0a1f10;cursor:pointer">
-                <option value="">Select school year</option>
-              </select>
-            </div>
-            <div>
-              <label class="settings-label">Semester</label>
-              <select id="fee-semester" class="settings-input" style="appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23fff%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;background-size:20px;background-color:#0a1f10;cursor:pointer">
-                <option value="First">1st Semester</option>
-                <option value="Second">2nd Semester</option>
+              <label class="settings-label">School Year & Semester</label>
+              <select id="fee-sy-sem" class="settings-input" onchange="onFeeDropdownChange()" style="appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23fff%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;background-size:20px;background-color:#0a1f10;cursor:pointer">
+                <option value="">Select school year & semester</option>
               </select>
             </div>
             <div>
@@ -914,1338 +884,1661 @@
 <div id="toast"></div>
 
 <script>
-async function showPage(name, navEl) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    var page = document.getElementById('page-' + name);
-    if (page) page.classList.add('active');
-    if (navEl) navEl.classList.add('active');
-    else { var n = document.getElementById('nav-' + name); if (n) n.classList.add('active'); }
-
-    // refresh the tab data
-    if (name === 'dashboard')   refreshDashboard();
-    if (name === 'requests')    refreshRequests();
-    if (name === 'students')    refreshStudents();
-    if (name === 'professors')  refreshProfessors();
-    if (name === 'settings')    await refreshSchoolYears();
-}
-async function updateStatus(accountId, status) {
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-    if (!confirm(`Are you sure you want to ${status.toLowerCase()} this account?`)) return;
-    try {
-        const res  = await fetch('/Home/UpdateAccountStatus', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
-            body: JSON.stringify({ accountId, status })
-        });
-        const data = await res.json();
-        if (data.success) {
-            const row = document.getElementById(`req-row-${accountId}`);
-            if (row) { row.style.opacity = '0'; row.style.transition = 'opacity .3s'; setTimeout(() => row.remove(), 300); }
-            const badge = document.querySelector('.nav-badge');
-            if (badge) { const count = parseInt(badge.textContent) - 1; if (count <= 0) badge.remove(); else badge.textContent = count; }
-            showToast(data.message, 'ok');
-        } else {
-            showToast(data.message, 'fail');
-        }
-    } catch {
-        showToast('Request failed. Please try again.', 'fail');
-    }
-}
-
-async function rejectAndDelete(accountId) {
-    if (!confirm('Are you sure you want to reject and permanently delete this account? This cannot be undone.')) return;
-
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
-
-    try {
-        const res = await fetch('/Home/DeleteAccount', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': token
-            },
-            body: JSON.stringify({ accountId: accountId })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            const row = document.getElementById(`req-row-${accountId}`);
-            if (row) {
-                row.style.opacity = '0';
-                row.style.transition = 'opacity .3s';
-                setTimeout(() => row.remove(), 300);
-            }
-
-            const badge = document.querySelector('.nav-badge');
-            if (badge) {
-                const count = parseInt(badge.textContent) - 1;
-                if (count <= 0) badge.remove();
-                else badge.textContent = count;
-            }
-
-            showToast('Account rejected and deleted successfully.', 'ok');
-        } else {
-            showToast(data.message, 'fail');
-        }
-    } catch {
-        showToast('Request failed. Please try again.', 'fail');
-    }
-}
-
-function filterTable(input,tbodyId){
-  var q=input.value.toLowerCase();
-  document.querySelectorAll('#'+tbodyId+' tr').forEach(function(row){
-    row.style.display=row.textContent.toLowerCase().includes(q)?'':'none';
-  });
-}
-function showToast(msg,type){
-  var t=document.getElementById('toast');
-  t.textContent=msg;t.className='show '+type;
-  clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3000);
-}
-function showAddProfessorModal(){
-    // Create and show the professor modal
-    const modalHtml = `
-        <div id="addProfessorModal" style="display:flex;position:fixed;inset:0;z-index:500;align-items:center;justify-content:center;">
-            <div onclick="closeAddProfessorModal()" style="position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)"></div>
-            <div style="position:relative;z-index:1;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 32px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.5)">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
-                    <div>
-                        <div style="font-size:16px;font-weight:700;color:#fff">Add Professor</div>
-                        <div style="font-size:11.5px;color:var(--text-m);margin-top:2px">New professor will be saved to the database</div>
-                    </div>
-                    <button onclick="closeAddProfessorModal()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
-                </div>
-
-                <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Personal Information</div>
-                <div style="display:grid;grid-template-columns:1fr 60px 1fr;gap:10px;margin-bottom:10px">
-                    <div>
-                        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">First Name</label>
-                        <input id="prof-firstName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
-                    </div>
-                    <div>
-                        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Middle I.</label>
-                        <input id="prof-middleName" type="text" maxlength="3" placeholder="M.I." oninput="autoMiddlePeriod(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 8px;color:#fff;font-size:13px;font-family:inherit;outline:none;text-align:center" />
-                    </div>
-                    <div>
-                        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Last Name</label>
-                        <input id="prof-lastName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
-                    </div>
-                </div>
-
-                <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px;margin-top:16px">Account Information</div>
-                <div style="margin-bottom:10px">
-                    <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">School ID</label>
-                    <input id="prof-schoolId" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
-                </div>
-                <div style="margin-bottom:10px">
-                    <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Email</label>
-                    <input id="prof-email" type="email" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
-                </div>
-                <div style="margin-bottom:24px">
-                    <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Password</label>
-                    <input id="prof-password" type="password" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
-                </div>
-
-                <div style="display:flex;gap:10px;justify-content:flex-end">
-                    <button onclick="closeAddProfessorModal()" style="padding:9px 20px;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text-m);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
-                    <button onclick="saveNewProfessor()" style="padding:9px 24px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Add Professor</button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Remove existing modal if present
-    const existingModal = document.getElementById('addProfessorModal');
-    if (existingModal) {
-        existingModal.remove();
-    }
-    
-    // Add modal to body
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-}
-
-function closeAddProfessorModal() {
-    const modal = document.getElementById('addProfessorModal');
-    if (modal) {
-        modal.remove();
-    }
-}
-
-async function saveNewProfessor() {
-    const firstName  = document.getElementById('prof-firstName')?.value.trim();
-    const lastName   = document.getElementById('prof-lastName')?.value.trim();
-    const middleName = document.getElementById('prof-middleName')?.value.trim();
-    const schoolId   = document.getElementById('prof-schoolId')?.value.trim();
-    const email      = document.getElementById('prof-email')?.value.trim();
-    const password   = document.getElementById('prof-password')?.value.trim();
-
-    if (!firstName || !lastName)  { showToast('First and last name are required.', 'fail'); return; }
-    if (!schoolId)                { showToast('School ID is required.', 'fail'); return; }
-    if (!password || password.length < 6) { showToast('Password must be at least 6 characters.', 'fail'); return; }
-
-    try {
-        const res  = await fetch('/Home/AddProfessor', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ firstName, lastName, middleName, schoolId, email, password })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            closeAddProfessorModal();
-            showToast(data.message, 'ok');
-            refreshProfessors(); // just refreshes the table, no page reload
-        } else {
-            showToast(data.message, 'fail');
-        }
-    } catch {
-        showToast('Request failed. Please try again.', 'fail');
-    }
-}
-function toggleRecentRows() {
-    var rows = document.querySelectorAll('.recent-row');
-    var btn = document.getElementById('view-all-btn');
-    var isExpanded = btn.getAttribute('data-expanded') === 'true';
-    
-    rows.forEach(function(row, i) {
-        if (i >= 5) {
-            row.style.display = isExpanded ? 'none' : '';
-        }
-    });
-    
-    btn.setAttribute('data-expanded', isExpanded ? 'false' : 'true');
-    var total = btn.getAttribute('data-total');
-    btn.textContent = isExpanded ? 'View All (' + total + ')' : 'Show Less';
-}
-function toggleDropdown(btn) {
-    // close all other open dropdowns first
-    document.querySelectorAll('.dropdown-menu.open').forEach(function(m) {
-        if (m !== btn.nextElementSibling) m.classList.remove('open');
-    });
-    btn.nextElementSibling.classList.toggle('open');
-}
-
-// close dropdown when clicking outside
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('.dropdown-wrap')) {
-        document.querySelectorAll('.dropdown-menu.open').forEach(function(m) {
-            m.classList.remove('open');
-        });
-    }
-});
-
-// holds courses list so we only fetch once
-let coursesCache = [];
-
-let emailCheckTimer = null;
-let emailIsTaken = false;
-
-function checkEmailAvailability(value) {
-    const feedback = document.getElementById('email-feedback');
-    const input = document.getElementById('edit-email');
-    const accountId = parseInt(document.getElementById('edit-accountId').value);
-
-    clearTimeout(emailCheckTimer);
-
-    if (!value || !value.includes('@@')) {
-        feedback.textContent = '';
-        input.style.borderColor = 'rgba(255,255,255,0.12)';
-        return;
+    // Formats the "Year Level - Section" cell. A year level of 5 means the student
+    // has completed the 4-year program, so it shows "4 Completed" with no section.
+    function fmtYearLevel(yearLevel, section) {
+        if (yearLevel === null || yearLevel === undefined || yearLevel === '' || yearLevel === '—')
+            return '—' + '-' + (section ?? '—');
+        if (Number(yearLevel) === 5)
+            return '4 Completed';
+        return yearLevel + '-' + (section ?? '—');
     }
 
-    emailCheckTimer = setTimeout(async () => {
+    // Formats a pre-joined "5-A" style year-section string. Year level 5 means the
+    // student has completed the 4-year program, so it shows "4 Completed".
+    function fmtYearSection(yearSection) {
+        const ys = String(yearSection ?? '').trim();
+        const yearPart = ys.split('-')[0].trim();
+        return yearPart === '5' ? 'Graduate' : ys;
+    }
+
+    async function showPage(name, navEl) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        var page = document.getElementById('page-' + name);
+        if (page) page.classList.add('active');
+        if (navEl) navEl.classList.add('active');
+        else { var n = document.getElementById('nav-' + name); if (n) n.classList.add('active'); }
+
+        // refresh the tab data
+        if (name === 'dashboard')   refreshDashboard();
+        if (name === 'requests')    refreshRequests();
+        if (name === 'students')    refreshStudents();
+        if (name === 'professors')  refreshProfessors();
+        if (name === 'settings')    await refreshSchoolYears();
+    }
+    async function updateStatus(accountId, status) {
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        if (!confirm(`Are you sure you want to ${status.toLowerCase()} this account?`)) return;
         try {
-            const res = await fetch('/Home/CheckEmail?email=' + encodeURIComponent(value) + '&excludeAccountId=' + accountId);
+            const res  = await fetch('/Home/UpdateAccountStatus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+                body: JSON.stringify({ accountId, status })
+            });
             const data = await res.json();
-
-            if (data.taken) {
-                emailIsTaken = true;
-                feedback.textContent = 'This email is already used by ' + data.usedBy;
-                feedback.style.color = '#f87171';
-                input.style.borderColor = 'rgba(239,68,68,0.5)';
+            if (data.success) {
+                const row = document.getElementById(`req-row-${accountId}`);
+                if (row) { row.style.opacity = '0'; row.style.transition = 'opacity .3s'; setTimeout(() => row.remove(), 300); }
+                const badge = document.querySelector('.nav-badge');
+                if (badge) { const count = parseInt(badge.textContent) - 1; if (count <= 0) badge.remove(); else badge.textContent = count; }
+                showToast(data.message, 'ok');
             } else {
-                emailIsTaken = false;
-                feedback.textContent = 'Email is available';
-                feedback.style.color = '#5fdd8e';
-                input.style.borderColor = 'rgba(39,167,68,0.5)';
+                showToast(data.message, 'fail');
             }
         } catch {
-            feedback.textContent = '';
+            showToast('Request failed. Please try again.', 'fail');
         }
-    }, 500); // debounce — waits 500ms after user stops typing
-}
+    }
 
-async function loadCoursesIntoSelect() {
-    if (coursesCache.length > 0) return; // already loaded
-    try {
-        const res  = await fetch('/Home/GetCourses');
-        const data = await res.json();
-        if (data.success) {
-            coursesCache = data.courses;
-            const sel = document.getElementById('edit-courseId');
-            sel.innerHTML = '<option value="">Select course</option>';
-            data.courses.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value       = c.courseId;
-                opt.textContent = c.courseCode;
-                sel.appendChild(opt);
+    async function rejectAndDelete(accountId) {
+        if (!confirm('Are you sure you want to reject and permanently delete this account? This cannot be undone.')) return;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+
+        try {
+            const res = await fetch('/Home/DeleteAccount', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({ accountId: accountId })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                const row = document.getElementById(`req-row-${accountId}`);
+                if (row) {
+                    row.style.opacity = '0';
+                    row.style.transition = 'opacity .3s';
+                    setTimeout(() => row.remove(), 300);
+                }
+
+                const badge = document.querySelector('.nav-badge');
+                if (badge) {
+                    const count = parseInt(badge.textContent) - 1;
+                    if (count <= 0) badge.remove();
+                    else badge.textContent = count;
+                }
+
+                showToast('Account rejected and deleted successfully.', 'ok');
+            } else {
+                showToast(data.message, 'fail');
+            }
+        } catch {
+            showToast('Request failed. Please try again.', 'fail');
+        }
+    }
+
+    function filterTable(input,tbodyId){
+    var q=input.value.toLowerCase();
+    document.querySelectorAll('#'+tbodyId+' tr').forEach(function(row){
+        row.style.display=row.textContent.toLowerCase().includes(q)?'':'none';
+    });
+    }
+    function showToast(msg,type){
+    var t=document.getElementById('toast');
+    t.textContent=msg;t.className='show '+type;
+    clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3000);
+    }
+    function showAddProfessorModal(){
+        // Create and show the professor modal
+        const modalHtml = `
+            <div id="addProfessorModal" style="display:flex;position:fixed;inset:0;z-index:500;align-items:center;justify-content:center;">
+                <div onclick="closeAddProfessorModal()" style="position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)"></div>
+                <div style="position:relative;z-index:1;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 32px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.5)">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+                        <div>
+                            <div style="font-size:16px;font-weight:700;color:#fff">Add Professor</div>
+                            <div style="font-size:11.5px;color:var(--text-m);margin-top:2px">New professor will be saved to the database</div>
+                        </div>
+                        <button onclick="closeAddProfessorModal()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
+                    </div>
+
+                    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Personal Information</div>
+                    <div style="display:grid;grid-template-columns:1fr 60px 1fr;gap:10px;margin-bottom:10px">
+                        <div>
+                            <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">First Name</label>
+                            <input id="prof-firstName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+                        </div>
+                        <div>
+                            <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Middle I.</label>
+                            <input id="prof-middleName" type="text" maxlength="3" placeholder="M.I." oninput="autoMiddlePeriod(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 8px;color:#fff;font-size:13px;font-family:inherit;outline:none;text-align:center" />
+                        </div>
+                        <div>
+                            <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Last Name</label>
+                            <input id="prof-lastName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+                        </div>
+                    </div>
+
+                    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px;margin-top:16px">Account Information</div>
+                    <div style="margin-bottom:10px">
+                        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">School ID</label>
+                        <input id="prof-schoolId" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+                    </div>
+                    <div style="margin-bottom:10px">
+                        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Email</label>
+                        <input id="prof-email" type="email" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+                    </div>
+                    <div style="margin-bottom:24px">
+                        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Password</label>
+                        <input id="prof-password" type="password" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+                    </div>
+
+                    <div style="display:flex;gap:10px;justify-content:flex-end">
+                        <button onclick="closeAddProfessorModal()" style="padding:9px 20px;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text-m);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+                        <button onclick="saveNewProfessor()" style="padding:9px 24px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Add Professor</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if present
+        const existingModal = document.getElementById('addProfessorModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    function closeAddProfessorModal() {
+        const modal = document.getElementById('addProfessorModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    async function saveNewProfessor() {
+        const firstName  = document.getElementById('prof-firstName')?.value.trim();
+        const lastName   = document.getElementById('prof-lastName')?.value.trim();
+        const middleName = document.getElementById('prof-middleName')?.value.trim();
+        const schoolId   = document.getElementById('prof-schoolId')?.value.trim();
+        const email      = document.getElementById('prof-email')?.value.trim();
+        const password   = document.getElementById('prof-password')?.value.trim();
+
+        if (!firstName || !lastName)  { showToast('First and last name are required.', 'fail'); return; }
+        if (!schoolId)                { showToast('School ID is required.', 'fail'); return; }
+        if (!password || password.length < 6) { showToast('Password must be at least 6 characters.', 'fail'); return; }
+
+        try {
+            const res  = await fetch('/Home/AddProfessor', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ firstName, lastName, middleName, schoolId, email, password })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                closeAddProfessorModal();
+                showToast(data.message, 'ok');
+                refreshProfessors(); // just refreshes the table, no page reload
+            } else {
+                showToast(data.message, 'fail');
+            }
+        } catch {
+            showToast('Request failed. Please try again.', 'fail');
+        }
+    }
+    function toggleRecentRows() {
+        var rows = document.querySelectorAll('.recent-row');
+        var btn = document.getElementById('view-all-btn');
+        var isExpanded = btn.getAttribute('data-expanded') === 'true';
+        
+        rows.forEach(function(row, i) {
+            if (i >= 5) {
+                row.style.display = isExpanded ? 'none' : '';
+            }
+        });
+        
+        btn.setAttribute('data-expanded', isExpanded ? 'false' : 'true');
+        var total = btn.getAttribute('data-total');
+        btn.textContent = isExpanded ? 'View All (' + total + ')' : 'Show Less';
+    }
+    function toggleDropdown(btn) {
+        // close all other open dropdowns first
+        document.querySelectorAll('.dropdown-menu.open').forEach(function(m) {
+            if (m !== btn.nextElementSibling) m.classList.remove('open');
+        });
+        btn.nextElementSibling.classList.toggle('open');
+    }
+
+    // close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown-wrap')) {
+            document.querySelectorAll('.dropdown-menu.open').forEach(function(m) {
+                m.classList.remove('open');
             });
         }
-    } catch { showToast('Failed to load courses.', 'fail'); }
-}
+    });
 
-async function editStudent(accountId) {
-    document.getElementById('editModal').style.display = 'flex';
-    document.getElementById('edit-accountId').value = accountId;
+    // holds courses list so we only fetch once
+    let coursesCache = [];
 
-    // load courses first
-    await loadCoursesIntoSelect();
+    let emailCheckTimer = null;
+    let emailIsTaken = false;
 
-    // fetch current student data
-    try {
-        const res  = await fetch(`/Home/GetStudent?accountId=${accountId}`);
-        const data = await res.json();
-        if (data.success) {
-            document.getElementById('edit-firstName').value  = data.firstName  ?? '';
-            document.getElementById('edit-lastName').value   = data.lastName   ?? '';
-            document.getElementById('edit-middleName').value = data.middleName ?? '';
-            document.getElementById('edit-email').value     = data.email     ?? '';
-            document.getElementById('edit-courseId').value   = data.courseId   ?? '';
-            document.getElementById('edit-yearLevel').value  = data.yearLevel  ?? '1';
-            document.getElementById('edit-section').value    = data.section    ?? '';
-            document.getElementById('edit-academicStatus').value = data.academicStatus ?? 'Enrolled';
-        } else {
-            showToast(data.message, 'fail');
-            closeEditModal();
+    function checkEmailAvailability(value) {
+        const feedback = document.getElementById('email-feedback');
+        const input = document.getElementById('edit-email');
+        const accountId = parseInt(document.getElementById('edit-accountId').value);
+
+        clearTimeout(emailCheckTimer);
+
+        if (!value || !value.includes('@@')) {
+            feedback.textContent = '';
+            input.style.borderColor = 'rgba(255,255,255,0.12)';
+            return;
         }
-    } catch { showToast('Failed to load student.', 'fail'); closeEditModal(); }
-}
 
-function closeEditModal() {
-    document.getElementById('editModal').style.display = 'none';
-    emailIsTaken = false;
-    document.getElementById('email-feedback').textContent = '';
-}
+        emailCheckTimer = setTimeout(async () => {
+            try {
+                const res = await fetch('/Home/CheckEmail?email=' + encodeURIComponent(value) + '&excludeAccountId=' + accountId);
+                const data = await res.json();
 
-async function saveStudent() {
-    const accountId  = parseInt(document.getElementById('edit-accountId').value);
-    const firstName  = document.getElementById('edit-firstName').value.trim();
-    const lastName   = document.getElementById('edit-lastName').value.trim();
-    const middleName = document.getElementById('edit-middleName').value.trim();
-    const email      = document.getElementById('edit-email').value.trim();
-    const courseId   = parseInt(document.getElementById('edit-courseId').value);
-    const yearLevel  = parseInt(document.getElementById('edit-yearLevel').value);
-    const section    = document.getElementById('edit-section').value.trim();
-    const academicStatus = document.getElementById('edit-academicStatus').value;
-
-    if (!firstName || !lastName) { showToast('First and last name are required.', 'fail'); return; }
-    if (!courseId)                { showToast('Please select a course.', 'fail'); return; }
-
-    if (emailIsTaken) {
-        showToast('Please use a different email address.', 'fail');
-        return;
-    }
-
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-
-    try {
-        const res  = await fetch('/Home/UpdateStudent', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
-            body:    JSON.stringify({ accountId, firstName, lastName, middleName, email, courseId, yearLevel, section, academicStatus })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            // update the row in the DOM without reload
-            const row       = document.querySelector(`[data-account="${accountId}"]`);
-            const nameCell  = row?.querySelector('td:nth-child(2)');
-            const courseCell = row?.querySelector('td:nth-child(3)');
-            const yearCell  = row?.querySelector('td:nth-child(4)');
-
-            if (nameCell) {
-                const isActive = row.getAttribute('data-active') === 'true';
-                const fullName = `${lastName.toUpperCase()}, ${firstName.toUpperCase()}`;
-                nameCell.innerHTML = isActive
-                    ? `<strong>${fullName}</strong>` 
-                    : `<strong style="color:#f87171">${fullName}</strong>
-                       <span class="deactivated-badge" style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>`;
-            }
-            if (courseCell) {
-                const courseName = coursesCache.find(c => c.courseId === courseId)?.courseCode ?? '';
-                courseCell.innerHTML = `<span class="badge bg">${courseName}</span>`;
-            }
-            if (yearCell) {
-                yearCell.textContent = `${yearLevel}-${section}`;
-            }
-
-            closeEditModal();
-            showToast(data.message, 'ok');
-        } else {
-            showToast(data.message, 'fail');
-        }
-    } catch { showToast('Save failed. Please try again.', 'fail'); }
-}
-async function deleteStudent(accountId) {
-    if (!confirm('Are you sure you want to PERMANENTLY delete this account? This cannot be undone.')) return;
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-    try {
-        const res = await fetch('/Home/DeleteAccount', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
-            body: JSON.stringify({ accountId: accountId })
-        });
-        const data = await res.json();
-        if (data.success) {
-            // remove the row from DOM instantly
-            const row = document.querySelector(`[data-account="${accountId}"]`);
-            if (row) { row.style.opacity = '0'; row.style.transition = 'opacity .3s'; setTimeout(() => row.remove(), 300); }
-            showToast(data.message, 'ok');
-            // NO redirect here
-        } else {
-            showToast(data.message, 'fail');
-        }
-    } catch {
-        showToast('Request failed. Please try again.', 'fail');
-    }
-}
-
-async function deleteProfessor(accountId) {
-    if (!confirm('Are you sure you want to permanently delete this professor? This cannot be undone.')) return;
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-    try {
-        const res = await fetch('/Home/DeleteAccount', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
-            body: JSON.stringify({ accountId: accountId })
-        });
-        const data = await res.json();
-        if (data.success) {
-            showToast(data.message, 'ok');
-            refreshProfessors();
-        } else {
-            showToast(data.message, 'fail');
-        }
-    } catch {
-        showToast('Request failed. Please try again.', 'fail');
-    }
-}
-
-async function editProfessor(accountId) {
-    document.getElementById('editProfessorModal').style.display = 'flex';
-    document.getElementById('edit-prof-accountId').value = accountId;
-
-    try {
-        const res  = await fetch(`/Home/GetProfessor?accountId=${accountId}`);
-        const data = await res.json();
-        if (data.success) {
-            document.getElementById('edit-prof-firstName').value  = data.firstName  ?? '';
-            document.getElementById('edit-prof-lastName').value   = data.lastName   ?? '';
-            document.getElementById('edit-prof-middleName').value = data.middleName ?? '';
-            document.getElementById('edit-prof-schoolId').value   = data.schoolId   ?? '';
-            document.getElementById('edit-prof-email').value      = data.email      ?? '';
-        } else {
-            showToast(data.message, 'fail');
-            closeEditProfessorModal();
-        }
-    } catch { 
-        showToast('Failed to load professor.', 'fail'); 
-        closeEditProfessorModal(); 
-    }
-}
-
-function closeEditProfessorModal() {
-    document.getElementById('editProfessorModal').style.display = 'none';
-}
-
-async function saveEditedProfessor() {
-    const accountId  = parseInt(document.getElementById('edit-prof-accountId').value);
-    const firstName  = document.getElementById('edit-prof-firstName').value.trim();
-    const lastName   = document.getElementById('edit-prof-lastName').value.trim();
-    const middleName = document.getElementById('edit-prof-middleName').value.trim();
-    const schoolId   = document.getElementById('edit-prof-schoolId').value.trim();
-    const email      = document.getElementById('edit-prof-email').value.trim();
-
-    if (!firstName || !lastName) { showToast('First and last name are required.', 'fail'); return; }
-    if (!schoolId)               { showToast('School ID is required.', 'fail'); return; }
-
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-
-    try {
-        const res  = await fetch('/Home/UpdateProfessor', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
-            body:    JSON.stringify({ accountId, firstName, lastName, middleName, schoolId, email })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            closeEditProfessorModal();
-            showToast(data.message, 'ok');
-            refreshProfessors(); // refresh the table
-        } else {
-            showToast(data.message, 'fail');
-        }
-    } catch { 
-        showToast('Save failed. Please try again.', 'fail'); 
-    }
-}
-
-async function toggleActivation(accountId, el) {
-    const row = document.querySelector(`[data-account="${accountId}"]`);
-    const isActive = row.getAttribute('data-active') === 'true';
-    const action = isActive ? 'deactivate' : 'reactivate';
-
-    if (!confirm(`Are you sure you want to ${action} this account?`)) return;
-
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-
-    try {
-        const res = await fetch('/Home/ToggleAccountActivation', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': token ?? ''
-            },
-            body: JSON.stringify({ accountId: accountId })
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-            row.setAttribute('data-active', data.isActive.toString());
-
-            // update button text and color
-            const span = el.querySelector('span');
-            if (span) span.textContent = data.isActive ? 'Deactivate Account' : 'Reactivate Account';
-            el.classList.remove('danger', 'reactivate');
-            el.classList.add(data.isActive ? 'danger' : 'reactivate');
-
-            // update the name cell — add/remove red color and badge
-            const nameCell = row.querySelector('td:nth-child(2)');
-            if (nameCell) {
-                const strong = nameCell.querySelector('strong');
-                const nameText = strong ? strong.textContent : '';
-
-                if (!data.isActive) {
-                    // deactivated → red + badge
-                    nameCell.innerHTML = `
-                        <strong style="color:#f87171">${nameText}</strong>
-                        <span class="deactivated-badge" style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>
-                    `;
-                    row.style.opacity = '0.45';
+                if (data.taken) {
+                    emailIsTaken = true;
+                    feedback.textContent = 'This email is already used by ' + data.usedBy;
+                    feedback.style.color = '#f87171';
+                    input.style.borderColor = 'rgba(239,68,68,0.5)';
                 } else {
-                    // reactivated → back to normal
-                    nameCell.innerHTML = `<strong>${nameText}</strong>`;
-                    row.style.opacity = '1';
+                    emailIsTaken = false;
+                    feedback.textContent = 'Email is available';
+                    feedback.style.color = '#5fdd8e';
+                    input.style.borderColor = 'rgba(39,167,68,0.5)';
                 }
+            } catch {
+                feedback.textContent = '';
             }
-
-            showToast(data.message, 'ok');
-        } else {
-            showToast(data.message, 'fail');
-        }
-    } catch {
-        showToast('Request failed. Please try again.', 'fail');
+        }, 500); // debounce — waits 500ms after user stops typing
     }
 
-    // close the dropdown
-    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
-}
-
-function showRoleSubmenu(el, accountId) {
-    event.stopPropagation();
-    document.querySelectorAll('[id^="role-submenu-"]').forEach(function(s) {
-        if (s.id !== 'role-submenu-' + accountId) s.style.display = 'none';
-    });
-    var submenu = document.getElementById('role-submenu-' + accountId);
-    if (submenu) {
-        submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
-        submenu.classList.add('open');
-    }
-}
-
-async function changeRole(accountId, role) {
-    if (!confirm('Change this account role to ' + role + '?')) return;
-
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-
-    try {
-        const res = await fetch('/Home/ChangeRole', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': token ?? ''
-            },
-            body: JSON.stringify({ accountId: accountId, role: role })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            showToast(data.message, 'ok');
-            refreshStudents();
-        } else {
-            showToast(data.message, 'fail');
-        }
-    } catch {
-        showToast('Request failed. Please try again.', 'fail');
+    async function loadCoursesIntoSelect() {
+        if (coursesCache.length > 0) return; // already loaded
+        try {
+            const res  = await fetch('/Home/GetCourses');
+            const data = await res.json();
+            if (data.success) {
+                coursesCache = data.courses;
+                const sel = document.getElementById('edit-courseId');
+                sel.innerHTML = '<option value="">Select course</option>';
+                data.courses.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value       = c.courseId;
+                    opt.textContent = c.courseCode;
+                    sel.appendChild(opt);
+                });
+            }
+        } catch { showToast('Failed to load courses.', 'fail'); }
     }
 
-    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
-    document.querySelectorAll('[id^="role-submenu-"]').forEach(s => s.style.display = 'none');
-}
-
-function showProfRoleSubmenu(el, accountId) {
-    event.stopPropagation();
-    // close any other open submenus
-    document.querySelectorAll('[id^="prof-role-submenu-"]').forEach(function(s) {
-        if (s.id !== 'prof-role-submenu-' + accountId) s.style.display = 'none';
-    });
-    var submenu = document.getElementById('prof-role-submenu-' + accountId);
-    if (submenu) {
-        submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
-        submenu.classList.add('open');
-    }
-}
-
-async function changeProfRole(accountId, role) {
-    if (!confirm('Change this professor\'s role to ' + role + '?')) return;
-
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-
-    try {
-        const res = await fetch('/Home/ChangeRole', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': token ?? ''
-            },
-            body: JSON.stringify({ accountId: accountId, role: role })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            showToast(data.message, 'ok');
-            refreshProfessors(); // refresh table to show updated Admin badge
-        } else {
-            showToast(data.message, 'fail');
-        }
-    } catch {
-        showToast('Request failed. Please try again.', 'fail');
-    }
-
-    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
-    document.querySelectorAll('[id^="prof-role-submenu-"]').forEach(s => s.style.display = 'none');
-}
-
-async function refreshRequests() {
-    try {
-        const res  = await fetch('/Home/GetPendingRequests');
-        const data = await res.json();
-        if (!data.success) return;
-
-        const tbody = document.querySelector('#page-requests tbody');
-        if (!tbody) return;
-
-        if (data.requests.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No pending requests.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = data.requests.map(r => `
-            <tr id="req-row-${r.accountId}">
-                <td class="td-mono td-m">${r.schoolId ?? '—'}</td>
-                <td><strong>${r.fullname}</strong></td>
-                <td class="td-m">${r.courseCode ?? '—'}</td>
-                <td class="td-m">${r.yearLevel ?? '—'}-${r.section ?? '—'}</td>
-                <td class="td-mono td-m">${r.createdAt}</td>
-                <td>
-                    <div class="action-btns">
-                        <button class="btn-ap" onclick="updateStatus(${r.accountId}, 'Approved')">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            Approve
-                        </button>
-                        <button class="btn-rj" onclick="rejectAndDelete(${r.accountId})">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-                            Reject
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-    } catch {}
-}
-
-async function refreshStudents() {
-    try {
-        const res  = await fetch('/Home/GetStudentsList');
-        const data = await res.json();
-        if (!data.success) return;
-
-        const tbody = document.getElementById('students-tb');
-        if (!tbody) return;
-
-        if (data.students.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No students found.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = data.students.map((s, i) => `
-            <tr data-account="${s.accountId}" data-active="${s.isActive}">
-                <td class="td-mono td-m">${i + 1}</td>
-                <td class="td-mono td-m">${s.schoolId}</td>
-                <td style="color:${s.isActive ? 'inherit' : '#f87171'}">
-                    <strong>${s.fullName}</strong>
-                    ${s.role === 'Treasurer' ? '<span style="font-size:10px;font-weight:600;background:rgba(249,115,22,.15);color:#fdba74;border:1px solid rgba(249,115,22,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Treasurer</span>' : ''}
-                    ${!s.isActive ? '<span style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>' : ''}
-                </td>
-                <td><span class="badge bg">${s.courseCode}</span></td>
-                <td class="td-m">${s.yearSection}</td>
-                <td>
-                    <span class="badge ${
-                        s.academicStatus === 'Enrolled'    ? 'bg' :
-                        s.academicStatus === 'Dropped'     ? 'br' : 'by'
-                    }">${s.academicStatus ?? 'N/A'}</span>
-                </td>
-                <td style="width:40px;text-align:right">
-                    <div class="dropdown-wrap">
-                        <button class="dot-btn" onclick="toggleDropdown(this)">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-                        </button>
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item" onclick="editStudent(${s.accountId})">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                Edit
-                            </div>
-                            <div class="dropdown-item has-submenu" onclick="showRoleSubmenu(this, ${s.accountId})">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                Change Role
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                <div class="dropdown-menu" id="role-submenu-${s.accountId}" style="display:none;position:absolute;left:-140px;top:0;min-width:130px">
-                                    <div class="dropdown-item" onclick="changeRole(${s.accountId}, 'Student'); event.stopPropagation()">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                        Student
-                                    </div>
-                                    <div class="dropdown-item" onclick="changeRole(${s.accountId}, 'Treasurer'); event.stopPropagation()">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                                        Treasurer
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="dropdown-item ${s.isActive ? 'danger' : 'reactivate'}" onclick="toggleActivation(${s.accountId}, this)">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                <span>${s.isActive ? 'Deactivate Account' : 'Reactivate Account'}</span>
-                            </div>
-                            <div class="dropdown-item danger" onclick="deleteStudent(${s.accountId})">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                Delete Account
-                            </div>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-    } catch {}
-}
-
-
-async function refreshProfessors() {
-    try {
-        const res  = await fetch('/Home/GetProfessorsList');
-        const data = await res.json();
-        if (!data.success) return;
-
-        const tbody = document.getElementById('profs-tb');
-        if (!tbody) return;
-
-        if (data.professors.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No professors found.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = data.professors.map((p, i) => `
-            <tr>
-                <td class="td-mono td-m">${i + 1}</td>
-                <td>
-                    <strong>${p.fullName}</strong>
-                    ${p.role === 'Admin' ? '<span style="font-size:10px;font-weight:600;background:rgba(39,167,68,.15);color:#5fdd8e;border:1px solid rgba(39,167,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Admin</span>' : ''}
-                </td>
-                <td class="td-mono td-m">${p.schoolId}</td>
-                <td class="td-m">${p.email}</td>
-                <td style="width:40px;text-align:right">
-                    <div class="dropdown-wrap">
-                        <button class="dot-btn" onclick="toggleDropdown(this)">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-                        </button>
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item" onclick="editProfessor(${p.accountId})">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                Edit
-                            </div>
-                            <div class="dropdown-item has-submenu" onclick="showProfRoleSubmenu(this, ${p.accountId})">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                Change Role
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                <div class="dropdown-menu" id="prof-role-submenu-${p.accountId}" style="display:none;position:absolute;left:-140px;top:0;min-width:130px">
-                                    <div class="dropdown-item" onclick="changeProfRole(${p.accountId}, 'Professor'); event.stopPropagation()">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 14l9-5-9-5-9 5 9 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                        Professor
-                                    </div>
-                                    <div class="dropdown-item" onclick="changeProfRole(${p.accountId}, 'Admin'); event.stopPropagation()">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                        Admin
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="dropdown-item danger" onclick="deleteProfessor(${p.accountId})">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                Delete Account
-                            </div>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-    } catch {}
-}
-
-function autoMiddlePeriod(input) {
-    var val = input.value.replace(/\./g, '').toUpperCase(); // remove existing periods, uppercase
-    if (val.length > 0) {
-        input.value = val + '.';
-    } else {
-        input.value = '';
-    }
-}
-
-// Settings functionality
-async function switchSettingsTab(name, btn) {
-    document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('settings-' + name).classList.add('active');
-    btn.classList.add('active');
-
-    if (name === 'sy')       await refreshSchoolYears();
-    if (name === 'courses')  await refreshCourses();
-    if (name === 'fees')     await refreshFees();
-    if (name === 'password') { /* nothing to load */ }
-}
-
-function togglePwdVisibility(fieldId) {
-    const field = document.getElementById(fieldId);
-    if (!field) return;
-    field.type = field.type === 'password' ? 'text' : 'password';
-}
-
-function checkPasswordMatch() {
-    const newPassword = document.getElementById('pwd-new')?.value || '';
-    const confirmPassword = document.getElementById('pwd-confirm')?.value || '';
-    const message = document.getElementById('pwd-match-message');
-    if (!message) return;
-    if (!newPassword && !confirmPassword) {
-        message.textContent = '';
-        return;
-    }
-
-    if (newPassword === confirmPassword) {
-        message.textContent = 'Passwords match';
-        message.style.color = '#5fdd8e';
-    } else {
-        message.textContent = 'Passwords do not match';
-        message.style.color = '#ff6b6b';
-    }
-}
-
-async function changeAdminPassword() {
-    const currentPassword = document.getElementById('pwd-current')?.value.trim() || '';
-    const newPassword     = document.getElementById('pwd-new')?.value.trim() || '';
-    const confirmPassword = document.getElementById('pwd-confirm')?.value.trim() || '';
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-        showToast('Please fill in all password fields.', 'fail');
-        return;
-    }
-
-    if (newPassword !== confirmPassword) {
-        showToast('New password and confirmation do not match.', 'fail');
-        return;
-    }
-
-    if (newPassword.length < 8) {
-        showToast('Password must be at least 8 characters long.', 'fail');
-        return;
-    }
-
-    try {
-        const response = await fetch('/Home/ChangeAdminPassword', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
-        });
-
-        const result = await response.json();
-        if (!result.success) {
-            showToast(result.message || 'Unable to update password.', 'fail');
-            return;
-        }
-
-        document.getElementById('pwd-current').value = '';
-        document.getElementById('pwd-new').value = '';
-        document.getElementById('pwd-confirm').value = '';
-        document.getElementById('pwd-match-message').textContent = '';
-
-        showToast(result.message || 'Password updated successfully.', 'success');
-    }
-    catch (ex) {
-        showToast('An error occurred while updating the password.', 'fail');
-    }
-}
-
-async function addSchoolYear() {
-    const yearStart = parseInt(document.getElementById('sy-yearStart').value);
-    const yearEnd   = parseInt(document.getElementById('sy-yearEnd').value);
-
-    if (!yearStart || !yearEnd)          { showToast('Both year start and end are required.', 'fail'); return; }
-    if (yearEnd !== yearStart + 1)       { showToast('Year end must be exactly year start + 1.', 'fail'); return; }
-
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-    try {
-        const res  = await fetch('/Home/AddSchoolYear', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
-            body:    JSON.stringify({ yearStart, yearEnd })
-        });
-        const data = await res.json();
-        if (data.success) {
-            document.getElementById('sy-yearStart').value = '';
-            document.getElementById('sy-yearEnd').value   = '';
-            showToast(data.message, 'ok');
-            refreshSchoolYears();
-        } else {
-            showToast(data.message, 'fail');
-        }
-    } catch { showToast('Request failed.', 'fail'); }
-}
-
-async function addCourse() {
-    const courseCode = document.getElementById('course-code').value.trim().toUpperCase();
-    const courseName = document.getElementById('course-name').value.trim();
-
-    if (!courseCode) { showToast('Course code is required.', 'fail'); return; }
-
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-    try {
-        const res  = await fetch('/Home/AddCourse', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
-            body:    JSON.stringify({ courseCode, courseName })
-        });
-        const data = await res.json();
-        if (data.success) {
-            document.getElementById('course-code').value = '';
-            document.getElementById('course-name').value = '';
-            showToast(data.message, 'ok');
-            refreshCourses();
-        } else {
-            showToast(data.message, 'fail');
-        }
-    } catch { showToast('Request failed.', 'fail'); }
-}
-
-async function setFeeAmount() {
-    const schoolYearId = parseInt(document.getElementById('fee-schoolYear').value);
-    const semester     = document.getElementById('fee-semester').value;
-    const amount       = parseFloat(document.getElementById('fee-amount').value);
-
-    // Add this temporarily to verify
-    console.log('Sending:', { schoolYearId, semester, amount });
-
-    if (!schoolYearId)      { showToast('Please select a school year.', 'fail'); return; }
-    if (!semester)          { showToast('Please select a semester.', 'fail'); return; }
-    if (!amount || amount <= 0) { showToast('Please enter a valid amount.', 'fail'); return; }
-
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-    try {
-        const res  = await fetch('/Home/SetFeeAmount', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
-            body:    JSON.stringify({ schoolYearId, semester, amount })
-        });
-        const data = await res.json();
-        if (data.success) {
-            document.getElementById('fee-amount').value = '';
-            showToast(data.message, 'ok');
-            refreshFees();
-        } else {
-            showToast(data.message, 'fail');
-        }
-    } catch { showToast('Request failed.', 'fail'); }
-}
-
-async function refreshSchoolYears() {
-    try {
-        const res  = await fetch('/Home/GetSchoolYears');
-        const data = await res.json();
-        if (!data.success) return;
-
-        const tbody = document.getElementById('sy-tbody');
-        const badge = document.getElementById('sy-count-badge');
-        if (badge) badge.textContent = data.schoolYears.length + ' total';
-
-        if (data.schoolYears.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No school years found.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = data.schoolYears.map((sy, i) => `
-            <tr>
-                <td class="td-mono td-m">${i + 1}</td>
-                <td><strong>${sy.yearStart} – ${sy.yearEnd}</strong></td>
-                <td>
-                    ${sy.hasFirst  ? '<span class="badge bg" style="margin-right:4px">1st</span>' : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d);margin-right:4px">1st</span>'}
-                    ${sy.hasSecond ? '<span class="badge bg">2nd</span>'                           : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">2nd</span>'}
-                </td>
-                <td>
-                    ${sy.yearStatus === 'Current'
-                        ? '<span class="badge bg">Current</span>'
-                        : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">Ended</span>'}
-                </td>
-                <td style="text-align:right">
-                    <button class="btn-rj" onclick="deleteSchoolYear(${sy.schoolYearId})" style="font-size:11px;padding:5px 12px">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Delete
-                    </button>
-                </td>
-            </tr>
-        `).join('');
-
-        // also refresh the school year dropdown in fee section
-        const sel = document.getElementById('fee-schoolYear');
-        if (sel) {
-            sel.innerHTML = '<option value="">Select school year</option>' +
-                data.schoolYears.map(sy => `<option value="${sy.schoolYearId}">${sy.yearStart} – ${sy.yearEnd}</option>`).join('');
-        }
-    } catch {}
-}
-
-async function refreshCourses() {
-    try {
-        const res  = await fetch('/Home/GetCourses');
-        const data = await res.json();
-        if (!data.success) return;
-
-        const tbody = document.getElementById('courses-tbody');
-        const badge = document.getElementById('courses-count-badge');
-        if (badge) badge.textContent = data.courses.length + ' total';
-
-        if (data.courses.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No courses found.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = data.courses.map((c, i) => `
-            <tr>
-                <td class="td-mono td-m">${i + 1}</td>
-                <td><span class="badge bg">${c.courseCode}</span></td>
-                <td class="td-m">${c.courseName ?? '—'}</td>
-                <td style="text-align:right">
-                    <button class="btn-rj" onclick="deleteCourse(${c.courseId})" style="font-size:11px;padding:5px 12px">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Delete
-                    </button>
-                </td>
-            </tr>
-        `).join('');
-    } catch {}
-}
-
-async function refreshFees() {
-    try {
-        const res  = await fetch('/Home/GetFees');
-        const data = await res.json();
-        if (!data.success) return;
-
-        const tbody = document.getElementById('fees-tbody');
-
-        // update summary cards
-        const first  = data.fees.find(f => f.semester === 'First'  && f.isLatest);
-        const second = data.fees.find(f => f.semester === 'Second' && f.isLatest);
-
-        document.getElementById('fee-1st-val').textContent = first  ? '₱' + parseFloat(first.amount).toFixed(2)  : '₱—';
-        document.getElementById('fee-1st-sub').textContent = first  ? first.schoolYear  : 'No fee set';
-        document.getElementById('fee-2nd-val').textContent = second ? '₱' + parseFloat(second.amount).toFixed(2) : '₱—';
-        document.getElementById('fee-2nd-sub').textContent = second ? second.schoolYear : 'No fee set';
-
-        if (data.fees.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No fee records found.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = data.fees.map(f => `
-            <tr>
-                <td><strong>${f.schoolYear}</strong></td>
-                <td><span class="badge ${f.semester === 'First' ? 'bg' : 'by'}">${f.semester === 'First' ? '1st' : '2nd'}</span></td>
-                <td class="td-mono">₱${parseFloat(f.amount).toFixed(2)}</td>
-                <td>
-                    ${f.semesterStatus === 'Current'
-                        ? '<span class="badge bg">Current</span>'
-                        : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">Ended</span>'}
-                </td>
-                <td style="text-align:right">
-                    <div class="dropdown-wrap">
-                        <button class="dot-btn" onclick="toggleDropdown(this)">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-                        </button>
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item" onclick="editFee(${f.fullAmountId}, ${f.amount})">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                Edit Amount
-                            </div>
-                            <div class="dropdown-item" onclick="changeFeeStatus(${f.fullAmountId}, '${f.semesterStatus}')">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                ${f.semesterStatus === 'Current' ? 'Mark as Ended' : 'Set as Current'}
-                            </div>
-                            <div class="dropdown-item danger" onclick="deleteFee(${f.fullAmountId})">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                Delete
-                            </div>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-
-        // refresh school year dropdown
-        await refreshSchoolYears();
-    } catch {}
-}
-
-async function deleteSchoolYear(schoolYearId) {
-    if (!confirm('Delete this school year? This cannot be undone.')) return;
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-    try {
-        const res  = await fetch('/Home/DeleteSchoolYear', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
-            body:    JSON.stringify({ schoolYearId })
-        });
-        const data = await res.json();
-        if (data.success) { showToast(data.message, 'ok'); refreshSchoolYears(); }
-        else showToast(data.message, 'fail');
-    } catch { showToast('Request failed.', 'fail'); }
-}
-
-async function deleteCourse(courseId) {
-    if (!confirm('Delete this course? Students assigned to it will lose their course.')) return;
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-    try {
-        const res  = await fetch('/Home/DeleteCourse', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
-            body:    JSON.stringify({ courseId })
-        });
-        const data = await res.json();
-        if (data.success) { showToast(data.message, 'ok'); refreshCourses(); }
-        else showToast(data.message, 'fail');
-    } catch { showToast('Request failed.', 'fail'); }
-}
-
-async function deleteFee(fullAmountId) {
-    if (!confirm('Delete this fee record? This cannot be undone.')) return;
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-    try {
-        const res  = await fetch('/Home/DeleteFee', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
-            body:    JSON.stringify({ fullAmountId })
-        });
-        const data = await res.json();
-        if (data.success) { showToast(data.message, 'ok'); refreshFees(); }
-        else showToast(data.message, 'fail');
-    } catch { showToast('Request failed.', 'fail'); }
-}
-
-function editFee(fullAmountId, currentAmount) {
-    const newAmount = prompt('Enter new fee amount:', currentAmount);
-    if (newAmount === null) return; // cancelled
-    const amount = parseFloat(newAmount);
-    if (!amount || amount <= 0) { showToast('Please enter a valid amount.', 'fail'); return; }
-
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
-    fetch('/Home/EditFee', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
-        body: JSON.stringify({ fullAmountId, amount })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) { showToast(data.message, 'ok'); refreshFees(); }
-        else showToast(data.message, 'fail');
-    })
-    .catch(() => showToast('Request failed.', 'fail'));
-}
-
-async function changeFeeStatus(fullAmountId, currentStatus) {
-    const newStatus = currentStatus === 'Current' ? 'Ended' : 'Current';
-    if (!confirm(`Set this fee as ${newStatus}?`)) return;
-
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
-    try {
-        const res  = await fetch('/Home/SetFeeStatus', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
-            body:    JSON.stringify({ fullAmountId, status: newStatus })
-        });
-        const data = await res.json();
-        if (data.success) { showToast(data.message, 'ok'); refreshFees(); }
-        else showToast(data.message, 'fail');
-    } catch { showToast('Request failed.', 'fail'); }
-}
-
-// Initialize settings data when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Load initial data for settings
-    refreshSchoolYears();
-    refreshCourses();
-    refreshFees();
-});
-
-// ================================================================
-// AUTO-REFRESH SYSTEM
-// Wraps every button click to trigger a data refresh automatically
-// ================================================================
-
-// Central refresh dispatcher — refreshes whichever page is currently active
-async function refreshCurrentPage() {
-    const activePage = document.querySelector('.page.active');
-    if (!activePage) return;
-
-    const pageId = activePage.id.replace('page-', '');
-
-    switch (pageId) {
-        case 'dashboard':   await refreshDashboard();   break;
-        case 'requests':    await refreshRequests();    break;
-        case 'students':    await refreshStudents();    break;
-        case 'professors':  await refreshProfessors();  break;
-        case 'settings':
-            await refreshSchoolYears();
-            await refreshCourses();
-            await refreshFees();
-            break;
-    }
-}
-
-// Refreshes the dashboard stat cards and recent requests table
-async function refreshDashboard() {
-    try {
-        const res  = await fetch('/Home/GetDashboardStats');
-        const data = await res.json();
-        if (!data.success) return;
-
-        // Update stat cards by ID — safe regardless of card order
-        const registered = document.getElementById('dash-registered');
-        const students   = document.getElementById('dash-students');
-        const treasurers = document.getElementById('dash-treasurers');
-        const professors = document.getElementById('dash-professors');
-        const admins     = document.getElementById('dash-admins');
-
-        if (registered) registered.textContent = data.approvedCount  ?? 0;
-        if (students)   students.textContent   = data.studentCount   ?? 0;
-        if (treasurers) treasurers.textContent = data.treasurerCount ?? 0;
-        if (professors) professors.textContent = data.professorCount ?? 0;
-        if (admins)     admins.textContent     = data.adminCount     ?? 0;
-
-        // Update pending nav badge
-        const badge = document.querySelector('#nav-requests .nav-badge');
-        const pendingCount = data.pendingCount ?? 0;
-        if (pendingCount > 0) {
-            if (badge) {
-                badge.textContent = pendingCount;
+    async function editStudent(accountId) {
+        document.getElementById('editModal').style.display = 'flex';
+        document.getElementById('edit-accountId').value = accountId;
+
+        // load courses first
+        await loadCoursesIntoSelect();
+
+        // fetch current student data
+        try {
+            const res  = await fetch(`/Home/GetStudent?accountId=${accountId}`);
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('edit-firstName').value  = data.firstName  ?? '';
+                document.getElementById('edit-lastName').value   = data.lastName   ?? '';
+                document.getElementById('edit-middleName').value = data.middleName ?? '';
+                document.getElementById('edit-email').value     = data.email     ?? '';
+                document.getElementById('edit-courseId').value   = data.courseId   ?? '';
+                document.getElementById('edit-yearLevel').value  = data.yearLevel  ?? '1';
+                document.getElementById('edit-section').value    = data.section    ?? '';
+                document.getElementById('edit-academicStatus').value = data.academicStatus ?? 'Enrolled';
             } else {
-                const navReq = document.getElementById('nav-requests');
-                if (navReq) {
-                    const b = document.createElement('span');
-                    b.className   = 'nav-badge';
-                    b.textContent = pendingCount;
-                    navReq.appendChild(b);
-                }
+                showToast(data.message, 'fail');
+                closeEditModal();
             }
-        } else {
-            if (badge) badge.remove();
-        }
+        } catch { showToast('Failed to load student.', 'fail'); closeEditModal(); }
+    }
 
-        // Update the sub-header pending count
-        const pendingSub = document.querySelector('#page-requests .page-sub');
-        if (pendingSub) pendingSub.textContent = `${pendingCount} pending approval`;
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+        emailIsTaken = false;
+        document.getElementById('email-feedback').textContent = '';
+    }
 
-        // Refresh the recent requests table
-        const tbody = document.getElementById('recent-tbody');
-        if (!tbody) return;
+    async function saveStudent() {
+        const accountId  = parseInt(document.getElementById('edit-accountId').value);
+        const firstName  = document.getElementById('edit-firstName').value.trim();
+        const lastName   = document.getElementById('edit-lastName').value.trim();
+        const middleName = document.getElementById('edit-middleName').value.trim();
+        const email      = document.getElementById('edit-email').value.trim();
+        const courseId   = parseInt(document.getElementById('edit-courseId').value);
+        const yearLevel  = parseInt(document.getElementById('edit-yearLevel').value);
+        const section    = document.getElementById('edit-section').value.trim();
+        const academicStatus = document.getElementById('edit-academicStatus').value;
 
-        const allRequests = data.recentRequests ?? [];
+        if (!firstName || !lastName) { showToast('First and last name are required.', 'fail'); return; }
+        if (!courseId)                { showToast('Please select a course.', 'fail'); return; }
 
-        if (allRequests.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No account requests found.</td></tr>';
+        if (emailIsTaken) {
+            showToast('Please use a different email address.', 'fail');
             return;
         }
 
-        tbody.innerHTML = allRequests.map((r, i) => {
-            const hidden = i >= 5 ? 'display:none' : '';
-            return `
-                <tr class="recent-row" style="${hidden}">
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        try {
+            const res  = await fetch('/Home/UpdateStudent', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+                body:    JSON.stringify({ accountId, firstName, lastName, middleName, email, courseId, yearLevel, section, academicStatus })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                // update the row in the DOM without reload
+                const row       = document.querySelector(`[data-account="${accountId}"]`);
+                const nameCell  = row?.querySelector('td:nth-child(2)');
+                const courseCell = row?.querySelector('td:nth-child(3)');
+                const yearCell  = row?.querySelector('td:nth-child(4)');
+
+                if (nameCell) {
+                    const isActive = row.getAttribute('data-active') === 'true';
+                    const fullName = `${lastName.toUpperCase()}, ${firstName.toUpperCase()}`;
+                    nameCell.innerHTML = isActive
+                        ? `<strong>${fullName}</strong>` 
+                        : `<strong style="color:#f87171">${fullName}</strong>
+                        <span class="deactivated-badge" style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>`;
+                }
+                if (courseCell) {
+                    const courseName = coursesCache.find(c => c.courseId === courseId)?.courseCode ?? '';
+                    courseCell.innerHTML = `<span class="badge bg">${courseName}</span>`;
+                }
+                if (yearCell) {
+                    yearCell.textContent = fmtYearLevel(yearLevel, section);
+                }
+
+                closeEditModal();
+                showToast(data.message, 'ok');
+            } else {
+                showToast(data.message, 'fail');
+            }
+        } catch { showToast('Save failed. Please try again.', 'fail'); }
+    }
+    async function deleteStudent(accountId) {
+        if (!confirm('Are you sure you want to PERMANENTLY delete this account? This cannot be undone.')) return;
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        try {
+            const res = await fetch('/Home/DeleteAccount', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+                body: JSON.stringify({ accountId: accountId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                // remove the row from DOM instantly
+                const row = document.querySelector(`[data-account="${accountId}"]`);
+                if (row) { row.style.opacity = '0'; row.style.transition = 'opacity .3s'; setTimeout(() => row.remove(), 300); }
+                showToast(data.message, 'ok');
+                // NO redirect here
+            } else {
+                showToast(data.message, 'fail');
+            }
+        } catch {
+            showToast('Request failed. Please try again.', 'fail');
+        }
+    }
+
+    async function deleteProfessor(accountId) {
+        if (!confirm('Are you sure you want to permanently delete this professor? This cannot be undone.')) return;
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        try {
+            const res = await fetch('/Home/DeleteAccount', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+                body: JSON.stringify({ accountId: accountId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'ok');
+                refreshProfessors();
+            } else {
+                showToast(data.message, 'fail');
+            }
+        } catch {
+            showToast('Request failed. Please try again.', 'fail');
+        }
+    }
+
+    async function editProfessor(accountId) {
+        document.getElementById('editProfessorModal').style.display = 'flex';
+        document.getElementById('edit-prof-accountId').value = accountId;
+
+        try {
+            const res  = await fetch(`/Home/GetProfessor?accountId=${accountId}`);
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('edit-prof-firstName').value  = data.firstName  ?? '';
+                document.getElementById('edit-prof-lastName').value   = data.lastName   ?? '';
+                document.getElementById('edit-prof-middleName').value = data.middleName ?? '';
+                document.getElementById('edit-prof-schoolId').value   = data.schoolId   ?? '';
+                document.getElementById('edit-prof-email').value      = data.email      ?? '';
+            } else {
+                showToast(data.message, 'fail');
+                closeEditProfessorModal();
+            }
+        } catch { 
+            showToast('Failed to load professor.', 'fail'); 
+            closeEditProfessorModal(); 
+        }
+    }
+
+    function closeEditProfessorModal() {
+        document.getElementById('editProfessorModal').style.display = 'none';
+    }
+
+    async function saveEditedProfessor() {
+        const accountId  = parseInt(document.getElementById('edit-prof-accountId').value);
+        const firstName  = document.getElementById('edit-prof-firstName').value.trim();
+        const lastName   = document.getElementById('edit-prof-lastName').value.trim();
+        const middleName = document.getElementById('edit-prof-middleName').value.trim();
+        const schoolId   = document.getElementById('edit-prof-schoolId').value.trim();
+        const email      = document.getElementById('edit-prof-email').value.trim();
+
+        if (!firstName || !lastName) { showToast('First and last name are required.', 'fail'); return; }
+        if (!schoolId)               { showToast('School ID is required.', 'fail'); return; }
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        try {
+            const res  = await fetch('/Home/UpdateProfessor', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+                body:    JSON.stringify({ accountId, firstName, lastName, middleName, schoolId, email })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                closeEditProfessorModal();
+                showToast(data.message, 'ok');
+                refreshProfessors(); // refresh the table
+            } else {
+                showToast(data.message, 'fail');
+            }
+        } catch { 
+            showToast('Save failed. Please try again.', 'fail'); 
+        }
+    }
+
+    async function toggleActivation(accountId, el) {
+        const row = document.querySelector(`[data-account="${accountId}"]`);
+        const isActive = row.getAttribute('data-active') === 'true';
+        const action = isActive ? 'deactivate' : 'reactivate';
+
+        if (!confirm(`Are you sure you want to ${action} this account?`)) return;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        try {
+            const res = await fetch('/Home/ToggleAccountActivation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token ?? ''
+                },
+                body: JSON.stringify({ accountId: accountId })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                row.setAttribute('data-active', data.isActive.toString());
+
+                // update button text and color
+                const span = el.querySelector('span');
+                if (span) span.textContent = data.isActive ? 'Deactivate Account' : 'Reactivate Account';
+                el.classList.remove('danger', 'reactivate');
+                el.classList.add(data.isActive ? 'danger' : 'reactivate');
+
+                // update the name cell — add/remove red color and badge
+                const nameCell = row.querySelector('td:nth-child(2)');
+                if (nameCell) {
+                    const strong = nameCell.querySelector('strong');
+                    const nameText = strong ? strong.textContent : '';
+
+                    if (!data.isActive) {
+                        // deactivated → red + badge
+                        nameCell.innerHTML = `
+                            <strong style="color:#f87171">${nameText}</strong>
+                            <span class="deactivated-badge" style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>
+                        `;
+                        row.style.opacity = '0.45';
+                    } else {
+                        // reactivated → back to normal
+                        nameCell.innerHTML = `<strong>${nameText}</strong>`;
+                        row.style.opacity = '1';
+                    }
+                }
+
+                showToast(data.message, 'ok');
+            } else {
+                showToast(data.message, 'fail');
+            }
+        } catch {
+            showToast('Request failed. Please try again.', 'fail');
+        }
+
+        // close the dropdown
+        document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+    }
+
+    function showRoleSubmenu(el, accountId) {
+        event.stopPropagation();
+        document.querySelectorAll('[id^="role-submenu-"]').forEach(function(s) {
+            if (s.id !== 'role-submenu-' + accountId) s.style.display = 'none';
+        });
+        var submenu = document.getElementById('role-submenu-' + accountId);
+        if (submenu) {
+            submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
+            submenu.classList.add('open');
+        }
+    }
+
+    async function changeRole(accountId, role) {
+        if (!confirm('Change this account role to ' + role + '?')) return;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        try {
+            const res = await fetch('/Home/ChangeRole', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token ?? ''
+                },
+                body: JSON.stringify({ accountId: accountId, role: role })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                showToast(data.message, 'ok');
+                refreshStudents();
+            } else {
+                showToast(data.message, 'fail');
+            }
+        } catch {
+            showToast('Request failed. Please try again.', 'fail');
+        }
+
+        document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+        document.querySelectorAll('[id^="role-submenu-"]').forEach(s => s.style.display = 'none');
+    }
+
+    function showProfRoleSubmenu(el, accountId) {
+        event.stopPropagation();
+        // close any other open submenus
+        document.querySelectorAll('[id^="prof-role-submenu-"]').forEach(function(s) {
+            if (s.id !== 'prof-role-submenu-' + accountId) s.style.display = 'none';
+        });
+        var submenu = document.getElementById('prof-role-submenu-' + accountId);
+        if (submenu) {
+            submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
+            submenu.classList.add('open');
+        }
+    }
+
+    async function changeProfRole(accountId, role) {
+        if (!confirm('Change this professor\'s role to ' + role + '?')) return;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        try {
+            const res = await fetch('/Home/ChangeRole', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token ?? ''
+                },
+                body: JSON.stringify({ accountId: accountId, role: role })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                showToast(data.message, 'ok');
+                refreshProfessors(); // refresh table to show updated Admin badge
+            } else {
+                showToast(data.message, 'fail');
+            }
+        } catch {
+            showToast('Request failed. Please try again.', 'fail');
+        }
+
+        document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+        document.querySelectorAll('[id^="prof-role-submenu-"]').forEach(s => s.style.display = 'none');
+    }
+
+    async function refreshRequests() {
+        try {
+            const res  = await fetch('/Home/GetPendingRequests');
+            const data = await res.json();
+            if (!data.success) return;
+
+            const tbody = document.querySelector('#page-requests tbody');
+            if (!tbody) return;
+
+            if (data.requests.length === 0) {
+                tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No pending requests.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.requests.map(r => `
+                <tr id="req-row-${r.accountId}">
                     <td class="td-mono td-m">${r.schoolId ?? '—'}</td>
                     <td><strong>${r.fullname}</strong></td>
                     <td class="td-m">${r.courseCode ?? '—'}</td>
-                    <td class="td-m">${r.yearLevel ?? '—'}-${r.section ?? '—'}</td>
+                    <td class="td-m">${fmtYearLevel(r.yearLevel, r.section)}</td>
+                    <td class="td-m">${r.role ?? '—'}</td>
                     <td class="td-mono td-m">${r.createdAt}</td>
-                </tr>`;
-        }).join('');
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn-ap" onclick="updateStatus(${r.accountId}, 'Approved')">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                Approve
+                            </button>
+                            <button class="btn-rj" onclick="rejectAndDelete(${r.accountId})">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                                Reject
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        } catch {}
+    }
 
-        // Update "View All" button
-        const viewAllBtn = document.getElementById('view-all-btn');
-        if (viewAllBtn) {
-            const wrap = viewAllBtn.closest('.view-all-wrap');
-            if (allRequests.length > 5) {
-                if (wrap) wrap.style.display = '';
-                viewAllBtn.setAttribute('data-total', allRequests.length);
-                viewAllBtn.textContent = `View All (${allRequests.length})`;
-                viewAllBtn.setAttribute('data-expanded', 'false');
-            } else {
-                if (wrap) wrap.style.display = 'none';
+    // ── STUDENTS PAGE (treasurer-style fee view + admin management actions) ──
+    let ALL_STUDENTS_PAGE = [];
+    let studentsPageQ = '';
+    let studentsPageCourse = '';
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, ch => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[ch]));
+    }
+
+    function feeStatusBadge(status) {
+        const s = (status || 'Unpaid').toLowerCase();
+        if (s === 'paid') return '<span class="badge bg">Paid</span>';
+        if (s === 'partial') return '<span class="badge by">Partial</span>';
+        if (s === 'n/a') return '<span class="badge" style="background:rgba(255,255,255,.06);color:var(--text-d)">N/A</span>';
+        return '<span class="badge br">Unpaid</span>';
+    }
+
+    async function refreshStudents(schoolYear = null) {
+        const tbody = document.getElementById('students-tb');
+        if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Loading students…</td></tr>';
+        const sySel = document.getElementById('students-filter-sy');
+        await initStudentsPageFilters();
+        const selectedSY = schoolYear || sySel?.value || '';
+        try {
+            const url = selectedSY
+                ? `/Home/GetTreasurerStudentsWithFees?schoolYear=${encodeURIComponent(selectedSY)}`
+                : '/Home/GetTreasurerStudentsWithFees';
+            const res  = await fetch(url);
+            const data = await res.json();
+            if (!data.success) {
+                if (tbody) tbody.innerHTML = `<tr class="empty-row"><td colspan="8">${escapeHtml(data.message || 'Failed to load students.')}</td></tr>`;
+                return;
             }
+            ALL_STUDENTS_PAGE = data.students || [];
+            populateStudentsPageFilters();
+            applyStudentsPageFilters();
+        } catch {
+            if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Failed to load students.</td></tr>';
+        }
+    }
+
+    function renderStudentsPage(filtered) {
+        const data = (filtered ?? ALL_STUDENTS_PAGE).slice()
+            .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' }));
+        const tbody = document.getElementById('students-tb');
+        if (!tbody) return;
+        if (!data.length) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No students found.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.map((s, i) => {
+            const courseYr = `${escapeHtml(s.courseCode)} ${escapeHtml(fmtYearSection(s.yearSection))}`;
+            const roleTag = s.role === 'Treasurer'
+                ? ' <span style="font-size:10px;font-weight:600;background:rgba(249,115,22,.15);color:#fdba74;border:1px solid rgba(249,115,22,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Treasurer</span>'
+                : '';
+            const inactiveTag = !s.isActive
+                ? ' <span style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>'
+                : '';
+            return `
+                <tr data-account="${s.accountId}" data-active="${s.isActive}">
+                    <td class="td-mono td-m">${i + 1}</td>
+                    <td class="td-mono td-m">${escapeHtml(s.schoolId)}</td>
+                    <td style="color:${s.isActive ? 'inherit' : '#f87171'}"><strong>${escapeHtml(s.name)}</strong>${roleTag}${inactiveTag}</td>
+                    <td class="td-m">${courseYr}</td>
+                    <td>${feeStatusBadge(s.firstSemStatus)}</td>
+                    <td>${feeStatusBadge(s.secondSemStatus)}</td>
+                    <td>
+                        <button class="btn-outline" style="padding:5px 12px;font-size:11px" onclick="openStudentOrgFeeModal(${s.userId})">Org Fees</button>
+                    </td>
+                    <td style="width:40px;text-align:right">
+                        <div class="dropdown-wrap">
+                            <button class="dot-btn" onclick="toggleDropdown(this)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                            </button>
+                            <div class="dropdown-menu">
+                                <div class="dropdown-item" onclick="editStudent(${s.accountId})">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                    Edit
+                                </div>
+                                <div class="dropdown-item has-submenu" onclick="showRoleSubmenu(this, ${s.accountId})">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                    Change Role
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                    <div class="dropdown-menu" id="role-submenu-${s.accountId}" style="display:none;position:absolute;left:-140px;top:0;min-width:130px">
+                                        <div class="dropdown-item" onclick="changeRole(${s.accountId}, 'Student'); event.stopPropagation()">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            Student
+                                        </div>
+                                        <div class="dropdown-item" onclick="changeRole(${s.accountId}, 'Treasurer'); event.stopPropagation()">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                            Treasurer
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="dropdown-item ${s.isActive ? 'danger' : 'reactivate'}" onclick="toggleActivation(${s.accountId}, this)">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                    <span>${s.isActive ? 'Deactivate Account' : 'Reactivate Account'}</span>
+                                </div>
+                                <div class="dropdown-item danger" onclick="deleteStudent(${s.accountId})">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    Delete Account
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function filterStudentsPage(q) {
+        studentsPageQ = (q || '').toLowerCase().trim();
+        applyStudentsPageFilters();
+    }
+
+    async function initStudentsPageFilters() {
+        const sySel = document.getElementById('students-filter-sy');
+        if (!sySel || sySel.dataset.listenerAttached) return;
+        try {
+            const res = await fetch('/Home/GetSchoolYears');
+            const data = await res.json();
+            if (!data.success) return;
+            const currentSY = data.schoolYears.find(sy => sy.yearStatus === 'Current');
+            sySel.innerHTML = data.schoolYears.map(sy =>
+                `<option value="${sy.yearStart}–${sy.yearEnd}">${sy.yearStart}–${sy.yearEnd}</option>`
+            ).join('');
+            if (currentSY) sySel.value = `${currentSY.yearStart}–${currentSY.yearEnd}`;
+            sySel.dataset.listenerAttached = 'true';
+            sySel.addEventListener('change', () => refreshStudents(sySel.value));
+        } catch {}
+    }
+
+    function populateStudentsPageFilters() {
+        const courseSel = document.getElementById('students-filter-course');
+        if (!courseSel) return;
+        const courses = [...new Set(ALL_STUDENTS_PAGE.map(s => (s.courseCode || '').trim()).filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        const prevCourse = courseSel.value;
+        courseSel.innerHTML = '<option value="">All Courses</option>' +
+            courses.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+        if (prevCourse) courseSel.value = prevCourse;
+    }
+
+    function applyStudentsPageFilters() {
+        studentsPageCourse = document.getElementById('students-filter-course')?.value || '';
+        const filtered = ALL_STUDENTS_PAGE.filter(s => {
+            const name = (s.name || '').toLowerCase();
+            const schoolId = (s.schoolId || '').toLowerCase();
+            const course = (s.courseCode || '').toLowerCase();
+            const yearSection = (s.yearSection || '').toLowerCase();
+            const matchesQ = !studentsPageQ
+                || name.includes(studentsPageQ) || schoolId.includes(studentsPageQ)
+                || course.includes(studentsPageQ) || yearSection.includes(studentsPageQ);
+            const matchesCourse = !studentsPageCourse || (s.courseCode || '') === studentsPageCourse;
+            return matchesQ && matchesCourse;
+        });
+        renderStudentsPage(filtered);
+    }
+
+    // ── ORG FEE MODAL helpers ──
+    function p(n) { return '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2 }); }
+    function fd(d) {
+        if (!d) return '—';
+        return new Date(d.split('T')[0] + 'T00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    function renderReceiptCell(paymentId, receiptNumber, hasReceipt) {
+        if (!hasReceipt || !receiptNumber || receiptNumber === '—') return '<span style="color:var(--text-d)">—</span>';
+        return `<span style="font-family:'DM Mono',monospace;font-size:10.5px;color:var(--text-m)">${escapeHtml(receiptNumber)}</span>`;
+    }
+
+    function renderCurrentFeesTable(currentSchoolYear, fees) {
+        const list = Array.isArray(fees) ? fees : [];
+        const rowsHtml = list.length
+            ? list.map(f => {
+                const semLabel = f.semester === 'First' ? '1st Semester' : f.semester === 'Second' ? '2nd Semester' : (f.semester || '—');
+                const balColor = f.balance > 0 ? '#f87171' : '#5fdd8e';
+                return `<tr>
+                    <td style="padding:9px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${escapeHtml(f.schoolYear || 'N/A')}</td>
+                    <td style="padding:9px 12px;color:var(--text)">${semLabel}</td>
+                    <td style="padding:9px 12px;font-family:'DM Mono',monospace;color:${balColor}">${p(f.balance)}</td>
+                    <td style="padding:9px 12px;font-family:'DM Mono',monospace;color:var(--text)">${p(f.requiredAmount)}</td>
+                    <td style="padding:9px 12px">${feeStatusBadge(f.feeStatus)}</td>
+                </tr>`;
+            }).join('')
+            : `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-d)">No applicable fees found.</td></tr>`;
+        return `
+            <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Current Fees${currentSchoolYear ? ' · A.Y. ' + escapeHtml(currentSchoolYear) : ''}</div>
+            <div style="border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+              <table style="width:100%;border-collapse:collapse;font-size:12px">
+                <thead><tr style="background:rgba(255,255,255,.04)">
+                    <th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-d);font-weight:600">School Year</th>
+                    <th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-d);font-weight:600">Semester</th>
+                    <th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-d);font-weight:600">Balance</th>
+                    <th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-d);font-weight:600">Amount</th>
+                    <th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-d);font-weight:600">Status</th>
+                </tr></thead>
+                <tbody>${rowsHtml}</tbody>
+              </table>
+            </div>`;
+    }
+
+    async function openStudentOrgFeeModal(userId) {
+        const nameEl = document.getElementById('student-orgfee-name');
+        const subEl = document.getElementById('student-orgfee-sub');
+        const summaryEl = document.getElementById('student-orgfee-summary');
+        const tbody = document.getElementById('student-orgfee-tbody');
+        nameEl.textContent = 'Student Org Fees';
+        subEl.textContent = 'Loading…';
+        summaryEl.innerHTML = '';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">Loading…</td></tr>';
+        openModal('modal-student-orgfee');
+        try {
+            const res = await fetch('/Home/GetStudentOrgFeeDetails?userId=' + encodeURIComponent(userId));
+            const data = await res.json();
+            if (!data.success) {
+                subEl.textContent = data.message || 'Unable to load org fee details.';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">No data available.</td></tr>';
+                return;
+            }
+            const s = data.student;
+            nameEl.textContent = s.name;
+            subEl.textContent = `${s.schoolId} · ${s.courseCode} ${fmtYearSection(s.yearSection)}${s.role === 'Treasurer' ? ' · Treasurer' : ''}${data.schoolYear ? ' · A.Y. ' + data.schoolYear : ''}`;
+            summaryEl.innerHTML = renderCurrentFeesTable(data.schoolYear, data.fees);
+            const txs = data.transactions || [];
+            if (!txs.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">No org fee transactions recorded.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = txs.map(t => {
+                const semLabel = t.semester === 'First' ? '1st' : '2nd';
+                return `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+                    <td style="padding:9px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${fd(t.date)}</td>
+                    <td style="padding:9px 12px;color:var(--text)">${escapeHtml(t.schoolYear)} · ${semLabel}</td>
+                    <td style="padding:9px 12px">${renderReceiptCell(t.paymentId, t.receiptNumber, t.hasReceipt)}</td>
+                    <td style="padding:9px 12px;text-align:right;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:#5fdd8e">${p(t.amount)}</td>
+                    <td style="padding:9px 12px">${feeStatusBadge(t.paymentStatus)}</td>
+                </tr>`;
+            }).join('');
+        } catch (err) {
+            console.error('Failed to load student org fee details:', err);
+            subEl.textContent = 'Failed to load org fee details.';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">Request failed.</td></tr>';
+        }
+    }
+
+
+    async function refreshProfessors() {
+        try {
+            const res  = await fetch('/Home/GetProfessorsList');
+            const data = await res.json();
+            if (!data.success) return;
+
+            const tbody = document.getElementById('profs-tb');
+            if (!tbody) return;
+
+            if (data.professors.length === 0) {
+                tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No professors found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.professors.map((p, i) => `
+                <tr>
+                    <td class="td-mono td-m">${i + 1}</td>
+                    <td>
+                        <strong>${p.fullName}</strong>
+                        ${p.role === 'Admin' ? '<span style="font-size:10px;font-weight:600;background:rgba(39,167,68,.15);color:#5fdd8e;border:1px solid rgba(39,167,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Admin</span>' : ''}
+                    </td>
+                    <td class="td-mono td-m">${p.schoolId}</td>
+                    <td class="td-m">${p.email}</td>
+                    <td style="width:40px;text-align:right">
+                        <div class="dropdown-wrap">
+                            <button class="dot-btn" onclick="toggleDropdown(this)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                            </button>
+                            <div class="dropdown-menu">
+                                <div class="dropdown-item" onclick="editProfessor(${p.accountId})">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                    Edit
+                                </div>
+                                <div class="dropdown-item has-submenu" onclick="showProfRoleSubmenu(this, ${p.accountId})">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                    Change Role
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                    <div class="dropdown-menu" id="prof-role-submenu-${p.accountId}" style="display:none;position:absolute;left:-140px;top:0;min-width:130px">
+                                        <div class="dropdown-item" onclick="changeProfRole(${p.accountId}, 'Professor'); event.stopPropagation()">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 14l9-5-9-5-9 5 9 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            Professor
+                                        </div>
+                                        <div class="dropdown-item" onclick="changeProfRole(${p.accountId}, 'Admin'); event.stopPropagation()">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            Admin
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="dropdown-item danger" onclick="deleteProfessor(${p.accountId})">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    Delete Account
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        } catch {}
+    }
+
+    function autoMiddlePeriod(input) {
+        var val = input.value.replace(/\./g, '').toUpperCase(); // remove existing periods, uppercase
+        if (val.length > 0) {
+            input.value = val + '.';
+        } else {
+            input.value = '';
+        }
+    }
+
+    // Settings functionality
+    async function switchSettingsTab(name, btn) {
+        document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('settings-' + name).classList.add('active');
+        btn.classList.add('active');
+
+        if (name === 'sy')       await refreshSchoolYears();
+        if (name === 'courses')  await refreshCourses();
+        if (name === 'fees')     await refreshFees();
+        if (name === 'password') { /* nothing to load */ }
+    }
+
+    function togglePwdVisibility(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+        field.type = field.type === 'password' ? 'text' : 'password';
+    }
+
+    function checkPasswordMatch() {
+        const newPassword = document.getElementById('pwd-new')?.value || '';
+        const confirmPassword = document.getElementById('pwd-confirm')?.value || '';
+        const message = document.getElementById('pwd-match-message');
+        if (!message) return;
+        if (!newPassword && !confirmPassword) {
+            message.textContent = '';
+            return;
         }
 
-        // Update total badge on recent requests card
-        const totalBadge = document.querySelector('#page-dashboard .badge.by');
-        if (totalBadge) totalBadge.textContent = `${allRequests.length} total`;
+        if (newPassword === confirmPassword) {
+            message.textContent = 'Passwords match';
+            message.style.color = '#5fdd8e';
+        } else {
+            message.textContent = 'Passwords do not match';
+            message.style.color = '#ff6b6b';
+        }
+    }
 
-    } catch(e) { console.error('refreshDashboard failed:', e); }
-}
+    async function changeAdminPassword() {
+        const currentPassword = document.getElementById('pwd-current')?.value.trim() || '';
+        const newPassword     = document.getElementById('pwd-new')?.value.trim() || '';
+        const confirmPassword = document.getElementById('pwd-confirm')?.value.trim() || '';
 
-// ── Global click interceptor ──────────────────────────────────────
-// Attaches to the document so it catches ALL button/action clicks,
-// including dynamically rendered ones (dropdowns, modals, etc.)
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            showToast('Please fill in all password fields.', 'fail');
+            return;
+        }
 
-document.addEventListener('click', async function(e) {
-    const target = e.target.closest(
-        'button, .btn-ap, .btn-rj, .btn-outline, .dropdown-item, .nav-item, .stat-icon[onclick]'
-    );
+        if (newPassword !== confirmPassword) {
+            showToast('New password and confirmation do not match.', 'fail');
+            return;
+        }
 
-    if (!target) return;
-    if (target.id === 'view-all-btn') return;
-    if (target.classList.contains('nav-item')) return;
-    if (target.classList.contains('dot-btn')) return;
-    if (target.textContent.trim() === 'Cancel') return;
-    if (target.onclick && target.getAttribute('onclick')?.includes('close')) return;
-    if (target.classList.contains('has-submenu')) return;
+        if (newPassword.length < 8) {
+            showToast('Password must be at least 8 characters long.', 'fail');
+            return;
+        }
 
-    setTimeout(async () => {
+        try {
+            const response = await fetch('/Home/ChangeAdminPassword', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                showToast(result.message || 'Unable to update password.', 'fail');
+                return;
+            }
+
+            document.getElementById('pwd-current').value = '';
+            document.getElementById('pwd-new').value = '';
+            document.getElementById('pwd-confirm').value = '';
+            document.getElementById('pwd-match-message').textContent = '';
+
+            showToast(result.message || 'Password updated successfully.', 'success');
+        }
+        catch (ex) {
+            showToast('An error occurred while updating the password.', 'fail');
+        }
+    }
+
+    async function addSchoolYear() {
+        const yearStart = parseInt(document.getElementById('sy-yearStart').value);
+        const yearEnd   = parseInt(document.getElementById('sy-yearEnd').value);
+        const firstStart  = document.getElementById('sy-first-start').value  || null;
+        const firstEnd    = document.getElementById('sy-first-end').value    || null;
+        const secondStart = document.getElementById('sy-second-start').value || null;
+        const secondEnd   = document.getElementById('sy-second-end').value   || null;
+
+        if (!yearStart || !yearEnd)          { showToast('Both year start and end are required.', 'fail'); return; }
+        if (yearEnd !== yearStart + 1)       { showToast('Year end must be exactly year start + 1.', 'fail'); return; }
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        try {
+            const res  = await fetch('/Home/AddSchoolYear', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+                body:    JSON.stringify({
+                    yearStart, yearEnd,
+                    firstSemStart:  firstStart  ? new Date(firstStart).toISOString()  : null,
+                    firstSemEnd:    firstEnd    ? new Date(firstEnd).toISOString()    : null,
+                    secondSemStart: secondStart ? new Date(secondStart).toISOString() : null,
+                    secondSemEnd:   secondEnd   ? new Date(secondEnd).toISOString()   : null
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                ['sy-yearStart','sy-yearEnd','sy-first-start','sy-first-end','sy-second-start','sy-second-end']
+                    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+                showToast(data.message, 'ok');
+                refreshSchoolYears();
+            } else {
+                showToast(data.message, 'fail');
+            }
+        } catch { showToast('Request failed.', 'fail'); }
+    }
+
+    async function addCourse() {
+        const courseCode = document.getElementById('course-code').value.trim().toUpperCase();
+        const courseName = document.getElementById('course-name').value.trim();
+
+        if (!courseCode) { showToast('Course code is required.', 'fail'); return; }
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        try {
+            const res  = await fetch('/Home/AddCourse', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+                body:    JSON.stringify({ courseCode, courseName })
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('course-code').value = '';
+                document.getElementById('course-name').value = '';
+                showToast(data.message, 'ok');
+                refreshCourses();
+            } else {
+                showToast(data.message, 'fail');
+            }
+        } catch { showToast('Request failed.', 'fail'); }
+    }
+
+    async function setFeeAmount() {
+        const sel = document.getElementById('fee-sy-sem');
+        const opt = sel.options[sel.selectedIndex];
+        const schoolYearId = parseInt(opt?.dataset?.schoolYearId);
+        const semester     = opt?.dataset?.semester;
+        const amount       = parseFloat(document.getElementById('fee-amount').value);
+
+        if (!schoolYearId)      { showToast('Please select a school year & semester.', 'fail'); return; }
+        if (!semester)          { showToast('Please select a semester.', 'fail'); return; }
+        if (!amount || amount <= 0) { showToast('Please enter a valid amount.', 'fail'); return; }
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        try {
+            const res  = await fetch('/Home/SetFeeAmount', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+                body:    JSON.stringify({ schoolYearId, semester, amount })
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('fee-amount').value = '';
+                showToast(data.message, 'ok');
+                refreshFees();
+            } else {
+                showToast(data.message, 'fail');
+            }
+        } catch { showToast('Request failed.', 'fail'); }
+    }
+
+    async function refreshSchoolYears() {
+        try {
+            const res  = await fetch('/Home/GetSchoolYears');
+            const data = await res.json();
+            if (!data.success) return;
+
+            const tbody = document.getElementById('sy-tbody');
+            const badge = document.getElementById('sy-count-badge');
+            if (badge) badge.textContent = data.schoolYears.length + ' total';
+
+            if (data.schoolYears.length === 0) {
+                tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No school years found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.schoolYears.map((sy, i) => {
+                const fmt = d => d ? new Date(d).toLocaleDateString('en-PH', { month:'short', day:'numeric', year:'numeric' }) : '—';
+                return `
+                <tr>
+                    <td class="td-mono td-m">${i + 1}</td>
+                    <td><strong>${sy.yearStart} – ${sy.yearEnd}</strong></td>
+                    <td>
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                            <div style="display:flex;align-items:center;gap:6px">
+                                ${sy.hasFirst
+                                    ? `<span class="badge bg">1st</span><span style="font-size:10.5px;color:var(--text-m)">${fmt(sy.firstSemStart)} → ${fmt(sy.firstSemEnd)}</span>`
+                                    : `<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">1st</span>`}
+                            </div>
+                            <div style="display:flex;align-items:center;gap:6px">
+                                ${sy.hasSecond
+                                    ? `<span class="badge bg">2nd</span><span style="font-size:10.5px;color:var(--text-m)">${fmt(sy.secondSemStart)} → ${fmt(sy.secondSemEnd)}</span>`
+                                    : `<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">2nd</span>`}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        ${sy.yearStatus === 'Current'
+                            ? '<span class="badge bg">Current</span>'
+                            : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">Ended</span>'}
+                    </td>
+                    <td style="text-align:right">
+                        <button class="btn-rj" onclick="deleteSchoolYear(${sy.schoolYearId})" style="font-size:11px;padding:5px 12px">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            `}).join('');
+
+            // also refresh the combined school year & semester dropdown in fee section
+            await populateFeeSySemDropdown();
+        } catch {}
+    }
+
+    async function populateFeeSySemDropdown() {
+        try {
+            const res  = await fetch('/Home/GetSchoolYears');
+            const data = await res.json();
+            const sel  = document.getElementById('fee-sy-sem');
+            if (!sel || !data.success) return;
+
+            const sorted = [...data.schoolYears].sort((a, b) => b.yearStart - a.yearStart);
+            const options = [];
+            sorted.forEach(sy => {
+                options.push({ schoolYearId: sy.schoolYearId, semester: 'First',  label: `${sy.yearStart}–${sy.yearEnd} · 1st Semester` });
+                options.push({ schoolYearId: sy.schoolYearId, semester: 'Second', label: `${sy.yearStart}–${sy.yearEnd} · 2nd Semester` });
+            });
+
+            sel.innerHTML = '<option value="">Select school year &amp; semester</option>' +
+                options.map(s =>
+                    `<option value="${s.schoolYearId}|${s.semester}" data-school-year-id="${s.schoolYearId}" data-semester="${s.semester}">${s.label}</option>`
+                ).join('');
+        } catch {}
+    }
+
+    function onFeeDropdownChange() {
+        // Placeholder for future fee dropdown behavior.
+    }
+
+    async function refreshCourses() {
+        try {
+            const res  = await fetch('/Home/GetCourses');
+            const data = await res.json();
+            if (!data.success) return;
+
+            const tbody = document.getElementById('courses-tbody');
+            const badge = document.getElementById('courses-count-badge');
+            if (badge) badge.textContent = data.courses.length + ' total';
+
+            if (data.courses.length === 0) {
+                tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No courses found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.courses.map((c, i) => `
+                <tr>
+                    <td class="td-mono td-m">${i + 1}</td>
+                    <td><span class="badge bg">${c.courseCode}</span></td>
+                    <td class="td-m">${c.courseName ?? '—'}</td>
+                    <td style="text-align:right">
+                        <button class="btn-rj" onclick="deleteCourse(${c.courseId})" style="font-size:11px;padding:5px 12px">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        } catch {}
+    }
+
+    async function refreshFees() {
+        try {
+            const res  = await fetch('/Home/GetFees');
+            const data = await res.json();
+            if (!data.success) return;
+
+            const tbody = document.getElementById('fees-tbody');
+
+            // update summary cards
+            const first  = data.fees.find(f => f.semester === 'First'  && f.isLatest);
+            const second = data.fees.find(f => f.semester === 'Second' && f.isLatest);
+
+            document.getElementById('fee-1st-val').textContent = first  ? '₱' + parseFloat(first.amount).toFixed(2)  : '₱—';
+            document.getElementById('fee-1st-sub').textContent = first  ? first.schoolYear  : 'No fee set';
+            document.getElementById('fee-2nd-val').textContent = second ? '₱' + parseFloat(second.amount).toFixed(2) : '₱—';
+            document.getElementById('fee-2nd-sub').textContent = second ? second.schoolYear : 'No fee set';
+
+            if (data.fees.length === 0) {
+                tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No fee records found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.fees.map(f => `
+                <tr>
+                    <td><strong>${f.schoolYear}</strong></td>
+                    <td><span class="badge ${f.semester === 'First' ? 'bg' : 'by'}">${f.semester === 'First' ? '1st' : '2nd'}</span></td>
+                    <td class="td-mono">₱${parseFloat(f.amount).toFixed(2)}</td>
+                    <td>
+                        ${f.semesterStatus === 'Current'
+                            ? '<span class="badge bg">Current</span>'
+                            : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">Ended</span>'}
+                    </td>
+                    <td style="text-align:right">
+                        <div class="dropdown-wrap">
+                            <button class="dot-btn" onclick="toggleDropdown(this)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                            </button>
+                            <div class="dropdown-menu">
+                                <div class="dropdown-item" onclick="editFee(${f.fullAmountId}, ${f.amount})">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                    Edit Amount
+                                </div>
+                                <div class="dropdown-item" onclick="changeFeeStatus(${f.fullAmountId}, '${f.semesterStatus}')">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                    ${f.semesterStatus === 'Current' ? 'Mark as Ended' : 'Set as Current'}
+                                </div>
+                                <div class="dropdown-item danger" onclick="deleteFee(${f.fullAmountId})">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    Delete
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            // refresh school year dropdown
+            await refreshSchoolYears();
+        } catch {}
+    }
+
+    async function deleteSchoolYear(schoolYearId) {
+        if (!confirm('Delete this school year? This cannot be undone.')) return;
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        try {
+            const res  = await fetch('/Home/DeleteSchoolYear', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+                body:    JSON.stringify({ schoolYearId })
+            });
+            const data = await res.json();
+            if (data.success) { showToast(data.message, 'ok'); refreshSchoolYears(); }
+            else showToast(data.message, 'fail');
+        } catch { showToast('Request failed.', 'fail'); }
+    }
+
+    async function deleteCourse(courseId) {
+        if (!confirm('Delete this course? Students assigned to it will lose their course.')) return;
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        try {
+            const res  = await fetch('/Home/DeleteCourse', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+                body:    JSON.stringify({ courseId })
+            });
+            const data = await res.json();
+            if (data.success) { showToast(data.message, 'ok'); refreshCourses(); }
+            else showToast(data.message, 'fail');
+        } catch { showToast('Request failed.', 'fail'); }
+    }
+
+    async function deleteFee(fullAmountId) {
+        if (!confirm('Delete this fee record? This cannot be undone.')) return;
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        try {
+            const res  = await fetch('/Home/DeleteFee', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+                body:    JSON.stringify({ fullAmountId })
+            });
+            const data = await res.json();
+            if (data.success) { showToast(data.message, 'ok'); refreshFees(); }
+            else showToast(data.message, 'fail');
+        } catch { showToast('Request failed.', 'fail'); }
+    }
+
+    function editFee(fullAmountId, currentAmount) {
+        const newAmount = prompt('Enter new fee amount:', currentAmount);
+        if (newAmount === null) return; // cancelled
+        const amount = parseFloat(newAmount);
+        if (!amount || amount <= 0) { showToast('Please enter a valid amount.', 'fail'); return; }
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+        fetch('/Home/EditFee', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+            body: JSON.stringify({ fullAmountId, amount })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) { showToast(data.message, 'ok'); refreshFees(); }
+            else showToast(data.message, 'fail');
+        })
+        .catch(() => showToast('Request failed.', 'fail'));
+    }
+
+    async function changeFeeStatus(fullAmountId, currentStatus) {
+        const newStatus = currentStatus === 'Current' ? 'Ended' : 'Current';
+        if (!confirm(`Set this fee as ${newStatus}?`)) return;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+        try {
+            const res  = await fetch('/Home/SetFeeStatus', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                body:    JSON.stringify({ fullAmountId, status: newStatus })
+            });
+            const data = await res.json();
+            if (data.success) { showToast(data.message, 'ok'); refreshFees(); }
+            else showToast(data.message, 'fail');
+        } catch { showToast('Request failed.', 'fail'); }
+    }
+
+    // Initialize settings data when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load initial data for settings
+        refreshSchoolYears();
+        refreshCourses();
+        refreshFees();
+    });
+
+    // ================================================================
+    // AUTO-REFRESH POLLING
+    // Automatically refreshes the active page every 15 seconds
+    // so the admin sees new signups, requests, and changes in real-time
+    // Also refreshes dashboard stats in the background so the nav badge stays current
+    // ================================================================
+
+    const AUTO_REFRESH_INTERVAL = 10000; // 10 seconds
+
+    // Refresh active tab
+    setInterval(async () => {
         await refreshCurrentPage();
-    }, 600);
-}, true); // useCapture = true so we run after the element's own onclick
+    }, AUTO_REFRESH_INTERVAL);
+
+    // Refresh dashboard nav badge even when not on dashboard
+    setInterval(async () => {
+        const activePage = document.querySelector('.page.active');
+        const pageId = activePage?.id?.replace('page-', '');
+        if (pageId !== 'dashboard') {
+            try {
+                const res = await fetch('/Home/GetDashboardStats');
+                const data = await res.json();
+                if (!data?.success) return;
+
+                const pendingCount = data.pendingCount ?? 0;
+                const badge = document.querySelector('#nav-requests .nav-badge');
+
+                if (pendingCount > 0) {
+                    if (badge) {
+                        badge.textContent = pendingCount;
+                    } else {
+                        const navReq = document.getElementById('nav-requests');
+                        if (navReq) {
+                            const b = document.createElement('span');
+                            b.className = 'nav-badge';
+                            b.textContent = pendingCount;
+                            navReq.appendChild(b);
+                        }
+                    }
+                } else {
+                    if (badge) badge.remove();
+                }
+            } catch {
+                // ignore polling errors
+            }
+        }
+    }, AUTO_REFRESH_INTERVAL);
+
+    // ================================================================
+    // AUTO-REFRESH SYSTEM
+    // Wraps every button click to trigger a data refresh automatically
+    // ================================================================
+
+
+    // Central refresh dispatcher — refreshes whichever page is currently active
+    async function refreshCurrentPage() {
+        const activePage = document.querySelector('.page.active');
+        if (!activePage) return;
+
+        const pageId = activePage.id.replace('page-', '');
+
+        switch (pageId) {
+            case 'dashboard':   await refreshDashboard();   break;
+            case 'requests':    await refreshRequests();    break;
+            case 'students':    await refreshStudents();    break;
+            case 'professors':  await refreshProfessors();  break;
+            case 'settings':
+                await refreshSchoolYears();
+                await refreshCourses();
+                await refreshFees();
+                break;
+        }
+    }
+
+    // Refreshes the dashboard stat cards and recent requests table
+    async function refreshDashboard() {
+        try {
+            const res  = await fetch('/Home/GetDashboardStats');
+            const data = await res.json();
+            if (!data.success) return;
+
+            // Update stat cards by ID — safe regardless of card order
+            const registered = document.getElementById('dash-registered');
+            const students   = document.getElementById('dash-students');
+            const treasurers = document.getElementById('dash-treasurers');
+            const professors = document.getElementById('dash-professors');
+            const admins     = document.getElementById('dash-admins');
+
+            if (registered) registered.textContent = data.approvedCount  ?? 0;
+            if (students)   students.textContent   = data.studentCount   ?? 0;
+            if (treasurers) treasurers.textContent = data.treasurerCount ?? 0;
+            if (professors) professors.textContent = data.professorCount ?? 0;
+            if (admins)     admins.textContent     = data.adminCount     ?? 0;
+
+            // Update pending nav badge
+            const badge = document.querySelector('#nav-requests .nav-badge');
+            const pendingCount = data.pendingCount ?? 0;
+            if (pendingCount > 0) {
+                if (badge) {
+                    badge.textContent = pendingCount;
+                } else {
+                    const navReq = document.getElementById('nav-requests');
+                    if (navReq) {
+                        const b = document.createElement('span');
+                        b.className   = 'nav-badge';
+                        b.textContent = pendingCount;
+                        navReq.appendChild(b);
+                    }
+                }
+            } else {
+                if (badge) badge.remove();
+            }
+
+            // Update the sub-header pending count
+            const pendingSub = document.querySelector('#page-requests .page-sub');
+            if (pendingSub) pendingSub.textContent = `${pendingCount} pending approval`;
+
+            // Refresh the recent requests table
+            const tbody = document.getElementById('recent-tbody');
+            if (!tbody) return;
+
+            const allRequests = data.recentRequests ?? [];
+
+            if (allRequests.length === 0) {
+                tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No account requests found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = allRequests.map((r, i) => {
+                const hidden = i >= 5 ? 'display:none' : '';
+                return `
+                    <tr class="recent-row" style="${hidden}">
+                        <td class="td-mono td-m">${r.schoolId ?? '—'}</td>
+                        <td><strong>${r.fullname}</strong></td>
+                        <td class="td-m">${r.courseCode ?? '—'}</td>
+                        <td class="td-m">${fmtYearLevel(r.yearLevel, r.section)}</td>
+                        <td class="td-m">${r.role ?? '—'}</td>
+                        <td class="td-mono td-m">${r.createdAt}</td>
+                    </tr>`;
+            }).join('');
+
+
+            // Update "View All" button
+            const viewAllBtn = document.getElementById('view-all-btn');
+            if (viewAllBtn) {
+                const wrap = viewAllBtn.closest('.view-all-wrap');
+                if (allRequests.length > 5) {
+                    if (wrap) wrap.style.display = '';
+                    viewAllBtn.setAttribute('data-total', allRequests.length);
+                    viewAllBtn.textContent = `View All (${allRequests.length})`;
+                    viewAllBtn.setAttribute('data-expanded', 'false');
+                } else {
+                    if (wrap) wrap.style.display = 'none';
+                }
+            }
+
+            // Update total badge on recent requests card
+            const totalBadge = document.querySelector('#page-dashboard .badge.by');
+            if (totalBadge) totalBadge.textContent = `${allRequests.length} total`;
+
+        } catch(e) { console.error('refreshDashboard failed:', e); }
+    }
+
+    // ── Global click interceptor ──────────────────────────────────────
+    // Attaches to the document so it catches ALL button/action clicks,
+    // including dynamically rendered ones (dropdowns, modals, etc.)
+
+    document.addEventListener('click', async function(e) {
+        const target = e.target.closest(
+            'button, .btn-ap, .btn-rj, .btn-outline, .dropdown-item, .nav-item, .stat-icon[onclick]'
+        );
+
+        if (!target) return;
+        if (target.id === 'view-all-btn') return;
+        if (target.classList.contains('nav-item')) return;
+        if (target.classList.contains('dot-btn')) return;
+        if (target.textContent.trim() === 'Cancel') return;
+        if (target.onclick && target.getAttribute('onclick')?.includes('close')) return;
+        if (target.classList.contains('has-submenu')) return;
+
+        setTimeout(async () => {
+            await refreshCurrentPage();
+        }, 600);
+    }, true); // useCapture = true so we run after the element's own onclick
 
 </script>
+
+<!-- Student Org Fee Details Modal -->
+<div class="modal-overlay" id="modal-student-orgfee">
+  <div class="modal-backdrop" onclick="closeModal('modal-student-orgfee')"></div>
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title" id="student-orgfee-name">Student Org Fees</div>
+        <div class="modal-sub" id="student-orgfee-sub">Loading…</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-student-orgfee')">✕</button>
+    </div>
+    <div id="student-orgfee-summary" style="margin-bottom:18px"></div>
+    <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:8px">Transaction History</div>
+    <div style="max-height:280px;overflow-y:auto;border:1px solid rgba(255,255,255,.06);border-radius:10px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Date</th>
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">School Year / Sem</th>
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Receipt</th>
+            <th style="padding:8px 12px;text-align:right;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Amount</th>
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Status</th>
+          </tr>
+        </thead>
+        <tbody id="student-orgfee-tbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('modal-student-orgfee')">Close</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

@@ -21,6 +21,11 @@ namespace MyMvcApp.Models
         public string Semester { get; set; } = string.Empty;
         public string Course { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
+
+        // The student's year level and section at the time this payment was made,
+        // so the receipt reflects their standing then, not their current standing.
+        public int? YearLevelAtPayment { get; set; }
+        public string? SectionAtPayment { get; set; }
     }
 
     public class StudentPaymentHistoryViewModel

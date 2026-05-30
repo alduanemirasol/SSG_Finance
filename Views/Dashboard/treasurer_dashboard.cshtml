@@ -12,7 +12,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SSG Finance — Treasurer</title>
+<title>SSG Finance - Treasurer</title>
+<link rel="icon" type="image/png" href="~/favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -27,9 +28,9 @@
   --glass:rgba(255,255,255,.045);
   --text:#e8f5ec;--text-m:rgba(232,245,236,.6);--text-d:rgba(232,245,236,.35);
   --card:#0f2918;--card-b:rgba(255,255,255,.07);
-  --green-badge:rgba(39,167,68,.18);--green-badge-t:#5fdd8e;
-  --yellow-badge:rgba(251,191,36,.14);--yellow-badge-t:#fbbf24;
-  --red-badge:rgba(239,68,68,.14);--red-badge-t:#f87171;
+  --green-badge:rgba(39,167,68,.28);--green-badge-t:#7eeaa3;--green-badge-bd:rgba(39,167,68,.55);
+  --yellow-badge:rgba(251,191,36,.24);--yellow-badge-t:#fcd34d;--yellow-badge-bd:rgba(251,191,36,.55);
+  --red-badge:rgba(239,68,68,.24);--red-badge-t:#fca5a5;--red-badge-bd:rgba(239,68,68,.55);
   --blue-badge:rgba(59,130,246,.14);--blue-badge-t:#93c5fd;
 }
 body{font-family:'DM Sans',sans-serif;background:var(--bg);display:flex;min-height:100vh;color:var(--text);font-size:14px;overflow:hidden}
@@ -63,7 +64,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);display:flex;min-heig
 .top-accent{height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);position:fixed;top:0;left:0;right:0;z-index:10}
 
 /* ── PAGES ── */
-.page{display:none}.page.active{display:block}
+.page{display:none;max-width:1200px;margin-left:auto;margin-right:auto}.page.active{display:block}
 .page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
 .page-title{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.03em}
 .page-sub{font-size:12px;color:var(--text-m);margin-top:2px}
@@ -117,16 +118,17 @@ table{width:100%;border-collapse:collapse;font-size:12.5px}
 thead th{padding:10px 16px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);border-bottom:1px solid rgba(255,255,255,.05);text-align:left;white-space:nowrap;background:rgba(255,255,255,.02)}
 tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
 tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:rgba(39,167,68,.04)}
+tbody tr:nth-child(even){background:rgba(255,255,255,.015)}
+tbody tr:hover{background:rgba(39,167,68,.07)}
 td{padding:11px 16px;color:var(--text);vertical-align:middle}
 .td-m{color:var(--text-m)}.td-mono{font-family:'DM Mono',monospace;font-size:11.5px}
 .empty-row td{text-align:center;padding:40px;color:var(--text-d);font-size:12.5px}
 
 /* ── BADGES ── */
-.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600}
-.bg{background:var(--green-badge);color:var(--green-badge-t)}
-.by{background:var(--yellow-badge);color:var(--yellow-badge-t)}
-.br{background:var(--red-badge);color:var(--red-badge-t)}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;letter-spacing:.02em;border:1px solid transparent}
+.bg{background:var(--green-badge);color:var(--green-badge-t);border-color:var(--green-badge-bd)}
+.by{background:var(--yellow-badge);color:var(--yellow-badge-t);border-color:var(--yellow-badge-bd)}
+.br{background:var(--red-badge);color:var(--red-badge-t);border-color:var(--red-badge-bd)}
 .bb{background:var(--blue-badge);color:var(--blue-badge-t)}
 
 /* ── BUTTONS ── */
@@ -243,49 +245,159 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 .receipt-modal.open{display:flex}
 .receipt-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px)}
 .receipt-modal-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:12px;max-height:95vh;overflow-y:auto;padding:16px}
-.receipt-controls{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 14px;width:100%;max-width:360px}
+.receipt-controls{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 14px;width:100%;max-width:620px}
 .receipt-ctrl-title{flex:1;font-size:12.5px;font-weight:600;color:var(--text-m)}
 .btn-pdf{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(39,167,68,.3);background:rgba(39,167,68,.15);color:#5fdd8e;transition:all .15s;font-family:inherit;flex-shrink:0}
 .btn-pdf:hover{background:rgba(39,167,68,.25);transform:translateY(-1px)}
 .btn-receipt-close{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;font-family:inherit;flex-shrink:0}
 .btn-receipt-close:hover{background:rgba(239,68,68,.12);color:#f87171}
-.receipt-paper{width:360px;min-height:560px;background:#ffffff;border:1px solid #ccc;box-shadow:0 8px 40px rgba(0,0,0,.45);padding:30px 28px 34px;font-family:'Libre Baskerville',Georgia,serif;color:#111;position:relative;flex-shrink:0}
-.receipt-paper::before{display:none}
-.rp-header{text-align:center;margin-bottom:18px;position:relative;z-index:1}
-.rp-org{font-size:13px;font-weight:700;letter-spacing:.01em;margin-bottom:2px}
-.rp-campus{font-size:10.5px;font-weight:400}
-.rp-divider{border:none;border-top:1px solid #555;margin:10px 0 8px}
-.rp-type{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-top:8px}
-.rp-copy{font-size:9.5px;font-style:italic;color:#444;margin-top:2px}
-.rp-meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;position:relative;z-index:1;gap:8px}
-.rp-meta-label{font-size:10px;font-weight:400}
-.rp-meta-value{font-size:10.5px;font-weight:700;color:#111;border-bottom:1px solid #888;min-width:88px;display:inline-block;padding-bottom:2px;text-align:center}
+
+/* ── THE ACTUAL RECEIPT (white paper) — matches student design ── */
+.receipt-paper{
+  width:620px;
+  min-height:auto;
+  background:#f9f8f5;
+  border:1px solid #ccc;
+  box-shadow:0 8px 40px rgba(0,0,0,.45);
+  padding:24px 56px 28px;
+  font-family:Arial, Helvetica, sans-serif;
+  color:#111;
+  position:relative;
+  flex-shrink:0;
+}
+.receipt-paper::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 31px,rgba(180,180,200,.18) 31px,rgba(180,180,200,.18) 32px);
+  pointer-events:none;
+}
+
+.rp-header{text-align:center;margin-bottom:12px;position:relative;z-index:1}
+.rp-org{font-size:16px;font-weight:700;letter-spacing:.01em;margin-bottom:1px}
+.rp-campus{font-size:11px;font-weight:400}
+.rp-divider{border:none;border-top:1px solid #555;margin:8px 0 6px}
+.rp-type{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-top:6px}
+.rp-copy{font-size:10px;font-style:italic;color:#444;margin-top:1px}
+
+.rp-meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;position:relative;z-index:1;gap:8px}
+.rp-meta-label{font-size:11px;font-weight:400}
+.rp-meta-value{font-size:12px;font-weight:700;color:#c0392b;border-bottom:1px solid #888;min-width:140px;display:inline-block;padding-bottom:2px;text-align:center}
 .rp-meta-value.date-val{color:#111}
-.rp-section-title{text-align:center;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;position:relative;z-index:1}
-.rp-field{display:flex;align-items:baseline;margin-bottom:10px;position:relative;z-index:1}
-.rp-field-label{font-size:10px;font-weight:400;min-width:115px;flex-shrink:0}
-.rp-field-value{flex:1;font-size:10.5px;font-weight:700;border-bottom:1px solid #888;padding-bottom:2px;min-height:16px;padding-left:4px;font-family:'Libre Baskerville',Georgia,serif}
-.rp-field-value.handwritten{font-style:italic;font-size:11px;letter-spacing:.01em}
-.rp-status-badge{display:inline-block;padding:0;border:none;border-radius:0;font-size:10.5px;font-weight:700;font-style:italic;color:#111;background:none}
-.rp-status-badge.paid{border:none;color:#111;background:none}
-.rp-status-badge.partial{border:none;color:#111;background:none}
-.rp-signature-section{margin-top:26px;display:flex;justify-content:flex-end;position:relative;z-index:1}
-.rp-sig-block{text-align:center;min-width:150px}
-.rp-sig-label{font-size:10px;margin-bottom:5px}
+
+.rp-section-title{text-align:center;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;position:relative;z-index:1}
+
+.rp-field{display:flex;align-items:baseline;margin-bottom:6px;position:relative;z-index:1}
+.rp-field-label{font-size:12px;font-weight:400;min-width:150px;flex-shrink:0}
+.rp-field-value{flex:1;font-size:12px;font-weight:700;border-bottom:1px solid #888;padding-bottom:2px;min-height:18px;padding-left:6px;font-family:Arial,Helvetica,sans-serif}
+.rp-field-value.handwritten{font-family:Arial,Helvetica,sans-serif;font-style:none;font-size:12px;letter-spacing:.01em}
+
+.rp-status-badge{display:inline-block;padding:1px 10px;border:1.5px solid #555;border-radius:4px;font-size:12px;font-weight:700;font-style:italic;background:#fff}
+.rp-status-badge.paid{border-color:transparent;color:#1a7a4a;background:transparent}
+.rp-status-badge.partial{border-color:transparent;color:#b45309;background:transparent}
+.rp-status-badge.pending{border-color:transparent;color:#92400e;background:transparent}
+
+.rp-signature-section{margin-top:24px;display:flex;justify-content:flex-end;position:relative;z-index:1}
+.rp-sig-block{text-align:center;min-width:220px}
+.rp-sig-label{font-size:11px;margin-bottom:6px}
 .rp-sig-line{display:none}
-.rp-sig-name-label{font-size:9px;color:#555}
-.rp-watermark{display:none}
+.rp-sig-name-label{font-size:10px;color:#555}
+.rp-watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:90px;font-weight:700;color:rgba(0,0,0,.04);pointer-events:none;letter-spacing:.2em;z-index:0;font-family:Arial,sans-serif;text-transform:uppercase}
 
 @@media (max-width: 768px){
-  .receipt-modal-inner{padding:10px}
-  .receipt-controls{max-width:96vw;padding:8px 10px;gap:6px}
-  .receipt-ctrl-title{font-size:11px}
-  .btn-pdf{padding:6px 10px;font-size:10.5px}
-  .receipt-paper{width:94vw;min-height:auto;padding:22px 16px 26px}
-  .rp-org{font-size:12px}
-  .rp-campus{font-size:10px}
-  .rp-field-label{min-width:98px;font-size:9.5px}
-  .rp-field-value,.rp-status-badge{font-size:10px}
+  .receipt-modal-inner{padding:8px}
+  .receipt-controls{max-width:95vw}
+  /* Scale the whole receipt down as one unit so mobile looks identical to desktop */
+  .receipt-paper{
+    transform: scale(0.56);
+    transform-origin: top center;
+    margin-bottom: -420px;
+  }
+}
+
+/* ── PRINT STYLES ──
+   When the user prints (or saves as PDF) from the receipt viewer, only the
+   .receipt-paper element should appear on the page. Everything else — the
+   sidebar, dashboard content, modal chrome, controls, even the dark backdrop —
+   is hidden, and the receipt is lifted out of its modal positioning and placed
+   cleanly on a white page. */
+@@media print {
+  /* Hide everything by default */
+  body * { visibility: hidden !important; }
+
+  /* Force a clean white page with black text. Override body's flex layout AND
+     full-viewport heights so the receipt isn't pushed down a page by hidden
+     elements that still occupy layout space. */
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+    min-height: 0 !important;
+    height: auto !important;
+  }
+
+  /* The dashboard main content panel is height:100vh on screen. Hidden during
+     print, but still occupying layout space unless we collapse it. */
+  .main, .sidebar, .top-accent {
+    display: none !important;
+  }
+
+  /* Reveal only the receipt paper and its children */
+  .receipt-paper, .receipt-paper * { visibility: visible !important; }
+
+  /* Lift the receipt out of its centered modal layout. The receipt sits inside
+     a fixed-position .receipt-modal with a flex inner container; for print we
+     reset it so the receipt sits at the top of the page with equal side margins. */
+  .receipt-modal,
+  .receipt-modal-inner {
+    position: static !important;
+    display: block !important;
+    width: auto !important;
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .receipt-modal-backdrop { display: none !important; }
+  .receipt-controls      { display: none !important; }
+
+  .receipt-paper {
+    position: static !important;
+    transform: none !important;     /* undo mobile down-scaling */
+    margin: 0px auto 0 !important; /* 50px top, equal left/right via auto */
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important; /* override tinted off-white for clean print */
+    page-break-inside: avoid;
+  }
+  .receipt-paper::before { display: none !important; }
+
+  /* Browsers default to dropping background colors when printing; force them on
+     for the receipt so its tinted fields and signature line still appear. */
+  .receipt-paper, .receipt-paper * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust:         exact !important;
+  }
+
+  /* Hide standard chrome we never want on a printed receipt */
+  .modal-overlay, .toast, header, footer { display: none !important; }
+
+  /* Reasonable print page. Setting size + zero margin-related properties
+     coaxes Chromium-family browsers into omitting the page header/footer in
+     some builds. Note: the "Headers and footers" toggle in the browser print
+     dialog is the only fully reliable way to suppress them — this is a
+     best-effort fallback. */
+  @@page {
+    margin: 12mm;
+    size: auto;
+    marks: none;
+  }
 }
 </style>
 </head>
@@ -310,29 +422,23 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
     <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
     Dashboard
   </div>
-  <div class="nav-item" onclick="showPage('history',this)">
-    <svg viewBox="0 0 24 24" fill="none"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    Transaction History
-  </div>
-  <div class="nav-item" onclick="showPage('students',this)">
-    <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    Students
+  <div class="nav-item" onclick="showPage('reports',this)">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.8"/><path d="M9 12h6M9 16h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Reports
   </div>
 
   <div class="sb-label">Transactions</div>
   <div class="nav-item" onclick="showPage('income',this)">
     <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12l7-7 7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    Add Income
+    Record Payment
   </div>
   <div class="nav-item" onclick="showPage('expenses',this)">
     <svg viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7 7 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    Add Expense
+    Record Expense
   </div>
-
-  <div class="sb-label">Reports</div>
-  <div class="nav-item" onclick="showPage('reports',this)">
-    <svg viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.8"/><path d="M9 12h6M9 16h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    Create Report
+  <div class="nav-item" onclick="showPage('history',this)">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Transaction History
   </div>
 
   <div class="sb-label">System</div>
@@ -362,65 +468,100 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 
   <!-- DASHBOARD -->
   <div class="page active" id="page-dashboard">
-    <div class="page-hdr">
+    <div class="page-hdr" style="justify-content:center;text-align:center;position:relative">
       <div>
         <div class="page-title">Dashboard</div>
-        <div class="page-sub">A.Y. 2025–2026 · 1st Semester</div>
+        <div class="page-sub" id="dash-sy-sem"></div>
       </div>
-      <div style="font-size:11.5px;color:var(--text-m);background:rgba(39,167,68,.1);border:1px solid rgba(39,167,68,.2);padding:6px 13px;border-radius:8px;display:flex;align-items:center;gap:6px">
+      <div style="position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:11.5px;color:var(--text-m);background:rgba(39,167,68,.1);border:1px solid rgba(39,167,68,.2);padding:6px 13px;border-radius:8px;display:flex;align-items:center;gap:6px">
         <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;display:inline-block"></span>
         Live
       </div>
     </div>
 
-    <!-- CHARTS -->
-    <div style="margin-bottom:14px">
-      <div class="content-card">
-        <div class="cc-hdr" style="flex-direction:column;align-items:stretch;gap:0">
-          <!-- Top row: balance left, nothing right -->
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:32px">
-            <div style="display:flex;flex-direction:column;gap:4px">
-              <div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d)">Remaining Balance</div>
-              <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-.04em;line-height:1" id="s-balance">₱0.00</div>
-            </div>
-          </div>
-
-          <!-- Bottom row: title left, dropdowns right -->
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div class="cc-title">Monthly Overview</div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <select class="filter-select" id="chart-sy" onchange="onChartSYChange()">
-                <option value="">All School Years</option>
-              </select>
-              <select class="filter-select" id="chart-month" onchange="updateCharts()">
-                <option value="">All Months</option>
-                <option value="0">January</option>
-                <option value="1">February</option>
-                <option value="2">March</option>
-                <option value="3">April</option>
-                <option value="4">May</option>
-                <option value="5">June</option>
-                <option value="6">July</option>
-                <option value="7">August</option>
-                <option value="8">September</option>
-                <option value="9">October</option>
-                <option value="10">November</option>
-                <option value="11">December</option>
-              </select>
-              <select class="filter-select" id="chart-mode" onchange="updateCharts()">
-                <option value="all">All Transactions</option>
-                <option value="both">Income vs Expenses</option>
-                <option value="orgfee">Organizational Fee</option>
-                <option value="funds">Other Funds</option>
-                <option value="expense">Expenses</option>
-              </select>
-            </div>
-          </div>
+    <!-- PAYMENT BREAKDOWN -->
+    <div class="content-card">
+      <div class="cc-hdr">
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+          <div class="cc-title">Payment Breakdown</div>
+          <span id="bd-sem-label" style="font-size:11px;color:var(--text-m)"></span>
         </div>
-        <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn-primary" onclick="goToOrgFeePayment()" style="display:inline-flex;align-items:center;gap:6px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            Record Org Fee Payment
+          </button>
+        </div>
+      </div>
+      <div style="padding:18px 20px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+        <div style="background:rgba(255,255,255,.03);border:1px solid var(--card-b);border-radius:11px;padding:14px 16px">
+          <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:8px">Total of Students</div>
+          <div style="font-size:26px;font-weight:800;color:#fff;line-height:1;letter-spacing:-.03em" id="bd-total">0</div>
+          <div style="font-size:10px;color:var(--text-d);margin-top:6px;line-height:1.35">Approved students included in the list below.</div>
+        </div>
+        <div style="background:rgba(39,167,68,.08);border:1px solid var(--green-badge-bd);border-radius:11px;padding:14px 16px">
+          <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:8px">Paid</div>
+          <div style="font-size:26px;font-weight:800;color:#5fdd8e;line-height:1;letter-spacing:-.03em" id="bd-paid">0</div>
+        </div>
+        <div style="background:rgba(251,191,36,.08);border:1px solid var(--yellow-badge-bd);border-radius:11px;padding:14px 16px">
+          <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:8px">Partial</div>
+          <div style="font-size:26px;font-weight:800;color:#fcd34d;line-height:1;letter-spacing:-.03em" id="bd-partial">0</div>
+        </div>
+        <div style="background:rgba(239,68,68,.08);border:1px solid var(--red-badge-bd);border-radius:11px;padding:14px 16px">
+          <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:8px">Unpaid</div>
+          <div style="font-size:26px;font-weight:800;color:#fca5a5;line-height:1;letter-spacing:-.03em" id="bd-unpaid">0</div>
+        </div>
       </div>
     </div>
-    <!-- hidden donut elements so JS doesn't error -->
+
+    <!-- STUDENTS LIST (moved from former Students page) -->
+    <div class="content-card">
+      <div class="cc-hdr"><div class="cc-title">Students</div></div>
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input type="text" id="students-search" placeholder="Search by name, school ID, course…" oninput="filterStudentsPage(this.value)"/>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select class="filter-select" id="students-filter-status" onchange="applyStudentsPageFilters()">
+            <option value="">All Payment Status</option>
+            <option value="Paid">Paid</option>
+            <option value="Partial">Partial</option>
+            <option value="Unpaid">Unpaid</option>
+          </select>
+          <select class="filter-select" id="students-filter-course" onchange="applyStudentsPageFilters()">
+            <option value="">All Courses</option>
+          </select>
+          <select class="filter-select" id="students-filter-year" onchange="applyStudentsPageFilters()">
+            <option value="">All Year Levels</option>
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
+          </select>
+          <select class="filter-select" id="students-filter-sy" onchange="applyStudentsPageFilters()">
+            <option value="">All School Years</option>
+          </select>
+          <button class="btn-outline" onclick="resetStudentsPageFilters()" title="Reset filters and sort to default" style="padding:7px 14px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L3 8"/></svg>
+            Default
+          </button>
+        </div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>#</th><th>School ID</th><th>Name</th><th>Course · Year &amp; Section</th>
+          <th><span id="th-sem1-label">1st Sem</span><span id="th-sem1-badge"></span><br><span style="font-weight:400;font-size:10px;color:var(--text-d);letter-spacing:.04em">Balance · Paid · Status · Receipts</span></th>
+          <th><span id="th-sem2-label">2nd Sem</span><span id="th-sem2-badge"></span><br><span style="font-weight:400;font-size:10px;color:var(--text-d);letter-spacing:.04em">Balance · Paid · Status · Receipts</span></th>
+          <th>Org Fees</th>
+        </tr></thead>
+        <tbody id="students-page-tbody">
+          <tr class="empty-row"><td colspan="7">Loading students…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- hidden chart elements so chart JS doesn't error if it ever runs from Dashboard -->
     <div style="display:none">
       <canvas id="donutChart"></canvas>
       <div id="donut-legend"></div>
@@ -429,24 +570,8 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 
   <!-- HISTORY -->
   <div class="page" id="page-history">
-    <div class="page-hdr">
+    <div class="page-hdr" style="justify-content:center;text-align:center">
       <div><div class="page-title">Transaction History</div><div class="page-sub">Complete record of all financial entries</div></div>
-    </div>
-
-    <!-- Summary row moved above the table -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px">
-      <div style="background:var(--card);border:1px solid var(--card-b);border-radius:12px;padding:14px 18px">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-d);margin-bottom:5px">Total Revenue</div>
-        <div class="amt-in" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:600" id="h-income">₱0.00</div>
-      </div>
-      <div style="background:var(--card);border:1px solid var(--card-b);border-radius:12px;padding:14px 18px">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-d);margin-bottom:5px">Total Expenses</div>
-        <div class="amt-out" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:600" id="h-expense">₱0.00</div>
-      </div>
-      <div style="background:var(--card);border:1px solid var(--card-b);border-radius:12px;padding:14px 18px">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-d);margin-bottom:5px">Collectable Org Fee</div>
-        <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:600" id="h-balance">₱0.00</div>
-      </div>
     </div>
 
     <div class="content-card">
@@ -471,45 +596,14 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
   </div>
 
   <!-- STUDENTS -->
-  <div class="page" id="page-students">
-    <div class="page-hdr">
-      <div>
-        <div class="page-title">Students</div>
-        <div class="page-sub" id="students-page-sub">All approved students and treasurers</div>
-      </div>
-    </div>
-    <div class="content-card">
-      <div class="toolbar">
-        <div class="search-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
-          <input type="text" placeholder="Search by name, school ID, course…" oninput="filterStudentsPage(this.value)"/>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <select class="filter-select" id="students-filter-course" onchange="applyStudentsPageFilters()">
-            <option value="">All Courses</option>
-          </select>
-          <select class="filter-select" id="students-filter-sy" onchange="applyStudentsPageFilters()">
-            <option value="">All School Years</option>
-          </select>
-        </div>
-      </div>
-      <table>
-        <thead><tr><th>#</th><th>School ID</th><th>Name</th><th>Course · Year &amp; Section</th><th>1st Sem</th><th>2nd Sem</th><th>Org Fees</th></tr></thead>
-        <tbody id="students-page-tbody">
-          <tr class="empty-row"><td colspan="7">Loading students…</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
   <!-- INCOME -->
   <div class="page" id="page-income">
-    <div class="page-hdr">
-      <div><div class="page-title">Add Income</div><div class="page-sub">Record student fees and other receivable funds</div></div>
+    <div class="page-hdr" style="justify-content:center;text-align:center">
+      <div><div class="page-title">Record Payment</div><div class="page-sub">Record student fees and other receivable funds</div></div>
     </div>
 
     <!-- TYPE TABS -->
-    <div style="display:flex;gap:8px;margin-bottom:20px">
+    <div style="display:flex;gap:8px;margin-bottom:20px;justify-content:center">
       <button id="income-tab-orgfee" onclick="switchIncomeTab('orgfee')"
         style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;background:var(--green);color:#fff;border:none">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -523,7 +617,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
     </div>
 
     <!-- ORG FEE FORM -->
-    <div id="income-panel-orgfee" class="content-card" style="max-width:600px">
+    <div id="income-panel-orgfee" class="content-card" style="max-width:600px;margin:0 auto">
       <div class="cc-hdr">
         <div class="cc-title">Student Organizational Fee</div>
         <span style="font-size:11.5px;color:var(--text-m)">Required: <strong style="color:#5fdd8e" id="page-fee-amount">₱0.00</strong></span>
@@ -572,7 +666,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
     </div>
 
     <!-- OTHER FUND FORM -->
-    <div id="income-panel-fund" class="content-card" style="max-width:600px;display:none">
+    <div id="income-panel-fund" class="content-card" style="max-width:600px;margin:0 auto;display:none">
       <div class="cc-hdr"><div class="cc-title">Other Receivable Fund</div></div>
       <div style="padding:22px">
         <div class="form-group">
@@ -611,37 +705,113 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
   </div>
 
   <!-- EXPENSES -->
-  <div class="page" id="page-expenses">
-    <div class="page-hdr">
-      <div><div class="page-title">Add Expense</div><div class="page-sub">Track organizational expenditures</div></div>
-      <button class="btn-primary" onclick="openModal('modal-expense')">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-        Add Expense
-      </button>
+ <div class="page" id="page-expenses">
+    <div class="page-hdr" style="justify-content:center;text-align:center">
+      <div><div class="page-title">Record Expense</div><div class="page-sub">Track organizational expenditures</div></div>
     </div>
-    <div class="stat-grid-3">
-      <div class="stat-card red"><div class="stat-lbl">Total Expenses</div><div class="stat-row"><div class="stat-val" id="e-total">₱0.00</div><div class="stat-icon r"><svg viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7 7 7-7" stroke="#f87171" stroke-width="1.8" stroke-linecap="round"/></svg></div></div><div class="stat-sub">All recorded</div></div>
-      <div class="stat-card yellow"><div class="stat-lbl">No. of Records</div><div class="stat-row"><div class="stat-val" id="e-count">0</div><div class="stat-icon y"><svg viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/><rect x="9" y="3" width="6" height="4" rx="1" stroke="#fbbf24" stroke-width="1.8"/></svg></div></div><div class="stat-sub">Transactions</div></div>
-      <div class="stat-card red"><div class="stat-lbl">Largest Expense</div><div class="stat-row"><div class="stat-val" id="e-max">₱0.00</div><div class="stat-icon r"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#f87171" stroke-width="1.8"/><path d="M12 8v4l3 3" stroke="#f87171" stroke-width="1.8" stroke-linecap="round"/></svg></div></div><div class="stat-sub">Single transaction</div></div>
-    </div>
-    <div class="content-card">
-      <div class="cc-hdr"><div class="cc-title">Expense Records</div><span class="badge br" id="exp-badge">0 records</span></div>
-      <div class="toolbar">
-        <div class="search-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
-          <input type="text" placeholder="Search expenses…" oninput="filterExpenses(this.value)"/>
+
+    <!-- INLINE EXPENSE FORM -->
+    <div class="content-card" style="max-width:600px;margin:0 auto 14px">
+      <div class="cc-hdr"><div class="cc-title">Record an Expense</div></div>
+      <div style="padding:22px">
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <input class="form-input" id="ex-desc" placeholder="e.g. Printing of event tarpaulins"/>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Amount (₱)</label>
+            <input class="form-input" id="ex-amount" type="number" placeholder="0.00"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input class="form-input" type="date" id="ex-date"/>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)">
+          <button class="btn-primary" onclick="saveExpense()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            Save Expense
+          </button>
         </div>
       </div>
-      <table>
-        <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Recorded By</th><th></th></tr></thead>
-        <tbody id="expenses-tbody"></tbody>
-      </table>
     </div>
   </div>
 
   <!-- REPORTS -->
   <div class="page" id="page-reports">
-    <div class="page-hdr"><div><div class="page-title">Create Report</div><div class="page-sub">Generate financial reports for submission or review</div></div></div>
+    <div class="page-hdr" style="justify-content:center;text-align:center"><div><div class="page-title">Reports</div><div class="page-sub">Generate financial reports for submission or review</div></div></div>
+
+    <!-- STAT CARDS (moved from Dashboard) -->
+    <div style="margin-bottom:14px">
+      <div class="content-card">
+        <div style="padding:20px 24px">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d)">Remaining Balance</div>
+              <div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-.04em;line-height:1" id="s-balance">₱0.00</div>
+              <div style="font-size:10.5px;font-weight:600;line-height:1.3;min-height:14px" id="s-balance-trend"></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d)">Total Collected</div>
+              <div style="font-size:26px;font-weight:800;color:#5fdd8e;letter-spacing:-.04em;line-height:1" id="s-collected">₱0.00</div>
+              <div style="font-size:10.5px;font-weight:600;line-height:1.3;min-height:14px" id="s-collected-trend"></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d)">Expenses</div>
+              <div style="font-size:26px;font-weight:800;color:#f87171;letter-spacing:-.04em;line-height:1" id="s-expenses">₱0.00</div>
+              <div style="font-size:10.5px;font-weight:600;line-height:1.3;min-height:14px" id="s-expenses-trend"></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d)">Collectable Org Fee</div>
+              <div style="font-size:26px;font-weight:800;color:#fbbf24;letter-spacing:-.04em;line-height:1" id="s-collectable">₱0.00</div>
+              <div style="font-size:10.5px;font-weight:600;line-height:1.3;min-height:14px">&nbsp;</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MONTHLY OVERVIEW (moved from Dashboard) -->
+    <div class="content-card" style="margin-bottom:14px">
+      <div class="cc-hdr">
+        <div class="cc-title">Monthly Overview</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select class="filter-select" id="chart-sy" onchange="onChartSYChange()">
+            <option value="">All School Years</option>
+          </select>
+          <select class="filter-select" id="chart-sem" onchange="updateCharts()">
+            <option value="">All Semesters</option>
+            <option value="1">1st Semester</option>
+            <option value="2">2nd Semester</option>
+          </select>
+          <select class="filter-select" id="chart-month" onchange="updateCharts()">
+            <option value="">All Months</option>
+            <option value="0">January</option>
+            <option value="1">February</option>
+            <option value="2">March</option>
+            <option value="3">April</option>
+            <option value="4">May</option>
+            <option value="5">June</option>
+            <option value="6">July</option>
+            <option value="7">August</option>
+            <option value="8">September</option>
+            <option value="9">October</option>
+            <option value="10">November</option>
+            <option value="11">December</option>
+          </select>
+          <select class="filter-select" id="chart-mode" onchange="updateCharts()">
+            <option value="all">All Transactions</option>
+            <option value="both">Income vs Expenses</option>
+            <option value="orgfee">Organizational Fee</option>
+            <option value="funds">Other Funds</option>
+            <option value="expense">Expenses</option>
+          </select>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+    </div>
+
     <div class="content-card" style="margin-bottom:14px">
       <div class="cc-hdr"><div class="cc-title">Report Generator</div></div>
       <div style="padding:16px 20px;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:flex-end">
@@ -685,7 +855,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 
   <!-- SETTINGS -->
   <div class="page" id="page-settings">
-    <div class="page-hdr">
+    <div class="page-hdr" style="justify-content:center;text-align:center">
       <div>
         <div class="page-title">Settings</div>
         <div class="page-sub">System configuration</div>
@@ -1042,33 +1212,31 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 
 <!-- Student Org Fee Details Modal -->
 <div class="modal-overlay" id="modal-student-orgfee">
-  <div class="modal-backdrop" onclick="closeModal('modal-student-orgfee')"></div>
-  <div class="modal-box" style="max-width:680px">
+  <div class="modal-backdrop" onclick="closeStudentOrgFeeModal()"></div>
+  <div class="modal-box" style="max-width:920px">
     <div class="modal-hdr">
       <div>
         <div class="modal-title" id="student-orgfee-name">Student Org Fees</div>
         <div class="modal-sub" id="student-orgfee-sub">Loading…</div>
       </div>
-      <button class="modal-close" onclick="closeModal('modal-student-orgfee')">✕</button>
+      <button class="modal-close" onclick="closeStudentOrgFeeModal()">✕</button>
     </div>
-    <div id="student-orgfee-summary" style="margin-bottom:18px"></div>
-    <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:8px">Transaction History</div>
-    <div style="max-height:280px;overflow-y:auto;border:1px solid rgba(255,255,255,.06);border-radius:10px">
+    <div style="max-height:480px;overflow-y:auto;border:1px solid rgba(255,255,255,.06);border-radius:10px">
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
-          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
-            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Date</th>
-            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">School Year / Sem</th>
-            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Receipt</th>
-            <th style="padding:8px 12px;text-align:right;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Amount</th>
-            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Status</th>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02)">
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Semester · School Year</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Balance · Paid · Status</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Receipts</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Date</th>
+            <th style="padding:9px 12px;text-align:right;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Actions</th>
           </tr>
         </thead>
         <tbody id="student-orgfee-tbody"></tbody>
       </table>
     </div>
     <div class="modal-footer">
-      <button class="btn-outline" onclick="closeModal('modal-student-orgfee')">Close</button>
+      <button class="btn-outline" onclick="closeStudentOrgFeeModal()">Close</button>
     </div>
   </div>
 </div>
@@ -1087,14 +1255,13 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
     </div>
 
     <div class="receipt-paper" id="trReceiptPaper">
-      <div class="rp-watermark">COPY</div>
 
       <div class="rp-header">
         <div class="rp-org">SUPREME STUDENT GOVERNMENT</div>
         <div class="rp-campus">Cebu Technological University - Ginatilan Campus</div>
         <hr class="rp-divider" />
         <div class="rp-type">Organization Fee</div>
-        <div class="rp-copy">(Owner's Copy)</div>
+        <div class="rp-copy">(Treasurer's Copy)</div>
       </div>
 
       <div class="rp-meta">
@@ -1258,6 +1425,10 @@ let DB = {
 
 let STUDENTS = [];
 let ALL_STUDENTS_PAGE = [];
+let _lastStudentsFiltered = [];
+let _lastStudentsForBreakdown = [];
+let _currentSem = null;     // 'first' | 'second' | null  (live semester of the loaded school year)
+let _breakdownSem = 'first'; // semester the breakdown + status filter operate on (falls back for past years)
 let studentsPageQ = '';
 let studentsPageCourse = '';
 let CURRENT_SCHOOL_YEAR = null;
@@ -1294,6 +1465,13 @@ function escapeHtml(value) {
     "'": '&#39;'
   }[ch]));
 }
+// A yearSection like "5-A" means the student has completed the 4-year program,
+// so it displays as "4 Completed". Anything else is shown as-is.
+function fmtYearSection(yearSection) {
+  const ys = String(yearSection ?? '').trim();
+  const yearPart = ys.split('-')[0].trim();
+  return yearPart === '5' ? 'Graduate' : ys;
+}
 function amountToWords(amount) {
   if (amount === 0) return 'Zero Pesos Only';
   const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
@@ -1325,22 +1503,104 @@ async function loadDashboardData() {
       CURRENT_SEMESTER = data.semester;
 
       // Update school year display
-      const syDisplay = document.querySelector('.page-sub');
+      const syDisplay = document.getElementById('dash-sy-sem');
       if (syDisplay && CURRENT_SCHOOL_YEAR !== 'Not Set') {
         const semDisplay = CURRENT_SEMESTER !== 'Not Set' ? `${CURRENT_SEMESTER} Semester` : '';
         syDisplay.textContent = `A.Y. ${CURRENT_SCHOOL_YEAR}${semDisplay ? ' · ' + semDisplay : ''}`;
       }
 
-      // Update stats
-      document.getElementById('s-balance').textContent = '₱' + Number(data.stats.balance).toLocaleString('en-PH', { minimumFractionDigits: 2 });
-
-      const bal = data.stats.balance;
+      // s-balance is now set by refreshDashboardStats (follows the school-year dropdown).
       const balEl = document.getElementById('s-balance-sub');
-      balEl.style.display = 'none';
+      if (balEl) balEl.style.display = 'none';
     }
   } catch (err) {
     console.error('Failed to load dashboard data:', err);
   }
+}
+
+async function refreshDashboardStats() {
+  // On the Dashboard, the visible school-year dropdown is the student-list one
+  // (students-filter-sy). The chart-sy dropdown lives on the Report page. Read
+  // whichever is present so a single picker drives both stats and student list.
+  const rawSY = document.getElementById('students-filter-sy')?.value
+             || document.getElementById('chart-sy')?.value
+             || '';
+  const selectedSY = rawSY.replace(/\s*[–-]\s*/g, '–');
+
+  // Collected + Expenses: per selected year (unchanged).
+  const tx = allTransactions().filter(t => !selectedSY || (t.schoolYear || '') === selectedSY);
+  const collected = tx.filter(t => t.type === 'income').reduce((s, t) => s + t.amt, 0);
+  const expenses  = tx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amt, 0);
+
+  const collectedEl = document.getElementById('s-collected');
+  const expensesEl  = document.getElementById('s-expenses');
+  if (collectedEl) collectedEl.textContent = p(collected);
+  if (expensesEl)  expensesEl.textContent  = p(expenses);
+
+  // Remaining Balance = CUMULATIVE cash on hand: selected year + all previous years.
+  const selStart = selectedSY ? parseInt(selectedSY.split('–')[0], 10) : null;
+  const cumTx = allTransactions().filter(t => {
+    if (selStart === null) return true; // "All School Years" = everything
+    const tyStart = parseInt((t.schoolYear || '').split('–')[0], 10);
+    if (isNaN(tyStart)) return false;
+    return tyStart <= selStart;
+  });
+  const cumCollected = cumTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amt, 0);
+  const cumExpenses  = cumTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amt, 0);
+
+  const balanceEl = document.getElementById('s-balance');
+  if (balanceEl) balanceEl.textContent = p(cumCollected - cumExpenses);
+
+  // ── Trend indicators: compare last 30 days vs the 30 days before that.
+  // This is independent of the selected school year — it answers "what's the
+  // current pace?" rather than "what's the year-to-date total?".
+  const now = new Date();
+  const day = 24 * 60 * 60 * 1000;
+  const start30  = new Date(now.getTime() - 30 * day);
+  const start60  = new Date(now.getTime() - 60 * day);
+
+  const everyTx = allTransactions();
+  const inRange = (t, a, b) => {
+    const d = new Date(t.fullDate || (t.date + 'T00:00'));
+    return d >= a && d < b;
+  };
+
+  const last30Inc  = everyTx.filter(t => t.type === 'income'  && inRange(t, start30, now)).reduce((s, t) => s + t.amt, 0);
+  const prev30Inc  = everyTx.filter(t => t.type === 'income'  && inRange(t, start60, start30)).reduce((s, t) => s + t.amt, 0);
+  const last30Exp  = everyTx.filter(t => t.type === 'expense' && inRange(t, start30, now)).reduce((s, t) => s + t.amt, 0);
+  const prev30Exp  = everyTx.filter(t => t.type === 'expense' && inRange(t, start60, start30)).reduce((s, t) => s + t.amt, 0);
+
+  // Render a trend line. `positiveIsGood` flips the color logic for expenses:
+  // for collected/balance, "up" is green; for expenses, "up" is red.
+  const renderTrend = (id, current, previous, positiveIsGood = true) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const delta = current - previous;
+    if (Math.abs(delta) < 0.01 && previous === 0 && current === 0) {
+      el.innerHTML = '<span style="color:var(--text-d)">—</span>';
+      return;
+    }
+    const up = delta >= 0;
+    const arrow = up ? '↑' : '↓';
+    const good = positiveIsGood ? up : !up;
+    const color = good ? '#5fdd8e' : '#f87171';
+    el.innerHTML = `<span style="color:${color}">${arrow} ${p(Math.abs(delta))}</span>`;
+  };
+
+  renderTrend('s-collected-trend', last30Inc,             prev30Inc,             true);
+  renderTrend('s-expenses-trend',  last30Exp,             prev30Exp,             false);
+  renderTrend('s-balance-trend',   last30Inc - last30Exp, prev30Inc - prev30Exp, true);
+
+  // Collectable: ask the server for the selected year (or all years if none).
+  try {
+    const url = selectedSY
+      ? '/Home/GetCollectableOrgFee?schoolYear=' + encodeURIComponent(selectedSY)
+      : '/Home/GetCollectableOrgFee';
+    const res = await fetch(url);
+    const data = await res.json();
+    const cEl = document.getElementById('s-collectable');
+    if (cEl) cEl.textContent = p(data.success ? data.collectable : 0);
+  } catch {}
 }
 
 async function loadOrgFeePayments() {
@@ -1527,8 +1787,8 @@ async function loadCurrentSemesterInfo() {
         REQ_FEE = data.semester.amount;
       }
 
-      // Update school year display
-      const syDisplay = document.querySelector('#page-dashboard .page-sub');
+      // Show current school year + semester directly under the "Dashboard" title.
+      const syDisplay = document.getElementById('dash-sy-sem');
       if (syDisplay && CURRENT_SCHOOL_YEAR) {
         const semDisplay = CURRENT_SEMESTER ? `${CURRENT_SEMESTER.semester === 'First' ? '1st' : '2nd'} Semester` : '';
         syDisplay.textContent = `A.Y. ${CURRENT_SCHOOL_YEAR.yearStart}–${CURRENT_SCHOOL_YEAR.yearEnd}${semDisplay ? ' · ' + semDisplay : ''}`;
@@ -1752,20 +2012,6 @@ async function renderHistory() {
     paidMap[key].paid += f.amt;
   });
 
-  // Simpler approach: fetch from server
-  let collectable = 0;
-  try {
-    const res = await fetch('/Home/GetCollectableOrgFee');
-    const data = await res.json();
-    if (data.success) collectable = data.collectable;
-  } catch {}
-
-  document.getElementById('h-income').textContent  = '+' + p(inc);
-  document.getElementById('h-expense').textContent = '-' + p(exp);
-  const balEl = document.getElementById('h-balance');
-  balEl.textContent = p(collectable);
-  balEl.style.color = '#fbbf24';
-
   document.getElementById('history-tbody').innerHTML = combined ||
     '<tr class="empty-row"><td colspan="6">No results found.</td></tr>';
 }
@@ -1785,11 +2031,12 @@ async function showPage(name, el) {
     await renderDashboard();
     await populateChartSchoolYears();
     setTimeout(renderCharts, 100);
+    await refreshDashboardStats();
+    await loadStudentsPage();
   }
   if (name === 'history')   await renderHistory();
-  if (name === 'students')  await loadStudentsPage();
   if (name === 'income')    await initIncomePage();
-  if (name === 'expenses')  await renderExpenses();
+  if (name === 'expenses')  { await renderExpenses(); const exd = document.getElementById('ex-date'); if (exd && !exd.value) exd.value = today(); }
   if (name === 'settings')  await refreshSchoolYears();
 }
 
@@ -1823,8 +2070,26 @@ async function populateChartSchoolYears() {
 
 function renderCharts() {
     const selectedSY    = (document.getElementById('chart-sy')?.value || '').replace(/\s*[–-]\s*/g, '–');
+    const selectedSem   = document.getElementById('chart-sem')?.value || '';   // '', '1', or '2'
     const selectedMonth = document.getElementById('chart-month')?.value;
     const mode          = document.getElementById('chart-mode')?.value || 'both';
+
+    // Resolve the semester date window from the cached range (set when SY was picked).
+    // No school year selected = semester filter is ignored (we need bounds to apply it).
+    let semStart = null, semEnd = null;
+    if (selectedSem && window.currentSYDateRange) {
+        if (selectedSem === '1') {
+            semStart = window.currentSYDateRange.firstSemStart;
+            semEnd   = window.currentSYDateRange.firstSemEnd;
+        } else if (selectedSem === '2') {
+            semStart = window.currentSYDateRange.secondSemStart;
+            semEnd   = window.currentSYDateRange.secondSemEnd;
+        }
+    }
+    const inSemester = (date) => {
+        if (!semStart || !semEnd) return true;          // not applying
+        return date >= semStart && date <= semEnd;
+    };
 
     // Build month labels
     const allMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1846,8 +2111,9 @@ function renderCharts() {
 
     allTransactions()
         .filter(t => {
+            const date = new Date(t.fullDate || t.date + 'T00:00');
+            if (!inSemester(date)) return false;
             if (selectedMonth !== '' && selectedMonth !== null && selectedMonth !== undefined) {
-                const date = new Date(t.fullDate || t.date + 'T00:00');
                 const syMatch = !selectedSY || (t.schoolYear || '') === selectedSY;
                 return date.getMonth() === parseInt(selectedMonth) && syMatch;
             } else {
@@ -1934,11 +2200,15 @@ async function onChartSYChange() {
     const selectedSY = document.getElementById('chart-sy').value;
     await rebuildMonthsDropdown(selectedSY);
     updateCharts();
+    await refreshDashboardStats();
 }
 
 async function rebuildMonthsDropdown(selectedSY) {
     const sel = document.getElementById('chart-month');
     const currentVal = sel.value;
+
+    // Reset the cached semester range; semester filtering needs an SY to work.
+    window.currentSYDateRange = null;
 
     if (!selectedSY) {
         // No school year selected — show all months
@@ -1957,6 +2227,14 @@ async function rebuildMonthsDropdown(selectedSY) {
                 MONTH_NAMES.map((m, i) => `<option value="${i}">${m}</option>`).join('');
             return;
         }
+
+        // Cache so the semester filter in renderCharts can use these bounds.
+        window.currentSYDateRange = {
+            firstSemStart:  data.firstSemStart  ? new Date(data.firstSemStart)  : null,
+            firstSemEnd:    data.firstSemEnd    ? new Date(data.firstSemEnd)    : null,
+            secondSemStart: data.secondSemStart ? new Date(data.secondSemStart) : null,
+            secondSemEnd:   data.secondSemEnd   ? new Date(data.secondSemEnd)   : null
+        };
 
         // Determine month range
         // Use firstSemStart as the start, secondSemEnd as the end
@@ -2305,22 +2583,8 @@ async function pageSubmitFund() {
 // ── EXPENSES ─────────────────────────────────────────────────────
 async function renderExpenses() {
   await loadExpenses();
-
-  let exp = DB.expenses.filter(e=>!expQ||e.desc.toLowerCase().includes(expQ.toLowerCase())).sort((a,b)=>b.date.localeCompare(a.date));
-  let total = DB.expenses.reduce((s,e)=>s+e.amt,0);
-  let mx    = DB.expenses.length ? Math.max(...DB.expenses.map(e=>e.amt)) : 0;
-  document.getElementById('e-total').textContent = p(total);
-  document.getElementById('e-count').textContent = DB.expenses.length;
-  document.getElementById('e-max').textContent   = p(mx);
-  document.getElementById('exp-badge').textContent = DB.expenses.length + ' records';
-  document.getElementById('expenses-tbody').innerHTML = exp.map(e => `
-    <tr>
-      <td class="td-mono td-m">${fd(e.date)}</td>
-      <td><strong>${e.desc}</strong></td>
-      <td class="amt-out">-${p(e.amt)}</td>
-      <td class="td-m">Treasurer</td>
-      <td><button class="btn-danger" onclick="deleteTx('Expense',${e.id})">Delete</button></td>
-    </tr>`).join('') || '<tr class="empty-row"><td colspan="5">No expenses yet.</td></tr>';
+  // The expenses page now only shows the inline "Record an Expense" form.
+  // We still load expenses so other pages (dashboard, history) stay accurate.
 }
 
 function filterExpenses(q) { expQ = q; renderExpenses(); }
@@ -2334,33 +2598,43 @@ function feeStatusBadge(status) {
   return '<span class="badge br">Unpaid</span>';
 }
 
-function renderSemesterSummaryCard(label, sem, schoolYear) {
-  if (!sem) {
-    return `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
-      <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:8px">${label}</div>
-      <div style="font-size:12px;color:var(--text-d)">No fee configured for ${schoolYear || 'current school year'}.</div>
+function renderCurrentFeesTable(currentSchoolYear, fees) {
+  const list = Array.isArray(fees) ? fees : [];
+
+  const rowsHtml = list.length
+    ? list.map(f => {
+        const semLabel = f.semester === 'First' ? '1st Semester'
+                       : f.semester === 'Second' ? '2nd Semester'
+                       : (f.semester || '—');
+        const balColor = f.balance > 0 ? '#f87171' : '#5fdd8e';
+        return `<tr>
+          <td style="padding:9px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${escapeHtml(f.schoolYear || 'N/A')}</td>
+          <td style="padding:9px 12px;color:var(--text)">${semLabel}</td>
+          <td style="padding:9px 12px;font-family:'DM Mono',monospace;color:${balColor}">${p(f.balance)}</td>
+          <td style="padding:9px 12px;font-family:'DM Mono',monospace;color:var(--text)">${p(f.requiredAmount)}</td>
+          <td style="padding:9px 12px">${feeStatusBadge(f.feeStatus)}</td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-d)">No applicable fees found.</td></tr>`;
+
+  return `
+    <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Current Fees</div>
+    <div style="border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:rgba(255,255,255,.04)">
+            <th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-d);font-weight:600">School Year</th>
+            <th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-d);font-weight:600">Semester</th>
+            <th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-d);font-weight:600">Balance</th>
+            <th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-d);font-weight:600">Amount</th>
+            <th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-d);font-weight:600">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
     </div>`;
-  }
-  return `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div style="font-size:11px;font-weight:700;color:#fff">${label}</div>
-      ${feeStatusBadge(sem.feeStatus)}
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-      <div>
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-d);margin-bottom:3px">Required</div>
-        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:#fff">${p(sem.requiredAmount)}</div>
-      </div>
-      <div>
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-d);margin-bottom:3px">Paid</div>
-        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:#5fdd8e">${p(sem.totalPaid)}</div>
-      </div>
-      <div>
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-d);margin-bottom:3px">Balance</div>
-        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:#fbbf24">${p(sem.balance)}</div>
-      </div>
-    </div>
-  </div>`;
 }
 
 function renderReceiptCell(paymentId, receiptNumber, hasReceipt) {
@@ -2396,10 +2670,10 @@ async function loadStudentsPage(schoolYear = null) {
         }
         ALL_STUDENTS_PAGE = data.students || [];
 
-        const sub = document.getElementById('students-page-sub');
-        if (sub) {
-            sub.textContent = `${ALL_STUDENTS_PAGE.length} approved student${ALL_STUDENTS_PAGE.length !== 1 ? 's' : ''} · A.Y. ${data.schoolYear}`;
-        }
+        // Resolve which semester is "current" for this school year (and the
+        // fallback the breakdown/status filter use for past years).
+        computeSemContext();
+        updateSemHeaderIndicators();
 
         // Only refresh course filter, NOT school year dropdown
         populateStudentsPageFilters();
@@ -2411,44 +2685,176 @@ async function loadStudentsPage(schoolYear = null) {
 }
 
 function renderStudentsPage(filtered) {
+  // Default ordering is a "stack": the most recently recorded payment sits at the
+  // top. Students with no payment fall to the bottom, then ties break by name.
   const data = (filtered ?? ALL_STUDENTS_PAGE)
     .slice()
-    .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' }));
+    .sort((a, b) => {
+      const ta = a.lastPaymentDate ? new Date(a.lastPaymentDate).getTime() : 0;
+      const tb = b.lastPaymentDate ? new Date(b.lastPaymentDate).getTime() : 0;
+      if (tb !== ta) return tb - ta;
+      return String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' });
+    });
+  _lastStudentsFiltered = data;
   const tbody = document.getElementById('students-page-tbody');
-  const sub = document.getElementById('students-page-sub');
   if (!tbody) return;
-
-  if (sub && !sub.textContent.includes('A.Y.')) {
-    sub.textContent = `${data.length} approved student${data.length !== 1 ? 's' : ''} (including treasurers)`;
-  }
 
   if (!data.length) {
     tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No students found.</td></tr>';
     return;
   }
 
+  // Renders the receipt buttons for one semester. A semester can hold more than
+  // one receipt (e.g. two partial payments); each opens the receipt modal.
+  const receiptBtns = (receipts) => {
+    if (!receipts || !receipts.length) return '<span style="color:var(--text-d)">—</span>';
+    return receipts.map(rc => {
+      const safe = String(rc.receiptNumber || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      return `<button type="button" class="btn-outline" style="padding:2px 6px;font-size:10px;font-family:'DM Mono',monospace"
+                onclick="viewReceipt('OrgFee', ${rc.paymentId}, '${safe}')">${escapeHtml(rc.receiptNumber || '')}</button>`;
+    }).join(' ');
+  };
+
   tbody.innerHTML = data.map((s, i) => {
-    const courseYr = `${escapeHtml(s.courseCode)} ${escapeHtml(s.yearSection)}`;
+    const courseYr = `${escapeHtml(s.courseCode)} ${escapeHtml(fmtYearSection(s.yearSection))}`;
     const roleTag = s.role === 'Treasurer'
       ? ' <span style="font-size:10px;font-weight:600;background:rgba(249,115,22,.15);color:#fdba74;border:1px solid rgba(249,115,22,.25);border-radius:5px;padding:1px 7px;margin-left:6px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle">Treasurer</span>'
       : '';
     const inactiveTag = !s.isActive
       ? ' <span style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:6px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle">Inactive</span>'
       : '';
+
+    // Build a sem cell: Balance · Amount Paid · Status · Receipts, stacked.
+    // Graduated/N/A students collapse to a single "N/A" row instead of zeroed lines.
+    const semCell = (required, paid, status, receipts) => {
+      if ((status || '').toLowerCase() === 'n/a' || (required <= 0 && paid <= 0)) {
+        return `<div style="color:var(--text-d);font-size:11px">N/A</div>`;
+      }
+      const bal = Math.max(0, (required || 0) - (paid || 0));
+      const balColor = bal > 0 ? '#f87171' : '#5fdd8e';
+      return `
+        <div style="display:flex;flex-direction:column;gap:2px;font-family:'DM Mono',monospace;font-size:11px;line-height:1.35">
+          <div style="color:${balColor}"><span style="color:var(--text-d);font-family:inherit">Bal:</span> ${p(bal)}</div>
+          <div style="color:var(--text)"><span style="color:var(--text-d)">Paid:</span> ${p(paid || 0)}</div>
+          <div>${feeStatusBadge(status)}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:2px;font-family:'DM Sans',sans-serif">
+            <span style="color:var(--text-d);font-size:10px">Receipts:</span> ${receiptBtns(receipts)}
+          </div>
+        </div>`;
+    };
+
     return `<tr>
       <td class="td-mono td-m">${i + 1}</td>
       <td class="td-mono td-m">${escapeHtml(s.schoolId)}</td>
       <td><strong>${escapeHtml(s.name)}</strong>${roleTag}${inactiveTag}</td>
       <td class="td-m">${courseYr}</td>
-      <td>${feeStatusBadge(s.firstSemStatus)}</td>
-      <td>${feeStatusBadge(s.secondSemStatus)}</td>
+      <td>${semCell(s.firstSemRequired,  s.firstSemPaid,  s.firstSemStatus,  s.firstSemReceipts)}</td>
+      <td>${semCell(s.secondSemRequired, s.secondSemPaid, s.secondSemStatus, s.secondSemReceipts)}</td>
       <td>
-        <button class="btn-outline" style="padding:5px 12px;font-size:11px" onclick="openStudentOrgFeeModal(${s.userId})">
-          Org Fees
+        <button class="btn-outline" title="View Org Fees" aria-label="View Org Fees"
+                style="padding:6px 8px;display:inline-flex;align-items:center;justify-content:center"
+                onclick="openStudentOrgFeeModal(${s.userId})">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
         </button>
       </td>
     </tr>`;
   }).join('');
+}
+
+// Resolve which semester the breakdown + status filter operate on.
+//  _currentSem   = the live semester for the loaded school year, or null (past year).
+//  _breakdownSem = _currentSem when there is one, otherwise a sensible fallback
+//                  (the later semester that has a fee) so the card still works.
+function computeSemContext() {
+  const s = ALL_STUDENTS_PAGE[0];
+  let current = null;
+  if (s) {
+    if (s.firstSemIsCurrent) current = 'first';
+    else if (s.secondSemIsCurrent) current = 'second';
+  }
+  _currentSem = current;
+  if (current) {
+    _breakdownSem = current;
+  } else if (s && (s.secondSemRequired || 0) > 0) {
+    _breakdownSem = 'second';
+  } else {
+    _breakdownSem = 'first';
+  }
+}
+
+// Put a "Current" badge on whichever semester column is the live one. Only the
+// real current semester gets the badge — past school years show none.
+function updateSemHeaderIndicators() {
+  const badge = '<span style="font-size:9px;font-weight:700;background:var(--green-glow);color:#5fdd8e;border:1px solid rgba(74,222,128,.3);border-radius:5px;padding:1px 6px;margin-left:6px;letter-spacing:.04em;text-transform:uppercase;vertical-align:middle">Current</span>';
+  const b1 = document.getElementById('th-sem1-badge');
+  const b2 = document.getElementById('th-sem2-badge');
+  if (b1) b1.innerHTML = _currentSem === 'first'  ? badge : '';
+  if (b2) b2.innerHTML = _currentSem === 'second' ? badge : '';
+}
+
+// Count students by org-fee status for the current semester. Uses the list
+// filtered by search/course/year/SY (but NOT the status filter, so the card
+// always shows the full distribution).
+function renderPaymentBreakdown() {
+  const list = _lastStudentsForBreakdown || [];
+  const key = _breakdownSem === 'second' ? 'secondSemStatus' : 'firstSemStatus';
+
+  let paid = 0, partial = 0, unpaid = 0;
+  list.forEach(s => {
+    switch ((s[key] || '').toLowerCase()) {
+      case 'paid':    paid++;    break;
+      case 'partial': partial++; break;
+      case 'unpaid':  unpaid++;  break;
+      // 'n/a' (graduated / not applicable) is intentionally excluded
+    }
+  });
+
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('bd-total',   list.length);
+  set('bd-paid',    paid);
+  set('bd-partial', partial);
+  set('bd-unpaid',  unpaid);
+
+  const lbl = document.getElementById('bd-sem-label');
+  if (lbl) {
+    const semText = _breakdownSem === 'second' ? '2nd Semester' : '1st Semester';
+    lbl.textContent = _currentSem ? `Current · ${semText}` : semText;
+  }
+}
+
+// Shortcut: jump straight to the Record Payment page with the Org Fee tab active.
+function goToOrgFeePayment() {
+  const incomeNav = document.querySelector('.nav-item[onclick*="income"]');
+  showPage('income', incomeNav);
+  setTimeout(() => { if (typeof switchIncomeTab === 'function') switchIncomeTab('orgfee'); }, 60);
+}
+
+// "Default" button: clear search + status + course + year, set school year back
+// to the current one, and return the list to its default latest-payment stack.
+function resetStudentsPageFilters() {
+  studentsPageQ = '';
+  const search = document.getElementById('students-search');
+  if (search) search.value = '';
+
+  const statusSel = document.getElementById('students-filter-status');
+  if (statusSel) statusSel.value = '';
+  const courseSel = document.getElementById('students-filter-course');
+  if (courseSel) courseSel.value = '';
+  const yearSel = document.getElementById('students-filter-year');
+  if (yearSel) yearSel.value = '';
+
+  const sySel = document.getElementById('students-filter-sy');
+  if (sySel && CURRENT_SCHOOL_YEAR && CURRENT_SCHOOL_YEAR.yearStart) {
+    const cur = `${CURRENT_SCHOOL_YEAR.yearStart}–${CURRENT_SCHOOL_YEAR.yearEnd}`;
+    const hasOption = [...sySel.options].some(o => o.value === cur);
+    sySel.value = hasOption ? cur : '';
+  }
+
+  // Reload for the (now current) school year, which re-renders with the stack sort.
+  loadStudentsPage(sySel ? sySel.value : null);
 }
 
 function filterStudentsPage(q) {
@@ -2477,7 +2883,10 @@ async function initStudentsPageFilters() {
         }
 
         sySel.dataset.listenerAttached = 'true';
-        sySel.addEventListener('change', () => loadStudentsPage(sySel.value));
+        sySel.addEventListener('change', async () => {
+            await loadStudentsPage(sySel.value);
+            await refreshDashboardStats();
+        });
     } catch {}
 }
 
@@ -2499,25 +2908,36 @@ function populateStudentsPageFilters() {
 
 function applyStudentsPageFilters() {
   studentsPageCourse = document.getElementById('students-filter-course')?.value || '';
-  const filterSY = document.getElementById('students-filter-sy')?.value || '';
+  const yearFilter = document.getElementById('students-filter-year')?.value || '';
+  const statusFilter = document.getElementById('students-filter-status')?.value || '';
 
-  const filtered = ALL_STUDENTS_PAGE.filter(s => {
-    const name        = (s.name        || '').toLowerCase();
-    const schoolId    = (s.schoolId    || '').toLowerCase();
-    const course      = (s.courseCode  || '').toLowerCase();
+  // Base list: everything except the payment-status filter. The breakdown card
+  // counts this, so its Paid/Partial/Unpaid totals always reflect the full
+  // distribution and don't collapse when a status is selected.
+  const base = ALL_STUDENTS_PAGE.filter(s => {
+    const name = (s.name || '').toLowerCase();
+    const schoolId = (s.schoolId || '').toLowerCase();
+    const course = (s.courseCode || '').toLowerCase();
     const yearSection = (s.yearSection || '').toLowerCase();
-
-    const matchesQ      = !studentsPageQ
-      || name.includes(studentsPageQ)
-      || schoolId.includes(studentsPageQ)
-      || course.includes(studentsPageQ)
-      || yearSection.includes(studentsPageQ);
-
+    const matchesQ = !studentsPageQ
+      || name.includes(studentsPageQ) || schoolId.includes(studentsPageQ)
+      || course.includes(studentsPageQ) || yearSection.includes(studentsPageQ);
     const matchesCourse = !studentsPageCourse || (s.courseCode || '') === studentsPageCourse;
-    // ↑ No matchesSY — the server already filtered by school year
-
-    return matchesQ && matchesCourse;
+    // yearSection looks like "3-A" → the year level is the part before the dash.
+    const studentYear = (s.yearSection || '').split('-')[0].trim();
+    const matchesYear = !yearFilter || studentYear === yearFilter;
+    return matchesQ && matchesCourse && matchesYear;
   });
+
+  _lastStudentsForBreakdown = base;
+  renderPaymentBreakdown();
+
+  // Table list: optionally narrowed to the chosen payment status (matched against
+  // the current semester's status, same semester the breakdown uses).
+  const statusKey = _breakdownSem === 'second' ? 'secondSemStatus' : 'firstSemStatus';
+  const filtered = statusFilter
+    ? base.filter(s => (s[statusKey] || '').toLowerCase() === statusFilter.toLowerCase())
+    : base;
 
   renderStudentsPage(filtered);
 }
@@ -2525,12 +2945,13 @@ function applyStudentsPageFilters() {
 async function openStudentOrgFeeModal(userId) {
   const nameEl = document.getElementById('student-orgfee-name');
   const subEl = document.getElementById('student-orgfee-sub');
-  const summaryEl = document.getElementById('student-orgfee-summary');
   const tbody = document.getElementById('student-orgfee-tbody');
+
+  // Stash the userId so refreshes after edit can reload the same student.
+  window._currentOrgFeeUserId = userId;
 
   nameEl.textContent = 'Student Org Fees';
   subEl.textContent = 'Loading…';
-  summaryEl.innerHTML = '';
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">Loading…</td></tr>';
   openModal('modal-student-orgfee');
 
@@ -2547,34 +2968,193 @@ async function openStudentOrgFeeModal(userId) {
     nameEl.textContent = s.name;
     subEl.textContent = `${s.schoolId} · ${s.courseCode} ${s.yearSection}${s.role === 'Treasurer' ? ' · Treasurer' : ''}${data.schoolYear ? ' · A.Y. ' + data.schoolYear : ''}`;
 
-    summaryEl.innerHTML = `
-      <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Current School Year · ${escapeHtml(data.schoolYear || 'N/A')}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        ${renderSemesterSummaryCard('1st Semester', data.firstSemester, data.schoolYear)}
-        ${renderSemesterSummaryCard('2nd Semester', data.secondSemester, data.schoolYear)}
-      </div>`;
+    const fees = data.fees || [];
+    const txs  = data.transactions || [];
 
-    const txs = data.transactions || [];
-    if (!txs.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">No org fee transactions recorded.</td></tr>';
+    if (!fees.length && !txs.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">No org fee records.</td></tr>';
       return;
     }
 
-    tbody.innerHTML = txs.map(t => {
-      const semLabel = t.semester === 'First' ? '1st' : '2nd';
-      return `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
-        <td style="padding:9px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${fd(t.date)}</td>
-        <td style="padding:9px 12px;color:var(--text)">${escapeHtml(t.schoolYear)} · ${semLabel}</td>
-        <td style="padding:9px 12px">${renderReceiptCell(t.paymentId, t.receiptNumber, t.hasReceipt)}</td>
-        <td style="padding:9px 12px;text-align:right;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:#5fdd8e">${p(t.amount)}</td>
-        <td style="padding:9px 12px">${feeStatusBadge(t.paymentStatus)}</td>
-      </tr>`;
+    // ── HYBRID LAYOUT ──
+    // Build a unified key set: every (schoolYear, semester) from BOTH fees and txs,
+    // so a payment to a semester that no longer has an open fee still shows up,
+    // and a current semester with no payments still appears as an unpaid row.
+    const groupKey = (sy, sem) => `${sy || ''}|${sem || ''}`;
+    const groups = new Map();
+
+    // Seed from fees (semesters that should appear even with no payments)
+    fees.forEach(f => {
+      const k = groupKey(f.schoolYear, f.semester);
+      if (!groups.has(k)) groups.set(k, { schoolYear: f.schoolYear, semester: f.semester, fee: null, payments: [] });
+      groups.get(k).fee = f;
+    });
+
+    // Add any payment-only groups (e.g. fully-paid prior semester that fees[] omitted)
+    txs.forEach(t => {
+      const k = groupKey(t.schoolYear, t.semester);
+      if (!groups.has(k)) groups.set(k, { schoolYear: t.schoolYear, semester: t.semester, fee: null, payments: [] });
+      groups.get(k).payments.push(t);
+    });
+
+    // Distribute payments into their groups (in case fee existed first)
+    groups.forEach(g => { g.payments = []; });
+    txs.forEach(t => {
+      const k = groupKey(t.schoolYear, t.semester);
+      groups.get(k).payments.push(t);
+    });
+
+    // Sort: the current school-year + semester floats to the very top, then the
+    // rest fall in most-recent-first order (newer year first, 2nd sem before 1st).
+    const sorted = [...groups.values()].sort((a, b) => {
+      const aCur = a.fee && a.fee.isCurrent ? 1 : 0;
+      const bCur = b.fee && b.fee.isCurrent ? 1 : 0;
+      if (aCur !== bCur) return bCur - aCur;
+      const sa = parseInt((a.schoolYear || '').split('–')[0], 10) || 0;
+      const sb = parseInt((b.schoolYear || '').split('–')[0], 10) || 0;
+      if (sa !== sb) return sb - sa;
+      const semOrder = { 'First': 1, 'Second': 2 };
+      return (semOrder[b.semester] || 0) - (semOrder[a.semester] || 0);
+    });
+
+    // Build rows. Each group emits one parent semester row plus a nested payment row per payment.
+    const html = sorted.map(g => {
+      const semLabel = g.semester === 'First' ? '1st Semester'
+                     : g.semester === 'Second' ? '2nd Semester' : (g.semester || '—');
+      const totalPaid = g.payments.reduce((s, p) => s + (p.amount || 0), 0);
+      const required = g.fee?.requiredAmount ?? null;
+      const balance  = g.fee ? g.fee.balance : (required != null ? Math.max(0, required - totalPaid) : 0);
+      // Derive the status straight from the figures we actually display (balance +
+      // amount paid) so the badge can never contradict them. A balance of 0 with at
+      // least one payment must read "Paid", never "Partial".
+      let status;
+      if (required != null && required <= 0) {
+        status = 'N/A';
+      } else if (totalPaid <= 0) {
+        status = 'Unpaid';
+      } else if (balance <= 0) {
+        status = 'Paid';
+      } else {
+        status = 'Partial';
+      }
+      const balColor = balance > 0 ? '#f87171' : '#5fdd8e';
+
+      const summaryHtml = `
+        <div style="display:flex;flex-direction:column;gap:2px;font-family:'DM Mono',monospace;font-size:11px;line-height:1.35">
+          <div style="color:${balColor}"><span style="color:var(--text-d);font-family:inherit">Bal:</span> ${p(balance)}</div>
+          <div style="color:var(--text)"><span style="color:var(--text-d)">Paid:</span> ${p(totalPaid)}</div>
+          <div>${feeStatusBadge(status)}</div>
+        </div>`;
+
+      const parentRow = `
+        <tr style="border-top:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02)">
+          <td style="padding:10px 12px;color:var(--text);font-weight:600">${semLabel}<br><span style="font-size:10.5px;font-weight:400;color:var(--text-d);font-family:'DM Mono',monospace">${escapeHtml(g.schoolYear || '—')}</span></td>
+          <td style="padding:10px 12px">${summaryHtml}</td>
+          <td style="padding:10px 12px;color:var(--text-d);font-size:11px">${g.payments.length ? g.payments.length + ' payment' + (g.payments.length === 1 ? '' : 's') : 'No payments'}</td>
+          <td></td>
+          <td></td>
+        </tr>`;
+
+      const paymentRows = g.payments
+        .slice()
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .map(t => {
+          const receiptCell = renderReceiptCell(t.paymentId, t.receiptNumber, t.hasReceipt);
+          const safeReceipt = (t.receiptNumber || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          const actions = `
+            <div style="display:inline-flex;gap:6px;justify-content:flex-end">
+              <button class="btn-outline" title="Print" aria-label="Print"
+                      style="padding:5px 7px;display:inline-flex;align-items:center;justify-content:center"
+                      onclick="printPaymentReceipt(${t.paymentId}, '${safeReceipt}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              </button>
+              <button class="btn-outline" title="Edit amount" aria-label="Edit amount"
+                      style="padding:5px 7px;display:inline-flex;align-items:center;justify-content:center"
+                      onclick="editPaymentFromModal(${t.paymentId})">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+            </div>`;
+          return `
+            <tr>
+              <td style="padding:8px 12px;padding-left:28px;color:var(--text-d);font-size:11px">↳ payment</td>
+              <td style="padding:8px 12px;text-align:left;font-family:'DM Mono',monospace;font-size:12px;color:#5fdd8e">${p(t.amount)}</td>
+              <td style="padding:8px 12px">${receiptCell}</td>
+              <td style="padding:8px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${fd(t.date)}</td>
+              <td style="padding:8px 12px;text-align:right">${actions}</td>
+            </tr>`;
+        }).join('');
+
+      return parentRow + paymentRows;
     }).join('');
+
+    tbody.innerHTML = html;
   } catch (err) {
     console.error('Failed to load student org fee details:', err);
     subEl.textContent = 'Failed to load org fee details.';
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">Request failed.</td></tr>';
   }
+}
+
+// Close the student org-fee modal and forget the current student, so a later
+// edit on an unrelated payment (e.g. from the History page) doesn't re-open it.
+function closeStudentOrgFeeModal() {
+  window._currentOrgFeeUserId = null;
+  closeModal('modal-student-orgfee');
+}
+
+// Wait for the receipt-paper element to appear in the DOM after viewReceipt
+// kicks off its render. Falls back to a hard timeout so we always print eventually.
+function awaitReceiptReady(timeoutMs = 2500) {
+  return new Promise(resolve => {
+    const start = Date.now();
+    const tick = () => {
+      const paper = document.querySelector('.receipt-paper');
+      // The paper exists once its container modal is open; check visibility too
+      // so we don't print an empty paper that's still being populated.
+      const modalOpen = document.querySelector('.receipt-modal.open');
+      if (paper && modalOpen && paper.textContent.trim().length > 0) {
+        // Give the browser one extra frame to actually paint
+        requestAnimationFrame(() => resolve(true));
+        return;
+      }
+      if (Date.now() - start > timeoutMs) { resolve(false); return; }
+      setTimeout(tick, 60);
+    };
+    tick();
+  });
+}
+
+// Print the receipt. The @@media print stylesheet hides everything except the
+// .receipt-paper, so only the receipt itself appears in the print preview.
+//
+// IMPORTANT — the date and URL at the top of the printed page come from the
+// browser, not from this code. They cannot be removed by CSS or JS; the user
+// must uncheck "Headers and footers" in the print dialog's More Settings
+// (the browser remembers this setting). We blank the document title for the
+// duration of the print so at least that part of the header is empty.
+async function printPaymentReceipt(paymentId, receiptNumber) {
+  await viewReceipt('OrgFee', paymentId, receiptNumber);
+  await awaitReceiptReady();
+
+  showToast('Tip: in More settings, uncheck "Headers and footers" for a clean print.', 'ok');
+
+  const originalTitle = document.title;
+  document.title = ' ';
+  try {
+    window.print();
+  } finally {
+    setTimeout(() => { document.title = originalTitle; }, 250);
+  }
+}
+
+// Edit a specific payment by id (from inside the org-fee modal).
+async function editPaymentFromModal(paymentId) {
+  // editIncome('OrgFee', id) reads from DB.orgFees, which is populated by loadOrgFeePayments.
+  if (!DB.orgFees || !DB.orgFees.find(f => f.id === paymentId)) {
+    await loadOrgFeePayments();
+  }
+  closeModal('modal-student-orgfee');
+  editIncome('OrgFee', paymentId);
 }
 
 // ── MODALS ───────────────────────────────────────────────────────
@@ -2758,6 +3338,16 @@ async function saveExpense() {
   let amt  = parseFloat(document.getElementById('ex-amount').value) || 0;
   let date = document.getElementById('ex-date').value || today();
   if (!desc || !amt) { showToast('Description and amount are required.', 'fail'); return; }
+
+  // Spending limit: an expense cannot exceed the remaining balance (cash on hand).
+  const allTx = allTransactions();
+  const totalIncome   = allTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amt, 0);
+  const totalExpenses = allTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amt, 0);
+  const remainingBalance = totalIncome - totalExpenses;
+  if (amt > remainingBalance) {
+    showToast('Remaining balance is not enough for this new expense. Available: ' + p(remainingBalance) + '.', 'fail');
+    return;
+  }
 
   try {
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
@@ -3499,7 +4089,7 @@ async function viewReceipt(type, id, receipt) {
     const r = data.receipt;
     const amount = Number(r.amount || 0);
     const status = r.status || 'Partial';
-    const issueDate = r.paymentDate ? new Date(r.paymentDate) : new Date();
+    const issueDate = (r.paymentDate || r.issueDate) ? new Date(r.paymentDate || r.issueDate) : new Date();
     const formattedDate = issueDate.toLocaleDateString('en-PH', { month: '2-digit', day: '2-digit', year: '2-digit' });
     const semLabel = r.semester === 'First' ? '1st Semester' : r.semester === 'Second' ? '2nd Semester' : (r.semester || '');
     const term = [r.schoolYear, semLabel].filter(Boolean).join(' - ');
@@ -3658,10 +4248,15 @@ async function saveEditedOrgFee() {
     const data = await res.json();
     if (data.success) {
       closeModal('modal-edit-orgfee');
+      await loadOrgFeePayments();
       await renderIncome();
       await renderHistory();
       await renderDashboard();
       showToast('Payment updated successfully.', 'ok');
+      // If the edit was launched from the student org-fee modal, reopen it with fresh data.
+      if (window._currentOrgFeeUserId) {
+        openStudentOrgFeeModal(window._currentOrgFeeUserId);
+      }
     } else {
       showToast(data.message || 'Failed to update.', 'fail');
     }
@@ -3815,6 +4410,8 @@ async function init() {
   await populateFeeSySemDropdown();
   await populateChartSchoolYears();
   setTimeout(renderCharts, 200);
+  await refreshDashboardStats();
+  await loadStudentsPage();
 }
 
 init();
@@ -3855,6 +4452,7 @@ async function refreshTreasurerPages(pages) {
                 ]);
                 await renderDashboard();
                 renderCharts();
+                await loadStudentsPage();
                 break;
             case 'history':
                 await renderHistory();

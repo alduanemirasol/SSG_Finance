@@ -30,10 +30,6 @@ namespace MyMvcApp.Data
 
                 context.Accounts.Add(adminAccount);
                 await context.SaveChangesAsync();
-                
-                System.Console.WriteLine("Default admin account created:");
-                System.Console.WriteLine("Email: admin@ssg.com");
-                System.Console.WriteLine("Password: admin123");
             }
         }
     }

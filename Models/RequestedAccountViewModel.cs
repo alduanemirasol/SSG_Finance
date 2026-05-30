@@ -10,6 +10,8 @@ namespace MyMvcApp.Models
         public string? CourseCode { get; set; }
         public string? YearLevel { get; set; }
         public string? Section { get; set; }
+        public string? Role { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public RequestStatus Status { get; set; }
     }

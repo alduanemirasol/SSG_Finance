@@ -167,6 +167,8 @@ namespace MyMvcApp.Data
                     );
                 entity.Property(e => e.ReceivedBy).IsRequired().HasColumnName("received_by");
                 entity.Property(e => e.PaymentDate).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("payment_date");
+                entity.Property(e => e.YearLevelAtPayment).HasColumnName("year_level_at_payment");
+                entity.Property(e => e.SectionAtPayment).HasMaxLength(50).HasColumnName("section_at_payment");
 
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Payments)

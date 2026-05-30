@@ -18,7 +18,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SSG Finance — Student Dashboard</title>
+  <title>SSG Finance - Student Dashboard</title>
   <link rel="icon" type="image/png" href="~/favicon.png" />
   <style>
     @@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
@@ -177,16 +177,17 @@
     /* Long bond paper: 8.5in × 13in → at 96dpi = 816 × 1248px, scaled down to ~620px wide */
     .receipt-paper{
       width:620px;
-      min-height:952px; /* proportional to long bond */
+      min-height:auto;
       background:#f9f8f5;
       border:1px solid #ccc;
       box-shadow:0 8px 40px rgba(0,0,0,.45);
-      padding:60px 64px 72px;
-      font-family:'Libre Baskerville',Georgia,serif;
+      padding:24px 56px 28px;
+      font-family:Arial, Helvetica, sans-serif;
       color:#111;
       position:relative;
       flex-shrink:0;
     }
+
     .receipt-paper::before{
       content:'';
       position:absolute;
@@ -195,39 +196,35 @@
       pointer-events:none;
     }
 
-    /* header */
-    .rp-header{text-align:center;margin-bottom:32px;position:relative;z-index:1}
-    .rp-org{font-size:20px;font-weight:700;letter-spacing:.01em;margin-bottom:2px}
-    .rp-campus{font-size:13px;font-weight:400}
-    .rp-divider{border:none;border-top:1px solid #555;margin:14px 0 10px}
-    .rp-type{font-size:14px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-top:10px}
-    .rp-copy{font-size:12px;font-style:italic;color:#444;margin-top:2px}
+    .rp-header{text-align:center;margin-bottom:12px;position:relative;z-index:1}
+    .rp-org{font-size:16px;font-weight:700;letter-spacing:.01em;margin-bottom:1px}
+    .rp-campus{font-size:11px;font-weight:400}
+    .rp-divider{border:none;border-top:1px solid #555;margin:8px 0 6px}
+    .rp-type{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-top:6px}
+    .rp-copy{font-size:10px;font-style:italic;color:#444;margin-top:1px}
 
-    /* receipt no / date row */
-    .rp-meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px;position:relative;z-index:1}
-    .rp-meta-label{font-size:12.5px;font-weight:400}
-    .rp-meta-value{font-size:13px;font-weight:700;color:#c0392b;border-bottom:1px solid #888;min-width:140px;display:inline-block;padding-bottom:2px;text-align:center}
+    .rp-meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;position:relative;z-index:1}
+    .rp-meta-label{font-size:11px;font-weight:400}
+    .rp-meta-value{font-size:12px;font-weight:700;color:#c0392b;border-bottom:1px solid #888;min-width:140px;display:inline-block;padding-bottom:2px;text-align:center}
     .rp-meta-value.date-val{color:#111}
 
-    /* section title */
-    .rp-section-title{text-align:center;font-size:13.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:22px;position:relative;z-index:1}
+    .rp-section-title{text-align:center;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;position:relative;z-index:1}
 
-    /* fields */
-    .rp-field{display:flex;align-items:baseline;margin-bottom:16px;position:relative;z-index:1}
-    .rp-field-label{font-size:13px;font-weight:400;min-width:160px;flex-shrink:0}
-    .rp-field-value{flex:1;font-size:13.5px;font-weight:700;border-bottom:1px solid #888;padding-bottom:2px;min-height:22px;padding-left:6px;font-family:'Libre Baskerville',Georgia,serif}
-    .rp-field-value.handwritten{font-family:'Libre Baskerville',Georgia,serif;font-style:italic;font-size:14px;letter-spacing:.01em}
+    .rp-field{display:flex;align-items:baseline;margin-bottom:6px;position:relative;z-index:1}
+    .rp-field-label{font-size:12px;font-weight:400;min-width:150px;flex-shrink:0}
+    .rp-field-value{flex:1;font-size:12px;font-weight:700;border-bottom:1px solid #888;padding-bottom:2px;min-height:18px;padding-left:6px;font-family:Arial,Helvetica,sans-serif}
+    .rp-field-value.handwritten{font-family:Arial,Helvetica,sans-serif;font-style:none;font-size:12px;letter-spacing:.01em}
 
     /* status badge on receipt */
-    .rp-status-badge{display:inline-block;padding:1px 10px;border:1.5px solid #555;border-radius:4px;font-size:12.5px;font-weight:700;font-style:italic;background:#fff}
-    .rp-status-badge.paid{border-color:#1a7a4a;color:#1a7a4a;background:#f0fdf4}
-    .rp-status-badge.partial{border-color:#b45309;color:#b45309;background:#fffbeb}
-    .rp-status-badge.pending{border-color:#92400e;color:#92400e;background:#fffbeb}
+    .rp-status-badge{display:inline-block;padding:1px 10px;border:1.5px solid #555;border-radius:4px;font-size:12px;font-weight:700;font-style:none;background:#fff}
+    .rp-status-badge.paid{border-color:transparent;color:#1a7a4a;background:transparent}
+    .rp-status-badge.partial{border-color:transparent;color:#b47209;background:transparent}
+    .rp-status-badge.pending{border-color:transparent;color:#87200e;background:transparent}
 
     /* signature section */
-    .rp-signature-section{margin-top:52px;display:flex;justify-content:flex-end;position:relative;z-index:1}
+    .rp-signature-section{margin-top:24px;display:flex;justify-content:flex-end;position:relative;z-index:1}
     .rp-sig-block{text-align:center;min-width:220px}
-    .rp-sig-label{font-size:12.5px;margin-bottom:6px}
+    .rp-sig-label{font-size:11px;margin-bottom:6px}
     .rp-sig-line{display:none}
     .rp-sig-name-label{font-size:11px;color:#555}
 
@@ -286,12 +283,12 @@
       .sb-brand{padding:16px 12px}
       .notice{padding:12px 14px}
       .notice-text{font-size:11px}
-      .receipt-paper{width:95vw;min-height:auto;padding:36px 28px 48px}
       .receipt-modal-inner{padding:8px}
       .receipt-controls{max-width:95vw}
-      .rp-org{font-size:16px}
-      .rp-field-label{min-width:130px;font-size:12px}
-      .rp-field-value{font-size:12.5px}
+      .receipt-paper{
+        transform: scale(0.56);
+        transform-origin: top center;
+        margin-bottom: -420px; 
     }
 
     @@media (max-width: 480px) {
@@ -401,7 +398,7 @@
     }
     <div class="stat-grid">
       <div class="stat-card">
-        <div class="stat-lbl">Outstanding Balance</div>
+        <div class="stat-lbl">Org Fee Balance</div>
         <div class="stat-row">
           <div class="stat-val amount">₱@totalBalance.ToString("N2")</div>
           <div class="stat-icon r">
@@ -611,7 +608,7 @@
           <div class="info-field"><label>Student ID</label><span style="font-family:'DM Mono',monospace;font-size:12px">@(studentId.Length > 0 ? studentId : "—")</span></div>
           <div class="info-field"><label>Course Code</label><span>@(courseCode.Length > 0 ? courseCode : "—")</span></div>
           <div class="info-field"><label>Course Name</label><span>@(courseName.Length > 0 ? courseName : "—")</span></div>
-          <div class="info-field"><label>Year Level</label><span>@(yearLevel.Length > 0 ? yearLevel : "—")</span></div>
+          <div class="info-field"><label>Year Level</label><span>@(yearLevel == "5" ? "4 Completed" : (yearLevel.Length > 0 ? yearLevel : "—"))</span></div>
           <div class="info-field"><label>Section</label><span>@(section.Length > 0 ? section : "—")</span></div>
         </div>
       </div>
@@ -805,6 +802,12 @@
     const studentYear    = '@yearLevel';
     const studentSection = '@(section)';
 
+    // For display: a year level of 5 means the 4-year program is completed.
+    // Show "4 Completed" (with no section) instead of "5" + section.
+    const studentYearSectionDisplay = (studentYear === '5')
+        ? '4 Completed'
+        : (studentYear + studentSection);
+
     /* ── HELPERS ── */
     function amountToWords(amount) {
       if (amount === 0) return 'Zero Pesos Only';
@@ -890,7 +893,18 @@
       
       document.getElementById('rp-name').textContent           = studentName || '—';
       document.getElementById('rp-id').textContent             = studentIdVal || '—';
-      document.getElementById('rp-course').textContent         = (studentCourse + ' ' + studentYear + studentSection).trim() || '—';
+      // Use the year level/section captured at the time of this payment so the receipt
+      // never changes as the student advances. Fall back to current session values only
+      // for old receipts that have no snapshot. Year level 5 means "4 Completed".
+      let receiptYearSection;
+      if (receipt && receipt.YearLevelAtPayment !== null && receipt.YearLevelAtPayment !== undefined) {
+        const yl = String(receipt.YearLevelAtPayment);
+        const sec = receipt.SectionAtPayment || '';
+        receiptYearSection = (yl === '5') ? '4 Completed' : (yl + sec);
+      } else {
+        receiptYearSection = studentYearSectionDisplay;
+      }
+      document.getElementById('rp-course').textContent         = (studentCourse + ' ' + receiptYearSection).trim() || '—';
       document.getElementById('rp-amount').textContent         = '₱ ' + paid.toFixed(2);
       document.getElementById('rp-amount-words').textContent   = amountToWords(paid);
       document.getElementById('rp-received-by').textContent   = receivedByName;
@@ -1029,6 +1043,49 @@
       t.textContent = msg; t.className = 'show ' + type;
       clearTimeout(t._t); t._t = setTimeout(() => t.className = '', 3000);
     }
+
+    // ================================================================
+    // AUTO-REFRESH POLLING
+    // Refreshes student payment data every 30 seconds
+    // Students don't need fast refresh — 30s is fine
+    // ================================================================
+    const STUDENT_REFRESH_INTERVAL = 30000; // 30 seconds
+
+    async function refreshStudentData() {
+      // Don't refresh if a modal is open — would be jarring
+      const payModalOpen     = document.getElementById('payModal')?.classList.contains('open');
+      const receiptModalOpen = document.getElementById('receiptModal')?.classList.contains('open');
+      if (payModalOpen || receiptModalOpen) return;
+
+      try {
+        const res  = await fetch('/Home/GetStudentDashboardData');
+        const data = await res.json();
+        if (!data.success) return;
+
+        // Update stat cards on Overview page
+        const balanceEls = document.querySelectorAll('#page-overview .stat-val.amount');
+        const balanceEl  = balanceEls?.[0];
+        const paidEl     = balanceEls?.[1];
+        const pendingEl  = document.querySelector('#page-overview .stat-val:not(.amount)');
+
+        if (balanceEl) balanceEl.textContent = '₱' + Number(data.outstandingBalance).toFixed(2);
+        if (paidEl)    paidEl.textContent    = '₱' + Number(data.totalPaid).toFixed(2);
+        if (pendingEl) pendingEl.textContent = data.pendingCount;
+
+        // Update pending badge on Current Fees tab
+        const feesBadge = document.querySelector('#page-fees .badge.by');
+        if (feesBadge) feesBadge.textContent = data.pendingCount + ' pending';
+
+        // Update history record count
+        const historyBadge = document.querySelector('#page-history .badge.bg');
+        if (historyBadge) historyBadge.textContent = data.paymentCount + ' records';
+      } catch { /* silent fail — don't disturb student */ }
+    }
+
+    setInterval(async () => {
+      await refreshStudentData();
+    }, STUDENT_REFRESH_INTERVAL);
   </script>
 </body>
 </html>
+

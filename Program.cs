@@ -30,6 +30,14 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+
+    // Fix: in local/dev (often HTTP), SecurePolicy=Always prevents the session cookie from being stored.
+    // Use None to allow cookie over HTTP; browser will still send it over HTTPS normally.
+    options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.None;
+
+    // Fix: Strict SameSite can block cookies on some navigation / fetch flows.
+    // Lax allows cookies for top-level navigation.
+    options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
 });
 
 var app = builder.Build();
@@ -45,8 +53,6 @@ using (var scope = app.Services.CreateScope())
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
 }
 else
 {
@@ -69,6 +75,11 @@ else
         });
     });
 }
+
+// Enforce HTTPS even on LAN.
+// Use HSTS for all environments (self-signed HTTPS is supported on school LAN).
+app.UseHsts();
+
 
 // Add security headers to hide server information
 app.Use(async (context, next) =>

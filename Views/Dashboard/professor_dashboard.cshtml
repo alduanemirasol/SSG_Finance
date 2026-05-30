@@ -11,7 +11,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSG Finance — Professor</title>
+    <title>SSG Finance - Professor</title>
     <link rel="icon" type="image/png" href="~/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -172,6 +172,18 @@
         .dropdown-menu.open{display:block}
         .dropdown-item{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12.5px;color:var(--text-m);cursor:pointer;transition:background .1s}
         .dropdown-item:hover{background:rgba(39,167,68,.08);color:var(--text)}
+        /* ── ORG FEE MODAL (added) ── */
+        .modal-overlay{display:none;position:fixed;inset:0;z-index:500;align-items:center;justify-content:center}
+        .modal-overlay.open{display:flex}
+        .modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px)}
+        .modal-box{position:relative;z-index:1;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 30px;width:100%;max-width:500px;box-shadow:0 24px 60px rgba(0,0,0,.5);max-height:90vh;overflow-y:auto}
+        .modal-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px}
+        .modal-title{font-size:16px;font-weight:700;color:#fff}
+        .modal-sub{font-size:11.5px;color:var(--text-m);margin-top:2px}
+        .modal-close{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)}
+        .btn-outline{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--text-m)}
+        .btn-outline:hover{border-color:var(--green);color:#5fdd8e;background:var(--green-glow2)}
     </style>
 </head>
 <body>
@@ -318,26 +330,28 @@
         <div class="page-hdr">
             <div>
                 <div class="page-title">My Students</div>
-                <div class="page-sub" id="students-sub">All students in your class</div>
+                <div class="page-sub" id="students-page-sub">All students in your class</div>
             </div>
         </div>
         <div class="content-card">
             <div class="toolbar">
                 <div class="search-box">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
-                    <input type="text" placeholder="Search by name, ID, course…" oninput="filterStudentsTable(this.value)"/>
+                    <input type="text" placeholder="Search by name, ID, course…" oninput="filterStudentsPage(this.value)"/>
                 </div>
-                <select class="filter-select" id="students-status-filter" onchange="filterStudentsTable(document.querySelector('#page-students .search-box input').value)">
-                    <option value="">All Statuses</option>
-                    <option value="paid">Paid</option>
-                    <option value="partial">Partial</option>
-                    <option value="unpaid">Unpaid</option>
-                </select>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <select class="filter-select" id="students-filter-course" onchange="applyStudentsPageFilters()">
+                        <option value="">All Courses</option>
+                    </select>
+                    <select class="filter-select" id="students-filter-sy" onchange="applyStudentsPageFilters()">
+                        <option value="">All School Years</option>
+                    </select>
+                </div>
             </div>
             <table>
-                <thead><tr><th>#</th><th>Name</th><th>School ID</th><th>Course</th><th>Year & Section</th><th>Status</th></tr></thead>
-                <tbody id="students-tbody">
-                    <tr class="empty-row"><td colspan="6">No students loaded yet.</td></tr>
+                <thead><tr><th>#</th><th>School ID</th><th>Name</th><th>Course · Year &amp; Section</th><th>1st Sem</th><th>2nd Sem</th><th>Org Fees</th></tr></thead>
+                <tbody id="students-page-tbody">
+                    <tr class="empty-row"><td colspan="7">Loading students…</td></tr>
                 </tbody>
             </table>
         </div>
@@ -537,10 +551,13 @@ function updateDashboardStats() {
 
 // ── Students Table ────────────────────────────────────────────────
 function renderStudentsTable(filtered) {
-    const data = filtered ?? allStudents;
+    // The old "My Students" table was replaced by the treasurer-style Org Fee list.
+    // Kept as a safe no-op so existing callers (loadStudents) don't break.
     const tbody = document.getElementById('students-tbody');
-    document.getElementById('students-sub').textContent = `${data.length} student${data.length !== 1 ? 's' : ''} in your class`;
-
+    if (!tbody) return;
+    const data = filtered ?? allStudents;
+    const sub = document.getElementById('students-sub');
+    if (sub) sub.textContent = `${data.length} student${data.length !== 1 ? 's' : ''} in your class`;
     if (!data.length) {
         tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No students found.</td></tr>';
         return;
@@ -558,7 +575,9 @@ function renderStudentsTable(filtered) {
 }
 
 function filterStudentsTable(q) {
-    const statusFilter = document.getElementById('students-status-filter').value.toLowerCase();
+    const filterEl = document.getElementById('students-status-filter');
+    if (!filterEl) return;
+    const statusFilter = filterEl.value.toLowerCase();
     const query = (q || '').toLowerCase().trim();
     const filtered = allStudents.filter(s => {
         const matchQ = !query
@@ -723,6 +742,306 @@ async function init() {
 }
 
 init();
+
+// ================================================================
+// AUTO-REFRESH POLLING
+// Refreshes data every 10 seconds so professor sees live updates
+// ================================================================
+
+const PROF_REFRESH_INTERVAL = 10000; // 10 seconds
+
+async function refreshCurrentProfPage() {
+    const activePage = document.querySelector('.page.active');
+    if (!activePage) return;
+    const pageId = activePage.id.replace('page-', '');
+
+    switch (pageId) {
+        case 'dashboard':
+            await loadStudents();
+            await renderRecentActivity();
+            break;
+        case 'students':
+            await loadStudents();
+            filterStudentsTable(
+                document.querySelector('#page-students .search-box input')?.value || ''
+            );
+            break;
+        case 'payment-status':
+            await loadStudents();
+            filterPaymentTable(
+                document.querySelector('#page-payment-status .search-box input')?.value || ''
+            );
+            break;
+        case 'profile':
+            // nothing dynamic to refresh
+            break;
+    }
+}
+
+setInterval(async () => {
+    await refreshCurrentProfPage();
+}, PROF_REFRESH_INTERVAL);
+
+// ════════════════════════════════════════════════════════════════
+// ORG FEE STUDENT LIST (shared treasurer-style module)
+// ════════════════════════════════════════════════════════════════
+let ALL_STUDENTS_PAGE = [];
+let studentsPageQ = '';
+let studentsPageCourse = '';
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
+function feeStatusBadge(status) {
+  const s = (status || 'Unpaid').toLowerCase();
+  if (s === 'paid') return '<span class="badge bg">Paid</span>';
+  if (s === 'partial') return '<span class="badge by">Partial</span>';
+  if (s === 'n/a') return '<span class="badge" style="background:rgba(255,255,255,.06);color:var(--text-d)">N/A</span>';
+  return '<span class="badge br">Unpaid</span>';
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function renderReceiptCell(paymentId, receiptNumber, hasReceipt) {
+  if (!hasReceipt || !receiptNumber || receiptNumber === '—') {
+    return '<span style="color:var(--text-d)">—</span>';
+  }
+  return `<span style="font-family:'DM Mono',monospace;font-size:10.5px;color:var(--text-m)">${escapeHtml(receiptNumber)}</span>`;
+}
+
+function renderCurrentFeesTable(currentSchoolYear, fees) {
+  const list = Array.isArray(fees) ? fees : [];
+  const rowsHtml = list.length
+    ? list.map(f => {
+        const semLabel = f.semester === 'First' ? '1st Semester'
+                       : f.semester === 'Second' ? '2nd Semester'
+                       : (f.semester || '—');
+        const balColor = f.balance > 0 ? '#f87171' : '#5fdd8e';
+        return `<tr>
+          <td style="padding:9px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${escapeHtml(f.schoolYear || 'N/A')}</td>
+          <td style="padding:9px 12px;color:var(--text)">${semLabel}</td>
+          <td style="padding:9px 12px;font-family:'DM Mono',monospace;color:${balColor}">${p(f.balance)}</td>
+          <td style="padding:9px 12px;font-family:'DM Mono',monospace;color:var(--text)">${p(f.requiredAmount)}</td>
+          <td style="padding:9px 12px">${feeStatusBadge(f.feeStatus)}</td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-d)">No applicable fees found.</td></tr>`;
+
+  return `
+    <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Current Fees${currentSchoolYear ? ' · A.Y. ' + escapeHtml(currentSchoolYear) : ''}</div>
+    <div style="border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:rgba(255,255,255,.04)">
+            <th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-d);font-weight:600">School Year</th>
+            <th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-d);font-weight:600">Semester</th>
+            <th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-d);font-weight:600">Balance</th>
+            <th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-d);font-weight:600">Amount</th>
+            <th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-d);font-weight:600">Status</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+}
+
+async function loadStudentsPage(schoolYear = null) {
+  const tbody = document.getElementById('students-page-tbody');
+  if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Loading students…</td></tr>';
+  const sySel = document.getElementById('students-filter-sy');
+  await initStudentsPageFilters();
+  const selectedSY = schoolYear || sySel?.value || '';
+  try {
+    const url = selectedSY
+      ? `/Home/GetTreasurerStudentsWithFees?schoolYear=${encodeURIComponent(selectedSY)}`
+      : '/Home/GetTreasurerStudentsWithFees';
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.success) {
+      if (tbody) tbody.innerHTML = `<tr class="empty-row"><td colspan="7">${escapeHtml(data.message || 'Failed to load students.')}</td></tr>`;
+      return;
+    }
+    ALL_STUDENTS_PAGE = data.students || [];
+    const sub = document.getElementById('students-page-sub');
+    if (sub) sub.textContent = `${ALL_STUDENTS_PAGE.length} student${ALL_STUDENTS_PAGE.length !== 1 ? 's' : ''} · A.Y. ${data.schoolYear}`;
+    populateStudentsPageFilters();
+    applyStudentsPageFilters();
+  } catch (err) {
+    console.error('Failed to load students page:', err);
+    if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Failed to load students.</td></tr>';
+  }
+}
+
+function renderStudentsPage(filtered) {
+  const data = (filtered ?? ALL_STUDENTS_PAGE).slice()
+    .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' }));
+  const tbody = document.getElementById('students-page-tbody');
+  if (!tbody) return;
+  if (!data.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No students found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map((s, i) => {
+    const courseYr = `${escapeHtml(s.courseCode)} ${escapeHtml(s.yearSection)}`;
+    const roleTag = s.role === 'Treasurer'
+      ? ' <span style="font-size:10px;font-weight:600;background:rgba(249,115,22,.15);color:#fdba74;border:1px solid rgba(249,115,22,.25);border-radius:5px;padding:1px 7px;margin-left:6px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle">Treasurer</span>'
+      : '';
+    return `<tr>
+      <td class="td-mono td-m">${i + 1}</td>
+      <td class="td-mono td-m">${escapeHtml(s.schoolId)}</td>
+      <td><strong>${escapeHtml(s.name)}</strong>${roleTag}</td>
+      <td class="td-m">${courseYr}</td>
+      <td>${feeStatusBadge(s.firstSemStatus)}</td>
+      <td>${feeStatusBadge(s.secondSemStatus)}</td>
+      <td>
+        <button class="btn-outline" style="padding:5px 12px;font-size:11px" onclick="openStudentOrgFeeModal(${s.userId})">
+          Org Fees
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterStudentsPage(q) {
+  studentsPageQ = (q || '').toLowerCase().trim();
+  applyStudentsPageFilters();
+}
+
+async function initStudentsPageFilters() {
+  const sySel = document.getElementById('students-filter-sy');
+  if (!sySel || sySel.dataset.listenerAttached) return;
+  try {
+    const res = await fetch('/Home/GetSchoolYears');
+    const data = await res.json();
+    if (!data.success) return;
+    const currentSY = data.schoolYears.find(sy => sy.yearStatus === 'Current');
+    sySel.innerHTML = data.schoolYears.map(sy =>
+      `<option value="${sy.yearStart}–${sy.yearEnd}">${sy.yearStart}–${sy.yearEnd}</option>`
+    ).join('');
+    if (currentSY) sySel.value = `${currentSY.yearStart}–${currentSY.yearEnd}`;
+    sySel.dataset.listenerAttached = 'true';
+    sySel.addEventListener('change', () => loadStudentsPage(sySel.value));
+  } catch {}
+}
+
+function populateStudentsPageFilters() {
+  const courseSel = document.getElementById('students-filter-course');
+  if (!courseSel) return;
+  const courses = [...new Set(ALL_STUDENTS_PAGE.map(s => (s.courseCode || '').trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  const prevCourse = courseSel.value;
+  courseSel.innerHTML = '<option value="">All Courses</option>' +
+    courses.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  if (prevCourse) courseSel.value = prevCourse;
+}
+
+function applyStudentsPageFilters() {
+  studentsPageCourse = document.getElementById('students-filter-course')?.value || '';
+  const filtered = ALL_STUDENTS_PAGE.filter(s => {
+    const name = (s.name || '').toLowerCase();
+    const schoolId = (s.schoolId || '').toLowerCase();
+    const course = (s.courseCode || '').toLowerCase();
+    const yearSection = (s.yearSection || '').toLowerCase();
+    const matchesQ = !studentsPageQ
+      || name.includes(studentsPageQ) || schoolId.includes(studentsPageQ)
+      || course.includes(studentsPageQ) || yearSection.includes(studentsPageQ);
+    const matchesCourse = !studentsPageCourse || (s.courseCode || '') === studentsPageCourse;
+    return matchesQ && matchesCourse;
+  });
+  renderStudentsPage(filtered);
+}
+
+async function openStudentOrgFeeModal(userId) {
+  const nameEl = document.getElementById('student-orgfee-name');
+  const subEl = document.getElementById('student-orgfee-sub');
+  const summaryEl = document.getElementById('student-orgfee-summary');
+  const tbody = document.getElementById('student-orgfee-tbody');
+
+  nameEl.textContent = 'Student Org Fees';
+  subEl.textContent = 'Loading…';
+  summaryEl.innerHTML = '';
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">Loading…</td></tr>';
+  openModal('modal-student-orgfee');
+
+  try {
+    const res = await fetch('/Home/GetStudentOrgFeeDetails?userId=' + encodeURIComponent(userId));
+    const data = await res.json();
+    if (!data.success) {
+      subEl.textContent = data.message || 'Unable to load org fee details.';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">No data available.</td></tr>';
+      return;
+    }
+    const s = data.student;
+    nameEl.textContent = s.name;
+    subEl.textContent = `${s.schoolId} · ${s.courseCode} ${s.yearSection}${s.role === 'Treasurer' ? ' · Treasurer' : ''}${data.schoolYear ? ' · A.Y. ' + data.schoolYear : ''}`;
+    summaryEl.innerHTML = renderCurrentFeesTable(data.schoolYear, data.fees);
+    const txs = data.transactions || [];
+    if (!txs.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">No org fee transactions recorded.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = txs.map(t => {
+      const semLabel = t.semester === 'First' ? '1st' : '2nd';
+      return `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+        <td style="padding:9px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${fd(t.date)}</td>
+        <td style="padding:9px 12px;color:var(--text)">${escapeHtml(t.schoolYear)} · ${semLabel}</td>
+        <td style="padding:9px 12px">${renderReceiptCell(t.paymentId, t.receiptNumber, t.hasReceipt)}</td>
+        <td style="padding:9px 12px;text-align:right;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:#5fdd8e">${p(t.amount)}</td>
+        <td style="padding:9px 12px">${feeStatusBadge(t.paymentStatus)}</td>
+      </tr>`;
+    }).join('');
+  } catch (err) {
+    console.error('Failed to load student org fee details:', err);
+    subEl.textContent = 'Failed to load org fee details.';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">Request failed.</td></tr>';
+  }
+}
+
+// Load the org-fee student list whenever the Students page is shown.
+(function () {
+  const origShowPage = window.showPage;
+  window.showPage = function (name, navEl) {
+    origShowPage(name, navEl);
+    if (name === 'students') loadStudentsPage();
+  };
+})();
 </script>
+
+<!-- Student Org Fee Details Modal -->
+<div class="modal-overlay" id="modal-student-orgfee">
+  <div class="modal-backdrop" onclick="closeModal('modal-student-orgfee')"></div>
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title" id="student-orgfee-name">Student Org Fees</div>
+        <div class="modal-sub" id="student-orgfee-sub">Loading…</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-student-orgfee')">✕</button>
+    </div>
+    <div id="student-orgfee-summary" style="margin-bottom:18px"></div>
+    <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:8px">Transaction History</div>
+    <div style="max-height:280px;overflow-y:auto;border:1px solid rgba(255,255,255,.06);border-radius:10px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Date</th>
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">School Year / Sem</th>
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Receipt</th>
+            <th style="padding:8px 12px;text-align:right;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Amount</th>
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Status</th>
+          </tr>
+        </thead>
+        <tbody id="student-orgfee-tbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('modal-student-orgfee')">Close</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

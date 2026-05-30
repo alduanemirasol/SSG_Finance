@@ -1,210 +1,761 @@
 @{
     ViewData["Title"] = "Professor Sign Up";
 }
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Professor Sign Up | SSG Finance</title>
-  <link rel="icon" type="image/png" href="~/favicon.png" />
-  <style>
-    :root {
-      color-scheme: dark;
-      color: #eef2ff;
-      background: #0b1410;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Professor Sign Up | SSG Finance</title>
+<link rel="icon" type="image/png" href="/images/favicon.png" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+<style>
+:root {
+  --green:      #27a744;
+  --green-dark: #218c3a;
+  --green-deep: #1a6e2e;
+  --white:      #ffffff;
+}
 
-    * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: radial-gradient(circle at top left, rgba(39,167,68,.18), transparent 28%), radial-gradient(circle at bottom right, rgba(64,116,242,.12), transparent 26%), #06100c; }
-    a { color: #7de4a0; text-decoration: none; }
-    a:hover { text-decoration: underline; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .page-shell { width: min(1200px, calc(100vw - 32px)); display: grid; grid-template-columns: 1.05fr 1.3fr; gap: 32px; }
-    .panel { border-radius: 24px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.35); }
-    .panel.left { background: linear-gradient(180deg, rgba(13,31,18,.96), rgba(5,12,7,.99)); padding: 42px 36px; display: flex; flex-direction: column; justify-content: space-between; }
-    .panel.right { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); padding: 34px; }
+html, body {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  height: 100%;
+  background: #0a280e;
+}
 
-    .brand-logo { width: 68px; height: 68px; border-radius: 18px; background: linear-gradient(135deg, #1fa253, #28b460); display: grid; place-items: center; margin-bottom: 28px; }
-    .brand-logo img { width: 42px; height: 42px; }
-    .brand-title { font-size: clamp(2rem, 2.6vw, 3rem); line-height: 1.02; font-weight: 800; margin-bottom: 14px; }
-    .brand-sub { max-width: 360px; color: rgba(238,242,255,.74); line-height: 1.7; margin-bottom: 28px; }
-    .feature-list { display: grid; gap: 16px; }
-    .feature-item { display: grid; gap: 8px; }
-    .feature-item strong { display: block; color: #c5f1cf; font-size: 1rem; }
-    .feature-item span { color: rgba(238,242,255,.72); line-height: 1.6; }
-    .hint-box { border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.05); border-radius: 16px; padding: 18px 20px; color: #d2ffe9; font-size: .95rem; line-height: 1.65; }
+#heroBg {
+  position: fixed;
+  inset: 0;
+  background: url('/images/CtuGinatilan.jpg') no-repeat center / cover;
+  filter: blur(3px);
+  transform: scale(1.08);
+  z-index: 0;
+}
 
-    .form-card { display: flex; flex-direction: column; gap: 24px; }
-    .form-card h1 { margin: 0; color: #f8fafc; font-size: clamp(1.9rem, 2.3vw, 2.7rem); }
-    .form-card p { margin: 0; color: rgba(238,242,255,.72); line-height: 1.7; }
-    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-    .form-group { display: flex; flex-direction: column; gap: 8px; }
-    .form-group label { font-size: .88rem; color: rgba(238,242,255,.75); }
-    .form-group input { width: 100%; border: 1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 14px 16px; background: rgba(255,255,255,.05); color: #eef2ff; font-size: .98rem; }
-    .form-group input::placeholder { color: rgba(238,242,255,.42); }
-    .form-group .inline { display: inline-flex; gap: 14px; }
-    .form-group .inline input { flex: 1; }
-    .btn-submit { width: 100%; padding: 16px 18px; border: none; border-radius: 14px; font-size: 1rem; font-weight: 700; color: #081b0f; background: #7de4a0; cursor: pointer; transition: transform .2s ease, box-shadow .2s ease; }
-    .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 18px 50px rgba(125,228,160,.28); }
-    .help-text { color: rgba(238,242,255,.72); font-size: .95rem; margin: 0; }
-    .help-text a { font-weight: 700; }
-    .status-message { min-height: 26px; color: #ffcd38; font-size: .95rem; }
+#heroOverlay {
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(to bottom,
+      rgba(20,60,30,0.82) 0%,
+      rgba(10,40,20,0.52) 40%,
+      rgba(10,40,20,0.52) 65%,
+      rgba(20,60,30,0.80) 100%);
+  z-index: 1;
+}
 
-    @@media (max-width: 960px) {
-      .page-shell { grid-template-columns: 1fr; }
-      .panel.left { order: 2; }
-      .panel.right { order: 1; }
-    }
+.top-accent {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  z-index: 1000;
+}
 
-    @@media (max-width: 640px) {
-      body { background: #080f0a; }
-      .panel.left { padding: 28px 24px; }
-      .panel.right { padding: 28px 24px; }
-      .form-grid { grid-template-columns: 1fr; }
-      .brand-title { font-size: 2.3rem; }
-    }
-  </style>
+/* ── OVERLAY LAYOUT (same as student login overlay) ── */
+#signupOverlay {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* LEFT PANEL */
+.lp-left {
+  width: 42%;
+  flex-shrink: 0;
+  background: rgba(20, 90, 40, 0.38);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border-right: 1px solid rgba(255,255,255,0.10);
+  display: flex;
+  flex-direction: column;
+  padding: 36px 44px 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.lp-left::before {
+  content:'';
+  position:absolute; inset:0;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none; z-index:0;
+}
+
+/* RIGHT PANEL */
+.lp-right {
+  flex: 1;
+  background: #ffffff;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* LEFT PANEL INTERNALS */
+.lp-top {
+  display:flex; align-items:center; gap:14px;
+  position:relative; z-index:1;
+}
+
+.lp-logo-circle {
+  width:52px; height:52px; border-radius:50%;
+  background:#f5c518; overflow:hidden; flex-shrink:0;
+  box-shadow:0 0 16px rgba(245,197,24,0.3);
+}
+.lp-logo-circle img { width:100%; height:100%; object-fit:cover; }
+
+.lp-school-info { display:flex; flex-direction:column; }
+.lp-school-name { color:#fff; font-size:16px; font-weight:700; line-height:1.2; }
+.lp-school-sub  { color:rgba(255,255,255,0.80); font-size:12px; font-weight:400; margin-top:2px; }
+
+.lp-left-body {
+  flex:1; display:flex; flex-direction:column; justify-content:center;
+  position:relative; z-index:1;
+}
+
+.lp-headline {
+  color:#fff; font-size:48px; font-weight:800;
+  line-height:1.12; margin-bottom:20px; letter-spacing:-1px;
+}
+
+.lp-desc {
+  color:rgba(255,255,255,0.75); font-size:13px;
+  line-height:1.65; max-width:300px;
+}
+
+.lp-feature-list {
+  display:flex; flex-direction:column; gap:18px;
+  margin-top:32px;
+}
+
+.lp-feature {
+  display:flex; align-items:flex-start; gap:12px;
+}
+
+.lp-feature-icon {
+  width:32px; height:32px; border-radius:8px;
+  background:rgba(39,167,68,0.25);
+  border:1px solid rgba(39,167,68,0.35);
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; margin-top:1px;
+}
+
+.lp-feature-icon svg { width:15px; height:15px; color:#7de4a0; }
+
+.lp-feature-text strong {
+  display:block; color:#c5f1cf; font-size:13px; font-weight:600; margin-bottom:2px;
+}
+.lp-feature-text span {
+  color:rgba(255,255,255,0.60); font-size:12px; line-height:1.5;
+}
+
+.lp-copyright {
+  position:relative; z-index:1;
+  color:rgba(255,255,255,0.35); font-size:12px;
+  margin-top:auto; padding-top:24px;
+}
+
+/* RIGHT PANEL INTERNALS */
+.lp-right-inner {
+  padding: 60px 64px;
+  flex:1;
+  display:flex; flex-direction:column; justify-content:flex-start;
+  min-height:100vh;
+}
+
+.rp-h1 {
+  font-size:28px; font-weight:700;
+  color:#111827; margin-bottom:8px; letter-spacing:-0.3px;
+}
+
+.rp-subtitle {
+  font-size:13px; color:#6b7280;
+  margin-bottom:28px;
+}
+
+/* FORM STYLES */
+.form-section { margin-bottom:18px; }
+
+.password-wrap{
+  position:relative;
+  display:block;
+}
+
+.password-input,
+.password-wrap .form-input{
+  padding-right:44px !important;
+}
+
+.password-toggle{
+  position:absolute;
+  top:50%;
+  right:12px;
+  transform:translateY(-50%);
+  width:32px;
+  height:32px;
+  border:none;
+  background:transparent;
+  border-radius:8px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#6b7280;
+  z-index:2;
+  padding:0;
+}
+
+.password-toggle:hover{ color:var(--green); background:rgba(39,167,68,0.08); }
+
+.password-toggle-icon{ font-size:18px; pointer-events:none; }
+
+/* Hide native browser password reveal / clear icons (Edge / IE) so only the custom eye shows */
+.password-input::-ms-reveal,
+.password-input::-ms-clear,
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear{
+  display:none;
+}
+
+.section-title {
+
+  font-size:13px; font-weight:700;
+  color:#374151; margin-bottom:14px;
+  padding-bottom:7px;
+  border-bottom:1.5px solid rgba(39,167,68,0.50);
+}
+
+.form-group { margin-bottom:14px; }
+
+.form-label {
+  display:block; font-size:12.5px;
+  color:#6b7280; margin-bottom:5px; font-weight:500;
+}
+
+.form-input {
+  width:100%; padding:12px 15px;
+  border:1.5px solid #d1d5db;
+  border-radius:9px; font-size:13.5px;
+  color:#111827; background:#f9fafb;
+  outline:none;
+  transition:border-color 0.16s, background 0.16s, transform 0.16s;
+  font-family:'Inter',sans-serif;
+}
+.form-input::placeholder { color:#9ca3af; font-size:13px; }
+.form-input:focus {
+  border-color:var(--green);
+  background:#ffffff;
+  transform:scale(1.02);
+}
+
+.form-row { display:flex; gap:14px; }
+.form-row .form-group { flex:1; }
+
+.submit-btn {
+  width:100%; padding:14px;
+  background:var(--green); color:#fff;
+  border:none; border-radius:10px;
+  font-size:15px; font-weight:600; cursor:pointer;
+  transition:background 0.16s, transform 0.16s;
+  font-family:'Inter',sans-serif;
+  margin-top:8px; margin-bottom:18px;
+}
+.submit-btn:hover { background:var(--green-dark); transform:translateY(-1px); }
+
+.back-to-login { font-size:13px; color:#6b7280; text-align:center; }
+.back-to-login a {
+  color:var(--green); text-decoration:none;
+  font-weight:600; cursor:pointer;
+}
+.back-to-login a:hover { text-decoration:underline; }
+
+.status-message {
+  min-height:26px; font-size:13px;
+  margin-bottom:14px; padding:10px 14px;
+  border-radius:8px; display:none;
+}
+.status-message.show { display:block; }
+.status-message.ok   { background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; }
+.status-message.fail { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
+
+/* RESPONSIVE */
+@@media (max-width: 768px) {
+  #signupOverlay { flex-direction: column; }
+
+  .lp-left {
+    width:100%; flex-shrink:0;
+    border-right:none;
+    border-bottom:1px solid rgba(255,255,255,0.10);
+    padding:20px 24px 24px;
+  }
+
+  .lp-headline { font-size:28px; margin-bottom:10px; }
+  .lp-feature-list { display:none; }
+  .lp-right-inner { padding:40px 24px 40px; min-height:auto; }
+  .rp-h1 { font-size:22px; }
+  .form-row { flex-direction:column; gap:0; }
+}
+
+@@media (max-width: 640px) {
+  .lp-headline { font-size:24px; }
+}
+/* ── Success overlay modal ── */
+#successOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 30, 15, 0.55);
+  backdrop-filter: blur(8px) saturate(1.2);
+  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  animation: successFade 0.25s ease;
+}
+#successOverlay.show { display: flex; }
+
+@@keyframes successFade { from { opacity: 0; } to { opacity: 1; } }
+
+.success-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 18px;
+  padding: 36px 28px 30px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+  animation: successPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@@keyframes successPop {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+.success-icon {
+  width: 64px; height: 64px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: rgba(39, 167, 68, 0.12);
+  display: flex; align-items: center; justify-content: center;
+}
+.success-icon svg { width: 34px; height: 34px; stroke: var(--green); }
+
+.success-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a2e1f;
+  margin: 0 0 10px;
+}
+.success-text {
+  font-size: 15px;
+  line-height: 1.55;
+  color: #4b5563;
+  margin: 0 0 24px;
+}
+.success-signin-btn {
+  display: inline-block;
+  width: 100%;
+  padding: 13px 20px;
+  border: none;
+  border-radius: 10px;
+  background: var(--green);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, transform 0.15s;
+}
+.success-signin-btn:hover { background: var(--green-dark); transform: translateY(-1px); }
+
+@@media (max-width: 480px) {
+  .success-card { padding: 30px 20px 24px; border-radius: 14px; }
+  .success-title { font-size: 18px; }
+  .success-text { font-size: 14px; }
+}
+</style>
 </head>
 <body>
-  <div class="page-shell">
-    <section class="panel left">
-      <div>
-        <div class="brand-logo">
-          <img src="/images/logo.png" alt="SSG Finance" />
-        </div>
-        <div class="brand-title">Professor Sign Up</div>
-        <div class="brand-sub">This hidden route is reserved for faculty account creation only. It does not collect any student academic profile details.</div>
-        <div class="feature-list">
-          <div class="feature-item">
+
+<div id="heroBg"></div>
+<div id="heroOverlay"></div>
+<div class="top-accent"></div>
+
+<div id="signupOverlay">
+
+  <!-- LEFT PANEL -->
+  <div class="lp-left">
+    <div class="lp-top">
+      <div class="lp-logo-circle">
+        <img src="/images/logo.png" alt="SSG Logo" />
+      </div>
+      <div class="lp-school-info">
+        <span class="lp-school-name">CTU - Ginatilan</span>
+        <span class="lp-school-sub">Supreme Student Government</span>
+      </div>
+    </div>
+
+    <div class="lp-left-body">
+      <div class="lp-headline">Professor<br>Sign Up</div>
+      <p class="lp-desc">Faculty account registration for the SSG Finance System. Admin approval required.</p>
+
+      <div class="lp-feature-list">
+        <div class="lp-feature">
+          <div class="lp-feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          </div>
+          <div class="lp-feature-text">
             <strong>Secure hidden access</strong>
             <span>Only people with the exact link can reach this page.</span>
           </div>
-          <div class="feature-item">
-            <strong>User and account only</strong>
+        </div>
+        <div class="lp-feature">
+          <div class="lp-feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+          </div>
+          <div class="lp-feature-text">
+            <strong>Basic profile only</strong>
             <span>Only login credentials and basic profile fields are requested.</span>
           </div>
-          <div class="feature-item">
+        </div>
+        <div class="lp-feature">
+          <div class="lp-feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          </div>
+          <div class="lp-feature-text">
             <strong>Admin approval</strong>
-            <span>New professor accounts are created pending admin approval.</span>
+            <span>New professor accounts are pending admin approval before activation.</span>
           </div>
         </div>
       </div>
-      <div class="hint-box">If you want, bookmark this URL: <strong>/proffessor_sign-up</strong>. Do not publish it publicly.</div>
-    </section>
+    </div>
 
-    <section class="panel right">
-      <div class="form-card">
-        <div>
-          <h1>Register as Professor</h1>
-          <p>Enter your basic account details to request a professor login.</p>
-        </div>
-
-        <div class="status-message" id="statusMessage"></div>
-
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="profSchoolId">School ID</label>
-            <input id="profSchoolId" type="text" placeholder="Enter CTU ID" />
-          </div>
-          <div class="form-group">
-            <label for="profEmail">Email</label>
-            <input id="profEmail" type="email" placeholder="Enter email address" />
-          </div>
-          <div class="form-group">
-            <label for="profFirstName">First Name</label>
-            <input id="profFirstName" type="text" placeholder="Enter first name" />
-          </div>
-          <div class="form-group">
-            <label for="profMiddleName">M.I.</label>
-            <input id="profMiddleName" type="text" maxlength="1" placeholder="Optional" />
-          </div>
-          <div class="form-group">
-            <label for="profLastName">Last Name</label>
-            <input id="profLastName" type="text" placeholder="Enter last name" />
-          </div>
-          <div class="form-group">
-            <label for="profPassword">Password</label>
-            <input id="profPassword" type="password" placeholder="Create a password" />
-          </div>
-          <div class="form-group">
-            <label for="profConfirmPassword">Confirm Password</label>
-            <input id="profConfirmPassword" type="password" placeholder="Confirm password" />
-          </div>
-        </div>
-
-        <button class="btn-submit" type="button" onclick="handleProfessorSignUp()">Create Professor Account</button>
-        <p class="help-text">Already have an account? <a href="/Home/Login">Sign in</a></p>
-      </div>
-    </section>
+    <div class="lp-copyright">© 2025 SSG Finance System · Cebu Technological University</div>
   </div>
 
-  <script>
-    function showStatus(message, isError = false) {
-      const status = document.getElementById('statusMessage');
-      status.textContent = message || '';
-      status.style.color = isError ? '#ffb3b3' : '#b9ffd5';
+  <!-- RIGHT PANEL -->
+  <div class="lp-right">
+    <div class="lp-right-inner">
+
+      <h1 class="rp-h1">Register as Professor</h1>
+      <p class="rp-subtitle">Enter your basic account details to request a professor login.</p>
+
+      <div class="status-message" id="statusMessage"></div>
+
+      <!-- SECURITY -->
+      <div class="form-section">
+        <div class="section-title">Security</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="profSchoolId">CTU ID</label>
+            <input type="text" id="profSchoolId" class="form-input" placeholder="Enter here" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="profPassword">Password</label>
+            <div class="password-wrap">
+              <input type="password" id="profPassword" class="form-input password-input" placeholder="Enter here" oninput="updateProfPasswordChecklist(this.value)" onfocus="document.getElementById('prof-password-checklist').style.display='block'" />
+              <button type="button" class="password-toggle" aria-label="Show password" data-toggle-target="#profPassword" onclick="togglePasswordVisibility(this)">
+                <ion-icon name="eye" class="password-toggle-icon"></ion-icon>
+              </button>
+            </div>
+            <ul id="prof-password-checklist" style="list-style:none;padding:0;margin:8px 0 0;font-size:11.5px;line-height:1.7;display:none">
+
+              <li data-rule="len"     style="color:#9aa">• At least 8 characters</li>
+              <li data-rule="upper"   style="color:#9aa">• One uppercase letter</li>
+              <li data-rule="lower"   style="color:#9aa">• One lowercase letter</li>
+              <li data-rule="digit"   style="color:#9aa">• One number</li>
+              <li data-rule="special" style="color:#9aa">• One special character</li>
+            </ul>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="profConfirmPassword">Confirm Password</label>
+            <div class="password-wrap">
+              <input type="password" id="profConfirmPassword" class="form-input password-input" placeholder="Enter here" />
+              <button type="button" class="password-toggle" aria-label="Show confirm password" data-toggle-target="#profConfirmPassword" onclick="togglePasswordVisibility(this)">
+                <ion-icon name="eye" class="password-toggle-icon"></ion-icon>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- NAME -->
+      <div class="form-section">
+        <div class="section-title">Name</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="profFirstName">First Name</label>
+            <input type="text" id="profFirstName" class="form-input" placeholder="Enter here" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="profMiddleName">M. I.</label>
+            <input type="text" id="profMiddleName" class="form-input" placeholder="Enter here" maxlength="1" oninput="this.value=this.value.toUpperCase()" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="profLastName">Last Name</label>
+            <input type="text" id="profLastName" class="form-input" placeholder="Enter here" />
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTACT -->
+      <div class="form-section">
+        <div class="section-title">Contact</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="profEmail">Email</label>
+            <input type="email" id="profEmail" class="form-input" placeholder="Enter here" />
+          </div>
+        </div>
+      </div>
+
+      <button class="submit-btn" type="button" onclick="handleProfessorSignUp()">Create Professor Account</button>
+      <p class="back-to-login">Already have an account? <a href="/Home/Login">Sign in</a></p>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Success overlay shown after a professor account request is submitted -->
+<div id="successOverlay" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+  <div class="success-card">
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6 9 17l-5-5"></path>
+      </svg>
+    </div>
+    <h2 class="success-title" id="successTitle">Account request submitted!</h2>
+    <p class="success-text">Please wait for admin approval, then try to sign in.</p>
+    <a href="/Home/Login" class="success-signin-btn">Try to Sign In</a>
+  </div>
+</div>
+
+
+<script>
+/* ── Auto-capitalize name fields ── */
+document.addEventListener('DOMContentLoaded', function () {
+    ['profFirstName', 'profLastName'].forEach(id => {
+        const field = document.getElementById(id);
+        if (field) {
+            field.addEventListener('input', function () {
+                const pos = this.selectionStart;
+                this.value = this.value.replace(/\b\w/g, c => c.toUpperCase());
+                this.setSelectionRange(pos, pos);
+            });
+        }
+    });
+
+    /* ── Clear error styling on input ── */
+    ['profSchoolId', 'profPassword', 'profConfirmPassword',
+     'profFirstName', 'profLastName', 'profEmail'].forEach(id => {
+        const field = document.getElementById(id);
+        if (field) {
+            field.addEventListener('input', function () {
+                setFieldError(id, false);
+                hideStatus();
+            });
+        }
+    });
+});
+
+/* ── Password toggle (shared with student pages) ── */
+function togglePasswordVisibility(btn){
+    if(!btn) return;
+    const targetSel = btn.getAttribute('data-toggle-target');
+    if(!targetSel) return;
+    const input = targetSel.startsWith('input[')
+      ? document.querySelector(targetSel)
+      : document.querySelector(targetSel);
+    if(!input) return;
+
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+
+    const icon = btn.querySelector('ion-icon');
+    if(icon){ icon.setAttribute('name', isPassword ? 'eye-off' : 'eye'); }
+
+    btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+}
+
+/* ── Status message ── */
+function showStatus(message, type) {
+
+    const el = document.getElementById('statusMessage');
+    el.textContent = message;
+    el.className = 'status-message show ' + type;
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function hideStatus() {
+    document.getElementById('statusMessage').className = 'status-message';
+}
+
+/* ── Field error highlight ── */
+function setFieldError(id, hasError) {
+    const field = document.getElementById(id);
+    if (!field) return;
+    if (hasError) {
+        field.style.borderColor = '#ef4444';
+        field.style.background  = '#fef2f2';
+    } else {
+        field.style.borderColor = '';
+        field.style.background  = '';
+    }
+}
+
+function clearAllErrors() {
+    ['profSchoolId', 'profPassword', 'profConfirmPassword',
+     'profFirstName', 'profLastName', 'profEmail'].forEach(id => setFieldError(id, false));
+}
+
+/* ── Email validation ── */
+function validateEmail(email) {
+    return /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(email);
+}
+
+/* ── Submit handler ── */
+async function handleProfessorSignUp() {
+    clearAllErrors();
+    hideStatus();
+
+    const schoolId        = document.getElementById('profSchoolId').value.trim();
+    const password        = document.getElementById('profPassword').value;
+    const confirmPassword = document.getElementById('profConfirmPassword').value;
+    const firstName       = document.getElementById('profFirstName').value.trim();
+    const middleName      = document.getElementById('profMiddleName').value.trim();
+    const lastName        = document.getElementById('profLastName').value.trim();
+    const email           = document.getElementById('profEmail').value.trim();
+
+    /* ── Field-by-field validation ── */
+    let hasError = false;
+
+    if (!schoolId) {
+        setFieldError('profSchoolId', true);
+        hasError = true;
     }
 
-    function validateEmail(email) {
-      return /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(email);
+    if (!firstName) {
+        setFieldError('profFirstName', true);
+        hasError = true;
     }
 
-    async function handleProfessorSignUp() {
-      const schoolId = document.getElementById('profSchoolId').value.trim();
-      const email = document.getElementById('profEmail').value.trim();
-      const firstName = document.getElementById('profFirstName').value.trim();
-      const middleName = document.getElementById('profMiddleName').value.trim();
-      const lastName = document.getElementById('profLastName').value.trim();
-      const password = document.getElementById('profPassword').value;
-      const confirmPassword = document.getElementById('profConfirmPassword').value;
+    if (!lastName) {
+        setFieldError('profLastName', true);
+        hasError = true;
+    }
 
-      if (!schoolId || !email || !firstName || !lastName || !password || !confirmPassword) {
-        showStatus('Please complete all required fields.', true);
+    if (!email) {
+        setFieldError('profEmail', true);
+        hasError = true;
+    } else if (!validateEmail(email)) {
+        setFieldError('profEmail', true);
+        showStatus('Please enter a valid email address.', 'fail');
         return;
-      }
-      if (!validateEmail(email)) {
-        showStatus('Please enter a valid email address.', true);
-        return;
-      }
-      if (password !== confirmPassword) {
-        showStatus('Passwords do not match.', true);
-        return;
-      }
-      if (password.length < 6) {
-        showStatus('Password must be at least 6 characters.', true);
-        return;
-      }
+    }
 
-      showStatus('Creating professor account, please wait...');
+    if (!password) {
+        setFieldError('profPassword', true);
+        hasError = true;
+    } else if (
+        password.length < 8 ||
+        !/[A-Z]/.test(password) ||
+        !/[a-z]/.test(password) ||
+        !/[0-9]/.test(password) ||
+        !/[^A-Za-z0-9]/.test(password) ||
+        /\s/.test(password)
+    ) {
+        setFieldError('profPassword', true);
+        showStatus('Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.', 'fail');
+        return;
+    }
 
-      try {
+    if (!confirmPassword) {
+        setFieldError('profConfirmPassword', true);
+        hasError = true;
+    } else if (password !== confirmPassword) {
+        setFieldError('profConfirmPassword', true);
+        showStatus('Passwords do not match.', 'fail');
+        return;
+    }
+
+    if (hasError) {
+        showStatus('Please fill in all required fields.', 'fail');
+        return;
+    }
+
+    /* ── Submit ── */
+    const btn  = document.querySelector('.submit-btn');
+    const orig = btn.textContent;
+    btn.textContent = 'Creating account...';
+    btn.disabled    = true;
+
+    try {
         const response = await fetch('/Home/Register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            schoolId,
-            email,
-            password,
-            role: 'Professor',
-            firstName,
-            middleName,
-            lastName
-          })
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                schoolId, email, password,
+                role: 'Professor',
+                firstName, middleName, lastName
+            })
         });
 
         const result = await response.json();
+
         if (result.success) {
-          showStatus('Account request submitted. Please wait for admin approval.');
-          document.querySelectorAll('input').forEach(i => i.value = '');
+            document.querySelectorAll('.form-input').forEach(i => i.value = '');
+            clearAllErrors();
+            hideStatus();
+            document.getElementById('successOverlay').classList.add('show');
         } else {
-          showStatus(result.message || 'Registration failed.', true);
+            /* Highlight field if server returns a known conflict */
+            const msg = (result.message || '').toLowerCase();
+            if (msg.includes('school id') || msg.includes('already exists') || msg.includes('id already')) {
+                setFieldError('profSchoolId', true);
+            }
+            if (msg.includes('email')) {
+                setFieldError('profEmail', true);
+            }
+            showStatus(result.message || 'Registration failed. Please try again.', 'fail');
         }
-      } catch (error) {
-        showStatus('An error occurred. Please try again.', true);
-      }
+    } catch {
+        showStatus('An error occurred. Please try again.', 'fail');
+    } finally {
+        btn.textContent = orig;
+        btn.disabled    = false;
     }
-  </script>
+  }
+
+  function updateProfPasswordChecklist(pw) {
+    const rules = {
+      len:     pw.length >= 8 && !/\s/.test(pw),
+      upper:   /[A-Z]/.test(pw),
+      lower:   /[a-z]/.test(pw),
+      digit:   /[0-9]/.test(pw),
+      special: /[^A-Za-z0-9]/.test(pw)
+    };
+    const list = document.getElementById('prof-password-checklist');
+    if (!list) return;
+    Object.keys(rules).forEach(key => {
+      const li = list.querySelector(`[data-rule="${key}"]`);
+      if (!li) return;
+      const ok = rules[key];
+      const text = li.textContent.replace(/^[•✓]\s*/, '');
+      li.textContent = (ok ? '✓ ' : '• ') + text;
+      li.style.color = ok ? '#27a744' : '#9aa';
+    });
+  }
+
+
+</script>
 </body>
 </html>

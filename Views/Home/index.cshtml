@@ -512,6 +512,49 @@ body.login-open .lp-right { transform: translateX(0); }
   transition:border-color 0.16s, background 0.16s, transform 0.16s;
   font-family:'Inter',sans-serif;
 }
+
+.password-wrap{
+  position:relative;
+  display:block;
+}
+
+.password-input,
+.password-wrap .input-field,
+.password-wrap .form-input{
+  padding-right:44px !important;
+}
+
+.password-toggle{
+  position:absolute;
+  top:50%;
+  right:12px;
+  transform:translateY(-50%);
+  width:32px;
+  height:32px;
+  border:none;
+  background:transparent;
+  border-radius:8px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#6b7280;
+  z-index:2;
+  padding:0;
+}
+
+.password-toggle:hover{ color:var(--green); background:rgba(39,167,68,0.08); }
+
+.password-toggle-icon{ font-size:18px; pointer-events:none; }
+
+/* Hide native browser password reveal / clear icons (Edge / IE) so only the custom eye shows */
+.password-input::-ms-reveal,
+.password-input::-ms-clear,
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear{
+  display:none;
+}
+
 .form-input::placeholder { color:#9ca3af; font-size:13px; }
 .form-input:focus {
   border-color:var(--green);
@@ -575,7 +618,7 @@ body.login-open .lp-right { transform: translateX(0); }
   .lp-screen { position:static; height:auto; opacity:1; transform:none; }
   .lp-screen:not(.active) { display:none; }
 
-  .lp-right-inner { padding:40px 24px 40px; justify-content:flex-start; min-height:auto; }
+  .lp-right-inner { padding:40px 24px 100px; justify-content:flex-start; min-height:auto; }
   .lp-close { top:16px; right:16px; }
 
   .rp-h1 { font-size:22px; }
@@ -728,7 +771,13 @@ body.login-open .lp-right { transform: translateX(0); }
         <p class="rp-subtitle">Enter your credentials below.</p>
 
         <input class="input-field" type="text" name="schoolId" placeholder="CTU ID" />
-        <input class="input-field" type="password" name="password" placeholder="Password" />
+        <div class="password-wrap" style="max-width:450px;">
+          <input class="input-field password-input" type="password" name="password" placeholder="Password" />
+          <button type="button" class="password-toggle" aria-label="Show password" data-toggle-target="input[name=\"password\"]" onclick="togglePasswordVisibility(this)">
+            <ion-icon name="eye" class="password-toggle-icon"></ion-icon>
+          </button>
+        </div>
+
         <a class="forgot-link" onclick="goToForgotPassword()"><strong>Forgot password</strong>?</a>
         <button class="btn-signin" onclick="handleSignIn()">Sign in</button>
 
@@ -751,11 +800,30 @@ body.login-open .lp-right { transform: translateX(0); }
             </div>
             <div class="form-group">
               <label class="form-label" for="password">Password</label>
-              <input type="password" id="password" name="password" class="form-input" placeholder="Enter here" />
+              <div class="password-wrap">
+                <input type="password" id="password" name="password" class="form-input password-input" placeholder="Enter here" oninput="updatePasswordChecklist(this.value)" onfocus="document.getElementById('password-checklist').style.display='block'" />
+                <button type="button" class="password-toggle" aria-label="Show password" data-toggle-target="#password" onclick="togglePasswordVisibility(this)">
+                  <ion-icon name="eye" class="password-toggle-icon"></ion-icon>
+                </button>
+              </div>
+              <ul id="password-checklist" style="list-style:none;padding:0;margin:8px 0 0;font-size:11.5px;line-height:1.7;display:none">
+
+                <li data-rule="len"     style="color:#9aa">• At least 8 characters</li>
+                <li data-rule="upper"   style="color:#9aa">• One uppercase letter</li>
+                <li data-rule="lower"   style="color:#9aa">• One lowercase letter</li>
+                <li data-rule="digit"   style="color:#9aa">• One number</li>
+                <li data-rule="special" style="color:#9aa">• One special character</li>
+              </ul>
             </div>
             <div class="form-group">
               <label class="form-label" for="confirmPassword">Confirm Password</label>
-              <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" placeholder="Enter here" />
+              <div class="password-wrap">
+                <input type="password" id="confirmPassword" name="confirmPassword" class="form-input password-input" placeholder="Enter here" />
+                <button type="button" class="password-toggle" aria-label="Show confirm password" data-toggle-target="#confirmPassword" onclick="togglePasswordVisibility(this)">
+                  <ion-icon name="eye" class="password-toggle-icon"></ion-icon>
+                </button>
+              </div>
+
             </div>
           </div>
         </div>
@@ -770,7 +838,7 @@ body.login-open .lp-right { transform: translateX(0); }
             </div>
             <div class="form-group">
               <label class="form-label" for="middleName">M. I.</label>
-              <input type="text" id="middleName" name="middleName" class="form-input" placeholder="Enter here" maxlength="1" />
+              <input type="text" id="profMiddleName" class="form-input" placeholder="Enter here" maxlength="1" oninput="this.value=this.value.toUpperCase()" />
             </div>
             <div class="form-group">
               <label class="form-label" for="lastName">Last Name</label>
@@ -829,6 +897,7 @@ body.login-open .lp-right { transform: translateX(0); }
           </div>
         </div>
 
+        <div id="signup-status" style="display:none;font-size:13px;margin-bottom:14px;padding:10px 14px;border-radius:8px;"></div>
         <button class="submit-btn" onclick="handleSignUp()">Submit</button>
         <p class="back-to-login">Already have an account? <a onclick="goToSignIn()" style="color: #000000; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Sign in</a></p>
       </div>
@@ -892,11 +961,21 @@ body.login-open .lp-right { transform: translateX(0); }
           <p class="rp-subtitle">Enter your new password to complete the reset.</p>
           <div class="form-group" style="margin-bottom:14px;">
             <label class="form-label">New Password</label>
-            <input type="password" id="newPassword" class="form-input" style="max-width:450px;" placeholder="Enter new password" />
+            <div class="password-wrap" style="max-width:450px;">
+              <input type="password" id="newPassword" class="form-input password-input" placeholder="Enter new password" />
+              <button type="button" class="password-toggle" aria-label="Show password" data-toggle-target="#newPassword" onclick="togglePasswordVisibility(this)">
+                <ion-icon name="eye" class="password-toggle-icon"></ion-icon>
+              </button>
+            </div>
           </div>
           <div class="form-group" style="margin-bottom:24px;">
             <label class="form-label">Confirm New Password</label>
-            <input type="password" id="confirmNewPassword" class="form-input" style="max-width:450px;" placeholder="Confirm new password" />
+            <div class="password-wrap" style="max-width:450px;">
+              <input type="password" id="confirmNewPassword" class="form-input password-input" placeholder="Confirm new password" />
+              <button type="button" class="password-toggle" aria-label="Show confirm password" data-toggle-target="#confirmNewPassword" onclick="togglePasswordVisibility(this)">
+                <ion-icon name="eye" class="password-toggle-icon"></ion-icon>
+              </button>
+            </div>
           </div>
           <button class="submit-btn" style="max-width:450px;" onclick="handleResetPassword()">Reset Password</button>
           <p class="back-to-login"><a onclick="goToForgot()">Back to Forgot Password</a></p>
@@ -1059,13 +1138,17 @@ function handleSignIn() {
   })
   .then(r => r.json())
   .then(data => {
-    if (data.success) {
+    if (data && data.success) {
       localStorage.setItem('currentUser', JSON.stringify(data.user));
-      window.location.href = data.redirectUrl || '/Home/Dashboard';
-    } else {
-      alert(`Login failed: ${data.message}`);
-      btn.textContent = orig; btn.disabled = false;
+      // Redirect only when backend explicitly says success=true
+      const target = data.redirectUrl || '/Home/Dashboard';
+      window.location.href = target;
+      return;
     }
+
+    alert(`Login failed: ${data?.message || 'Unknown error'}`);
+    btn.textContent = orig;
+    btn.disabled = false;
   })
   .catch(() => { alert('An error occurred. Please try again.'); btn.textContent = orig; btn.disabled = false; });
 }
@@ -1073,45 +1156,157 @@ function handleSignIn() {
 // Stores the validated payload while waiting for OTP confirmation
 window._pendingSignUpPayload = null;
 
-function handleSignUp() {
-  const firstName       = document.getElementById('firstName')?.value.trim() || '';
-  const lastName        = document.getElementById('lastName')?.value.trim() || '';
-  const middleName      = document.getElementById('middleName')?.value.trim() || '';
-  const email           = document.getElementById('email')?.value.trim() || '';
-  const password        = document.getElementById('password')?.value || '';
-  const confirmPassword = document.getElementById('confirmPassword')?.value || '';
-  const course          = document.getElementById('course')?.value || '';
-  const schoolYear      = document.getElementById('schoolYear')?.value || '';
-  const semesterEntered = document.getElementById('semesterEntered')?.value || '';
-  const section         = document.getElementById('section')?.value.trim() || '';
-  const yearLevel       = document.getElementById('yearLevel')?.value || '';
-  const studentId       = document.getElementById('studentId')?.value.trim() || '';
-  const schoolId        = studentId || `STU-${Date.now()}`;
-
-  // --- Validation ---
-  if (!firstName || !lastName || !email || !schoolId || !password || !confirmPassword) {
-    alert('Please fill in all required fields'); return;
-  }
-  if (!course || !schoolYear || !semesterEntered || !yearLevel) {
-    alert('Please complete the school information fields'); return;
-  }
-  if (password !== confirmPassword) { alert('Passwords do not match'); return; }
-  if (password.length < 6)          { alert('Password must be at least 6 characters'); return; }
-  if (!/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(email)) { alert('Please enter a valid email address'); return; }
-
-  // Store payload for after OTP is confirmed
-  window._pendingSignUpPayload = {
-    schoolId, firstName, lastName, middleName, email,
-    password, role: 'Student',
-    courseCode: course,
-    schoolYearId: schoolYear ? parseInt(schoolYear) : null,
-    semesterEntered: semesterEntered || null,
-    yearLevel: yearLevel ? parseInt(yearLevel) : null,
-    section, studentId
-  };
-
-  sendSignupOTP(email);
+/* ── SIGNUP FIELD HELPERS ── */
+function setSignupFieldError(id, hasError) {
+    const field = document.getElementById(id);
+    if (!field) return;
+    if (hasError) {
+        field.style.borderColor = '#ef4444';
+        field.style.background  = '#fef2f2';
+    } else {
+        field.style.borderColor = '';
+        field.style.background  = '';
+    }
 }
+
+function clearSignupErrors() {
+    ['studentId','password','confirmPassword','firstName','lastName',
+     'email','course','yearLevel','section','schoolYear','semesterEntered']
+    .forEach(id => setSignupFieldError(id, false));
+    const el = document.getElementById('signup-status');
+    if (el) el.style.display = 'none';
+}
+
+function showSignupStatus(message, type) {
+    const el = document.getElementById('signup-status');
+    if (!el) return;
+    el.textContent = message;
+    el.style.display = 'block';
+    if (type === 'fail') {
+        el.style.background  = '#fef2f2';
+        el.style.color       = '#991b1b';
+        el.style.border      = '1px solid #fecaca';
+    } else {
+        el.style.background  = '#f0fdf4';
+        el.style.color       = '#166534';
+        el.style.border      = '1px solid #bbf7d0';
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function handleSignUp() {
+    clearSignupErrors();
+
+    const firstName       = document.getElementById('firstName')?.value.trim() || '';
+    const lastName        = document.getElementById('lastName')?.value.trim() || '';
+    const middleName      = document.getElementById('middleName')?.value.trim() || '';
+    const email           = document.getElementById('email')?.value.trim() || '';
+    const password        = document.getElementById('password')?.value || '';
+    const confirmPassword = document.getElementById('confirmPassword')?.value || '';
+    const course          = document.getElementById('course')?.value || '';
+    const schoolYear      = document.getElementById('schoolYear')?.value || '';
+    const semesterEntered = document.getElementById('semesterEntered')?.value || '';
+    const section         = document.getElementById('section')?.value.trim() || '';
+    const yearLevel       = document.getElementById('yearLevel')?.value || '';
+    const studentId       = document.getElementById('studentId')?.value.trim() || '';
+    const schoolId        = studentId || `STU-${Date.now()}`;
+
+    let hasError = false;
+
+    /* ── Required fields ── */
+    if (!studentId)   { setSignupFieldError('studentId', true);   hasError = true; }
+    if (!firstName)   { setSignupFieldError('firstName', true);   hasError = true; }
+    if (!lastName)    { setSignupFieldError('lastName', true);    hasError = true; }
+
+    if (!email) {
+        setSignupFieldError('email', true);
+        hasError = true;
+    } else if (!/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(email)) {
+        setSignupFieldError('email', true);
+        showSignupStatus('Please enter a valid email address.', 'fail');
+        return;
+    }
+
+    if (!password) {
+        setSignupFieldError('password', true);
+        hasError = true;
+    } else if (
+        password.length < 8 ||
+        !/[A-Z]/.test(password) ||
+        !/[a-z]/.test(password) ||
+        !/[0-9]/.test(password) ||
+        !/[^A-Za-z0-9]/.test(password) ||
+        /\s/.test(password)
+    ) {
+        setSignupFieldError('password', true);
+        showSignupStatus('Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.', 'fail');
+        return;
+    }
+
+    if (!confirmPassword) {
+        setSignupFieldError('confirmPassword', true);
+        hasError = true;
+    } else if (password !== confirmPassword) {
+        setSignupFieldError('confirmPassword', true);
+        showSignupStatus('Passwords do not match.', 'fail');
+        return;
+    }
+
+    /* ── School information ── */
+    if (!course)          { setSignupFieldError('course', true);          hasError = true; }
+    if (!yearLevel)       { setSignupFieldError('yearLevel', true);       hasError = true; }
+    if (!section)         { setSignupFieldError('section', true);         hasError = true; }
+    if (!schoolYear)      { setSignupFieldError('schoolYear', true);      hasError = true; }
+    if (!semesterEntered) { setSignupFieldError('semesterEntered', true); hasError = true; }
+
+    if (hasError) {
+        showSignupStatus('Please fill in all required fields.', 'fail');
+        return;
+    }
+
+    /* ── Clear errors on input ── */
+    ['studentId','password','confirmPassword','firstName','lastName',
+     'email','course','yearLevel','section','schoolYear','semesterEntered']
+    .forEach(id => {
+        document.getElementById(id)?.addEventListener('input', () => {
+            setSignupFieldError(id, false);
+        }, { once: true });
+    });
+
+    /* ── Store payload and send OTP ── */
+    window._pendingSignUpPayload = {
+        schoolId, firstName, lastName, middleName, email,
+        password, role: 'Student',
+        courseCode: course,
+        schoolYearId: schoolYear ? parseInt(schoolYear) : null,
+        semesterEntered: semesterEntered || null,
+        yearLevel: yearLevel ? parseInt(yearLevel) : null,
+        section, studentId
+    };
+
+    sendSignupOTP(email);
+}
+
+function updatePasswordChecklist(pw) {
+  const rules = {
+    len:     pw.length >= 8 && !/\s/.test(pw),
+    upper:   /[A-Z]/.test(pw),
+    lower:   /[a-z]/.test(pw),
+    digit:   /[0-9]/.test(pw),
+    special: /[^A-Za-z0-9]/.test(pw)
+  };
+  const list = document.getElementById('password-checklist');
+  if (!list) return;
+  Object.keys(rules).forEach(key => {
+  const li = list.querySelector(`[data-rule="${key}"]`);
+  if (!li) return;
+  const ok = rules[key];
+  const text = li.textContent.replace(/^[•✓]\s*/, '');
+  li.textContent = (ok ? '✓ ' : '• ') + text;
+  li.style.color = ok ? '#27a744' : '#9aa';
+  });
+}
+
 
 function sendSignupOTP(email) {
   const btn = document.querySelector('#screenSignUp .submit-btn');
@@ -1191,6 +1386,8 @@ function handleEmailOTPVerify() {
   .catch(() => { alert('An error occurred. Please try again.'); btn.textContent = orig; btn.disabled = false; });
 }
 
+
+
 function handleForgotPassword() {
   const studentId = document.getElementById('forgotStudentId').value;
   if (!studentId) { alert('Please enter your student ID'); return; }
@@ -1217,6 +1414,7 @@ function handleForgotPassword() {
   })
   .catch(() => { alert('An error occurred. Please try again.'); btn.textContent = orig; btn.disabled = false; });
 }
+
 
 function handleVerifyCode() {
   const code = document.getElementById('verificationCode').value;
@@ -1317,9 +1515,31 @@ async function loadSchoolYears() {
   } catch(e) { console.error('Error loading school years:', e); }
 }
 
+function togglePasswordVisibility(btn){
+  if(!btn) return;
+  const targetSel = btn.getAttribute('data-toggle-target');
+  if(!targetSel) return;
+  const input = targetSel.startsWith('input[')
+    ? document.querySelector(targetSel)
+    : document.querySelector(targetSel);
+
+  if(!input) return;
+
+  const isPassword = input.type === 'password';
+  input.type = isPassword ? 'text' : 'password';
+
+  const icon = btn.querySelector('ion-icon');
+  if(icon){
+    icon.setAttribute('name', isPassword ? 'eye-off' : 'eye');
+  }
+
+  btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   loadCourses();
   loadSchoolYears();
+
 
   /* About/Contacts navbar uses /Home/Login, which redirects here with ?login=1 */
   (function openLoginFromDeepLink() {

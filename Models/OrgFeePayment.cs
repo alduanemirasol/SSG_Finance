@@ -34,6 +34,15 @@ public class OrgFeePayment
     [Column("payment_date")]
     public DateTime PaymentDate { get; set; }
 
+    // Snapshot of the student's year level and section at the moment of payment,
+    // so a receipt always reflects the year level the student had when they paid,
+    // even after they advance in later school years. Nullable for existing rows.
+    [Column("year_level_at_payment")]
+    public int? YearLevelAtPayment { get; set; }
+
+    [Column("section_at_payment")]
+    public string? SectionAtPayment { get; set; }
+
     // Navigation properties
     public User User { get; set; } = null!;
     public FullAmount FullAmount { get; set; } = null!;
