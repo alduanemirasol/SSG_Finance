@@ -1,1 +1,23 @@
+# ---- Build output ----
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# ---- Runtime user uploads (not source) ----
+wwwroot/uploads/
+
+# ---- Credentials / secrets kept out of the repo ----
 App_data/*.json
+
+# ---- IDE / editor ----
+.vs/
+.idea/
+*.user
+*.suo
+
+# ---- OS noise ----
+.DS_Store
+Thumbs.db
