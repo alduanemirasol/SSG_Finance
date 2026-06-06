@@ -401,13 +401,13 @@ namespace MyMvcApp.Services
             }
             catch (Exception ex)
             {
-                var inner = ex.InnerException?.Message ?? "No inner exception";
-                var inner2 = ex.InnerException?.InnerException?.Message ?? "No second inner";
-                var stackTrace = ex.StackTrace ?? "No stack trace";
-                return new RegistrationResult 
-                { 
-                    Success = false, 
-                    Message = $"Registration failed: {inner} | Inner2: {inner2} | Stack: {stackTrace}" 
+                // Log full details server-side for debugging, but never expose internal
+                // error details (stack traces, DB messages) to the client.
+                Console.WriteLine($"RegisterAccountAsync error: {ex}");
+                return new RegistrationResult
+                {
+                    Success = false,
+                    Message = "Registration failed. Please try again later."
                 };
             }
         }
