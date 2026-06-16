@@ -8,6 +8,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<script src="/js/csrf.js"></script>
 <title>SSG Portal</title>
 <link rel="icon" type="image/png" href="/images/favicon.png" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -403,8 +404,8 @@ body.login-open .lp-right { transform: translateX(0); }
 
 .lp-logo-circle {
   width:52px; height:52px; border-radius:50%;
-  background:#f5c518; overflow:hidden; flex-shrink:0;
-  box-shadow:0 0 16px rgba(245,197,24,0.3);
+  border:2px solid var(--green); overflow:hidden; flex-shrink:0;
+  box-shadow:0 0 14px rgba(39,167,68,0.45);
 }
 .lp-logo-circle img { width:100%; height:100%; object-fit:cover; }
 
@@ -565,6 +566,34 @@ body.login-open .lp-right { transform: translateX(0); }
   display:block; font-size:12.5px;
   color:#6b7280; margin-bottom:5px; font-weight:500;
 }
+.req { color:#ef4444; margin-left:2px; }
+
+/* ── Avatar upload ── */
+.avatar-file-input { display:none; }
+.avatar-upload-label {
+  display:flex; align-items:center; gap:14px;
+  padding:10px 14px;
+  border:1.5px solid #d1d5db; border-radius:9px;
+  background:#f9fafb; cursor:pointer;
+  transition:border-color .16s, background .16s;
+}
+.avatar-upload-label:hover { border-color:var(--green); background:#fff; }
+.avatar-preview {
+  width:52px; height:52px; border-radius:50%;
+  overflow:hidden; flex-shrink:0;
+  border:2px solid #d1d5db; background:#e5e7eb;
+  display:flex; align-items:center; justify-content:center;
+}
+.avatar-preview img { width:100%; height:100%; object-fit:cover; display:block; }
+.avatar-placeholder-icon { font-size:30px; color:#9ca3af; }
+.avatar-upload-info { display:flex; flex-direction:column; gap:3px; }
+.avatar-upload-btn {
+  display:inline-block; padding:5px 13px;
+  background:var(--green); color:#fff;
+  border-radius:6px; font-size:12px; font-weight:600; width:fit-content;
+}
+.avatar-file-name { font-size:12px; color:#6b7280; }
+.avatar-hint { font-size:11px; color:#9ca3af; margin:4px 0 0; }
 
 .form-input {
   width:100%; padding:12px 15px;
@@ -878,20 +907,20 @@ input[type="password"]::-ms-clear{
       <div class="rp-screen" id="screenSignUp">
          <div class="signup-screen-inner" style="padding:40px 0 20px;">
         <h1 class="rp-h1">Create Account</h1>
-        <p class="rp-subtitle">Fill requirements below.</p>
+        <p class="rp-subtitle">Fill in the details below to create your student account.</p>
 
         <!-- 1. SECURITY -->
         <div class="form-section">
-          <div class="section-title">Account</div>
+          <div class="section-title">Login Credentials</div>
           <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="studentId">CTU ID</label>
-              <input type="text" id="studentId" name="studentId" class="form-input" placeholder="Enter here" />
+              <input type="text" id="studentId" name="studentId" class="form-input" placeholder="Enter your CTU ID" />
             </div>
             <div class="form-group">
               <label class="form-label" for="password">Password</label>
               <div class="password-wrap">
-                <input type="password" id="password" name="password" class="form-input password-input" placeholder="Enter here" oninput="updatePasswordChecklist(this.value)" onfocus="document.getElementById('password-checklist').style.display='block'" />
+                <input type="password" id="password" name="password" class="form-input password-input" placeholder="Create a password" oninput="updatePasswordChecklist(this.value)" onfocus="document.getElementById('password-checklist').style.display='block'" />
                 <button type="button" class="password-toggle" aria-label="Show password" data-toggle-target="#password" onclick="togglePasswordVisibility(this)">
                   <ion-icon name="eye" class="password-toggle-icon"></ion-icon>
                 </button>
@@ -908,7 +937,7 @@ input[type="password"]::-ms-clear{
             <div class="form-group">
               <label class="form-label" for="confirmPassword">Confirm Password</label>
               <div class="password-wrap">
-                <input type="password" id="confirmPassword" name="confirmPassword" class="form-input password-input" placeholder="Enter here" />
+                <input type="password" id="confirmPassword" name="confirmPassword" class="form-input password-input" placeholder="Re-enter your password" />
                 <button type="button" class="password-toggle" aria-label="Show confirm password" data-toggle-target="#confirmPassword" onclick="togglePasswordVisibility(this)">
                   <ion-icon name="eye" class="password-toggle-icon"></ion-icon>
                 </button>
@@ -923,22 +952,38 @@ input[type="password"]::-ms-clear{
           <div class="section-title">Personal Information</div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="firstName">First Name</label>
-              <input type="text" id="firstName" name="firstName" class="form-input" placeholder="Enter here" />
+              <label class="form-label" for="firstName">First Name<span class="req">*</span></label>
+              <input type="text" id="firstName" name="firstName" class="form-input" placeholder="First name" />
             </div>
             <div class="form-group" style="flex:0 0 90px;">
               <label class="form-label" for="middleName">M. I.</label>
               <input type="text" id="middleName" name="middleName" class="form-input" placeholder="M.I." maxlength="2" oninput="autoMiddlePeriod(this)" style="text-align:center;" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="lastName">Last Name</label>
-              <input type="text" id="lastName" name="lastName" class="form-input" placeholder="Enter here" />
+              <label class="form-label" for="lastName">Last Name<span class="req">*</span></label>
+              <input type="text" id="lastName" name="lastName" class="form-input" placeholder="Last name" />
             </div>
           </div>
           <div class="form-row">
             <div class="form-group" style="flex:0 1 50%;">
-              <label class="form-label" for="email">Email</label>
-              <input type="email" id="email" name="email" class="form-input" placeholder="Enter here" />
+              <label class="form-label" for="email">Email<span class="req">*</span></label>
+              <input type="email" id="email" name="email" class="form-input" placeholder="name@example.com" autocapitalize="none" autocorrect="off" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="flex:0 1 60%;">
+              <label class="form-label">Profile Picture<span class="req">*</span></label>
+              <input type="file" id="avatarFile" class="avatar-file-input" accept="image/jpeg,image/png,image/webp" onchange="validateAvatarFile(this,'avatarPreview','avatarFileName','avatarBtn')" />
+              <label for="avatarFile" class="avatar-upload-label">
+                <div class="avatar-preview" id="avatarPreview">
+                  <ion-icon name="person-circle-outline" class="avatar-placeholder-icon"></ion-icon>
+                </div>
+                <div class="avatar-upload-info">
+                  <span class="avatar-upload-btn" id="avatarBtn"><ion-icon name="cloud-upload-outline" style="vertical-align:-2px;margin-right:5px;"></ion-icon>Upload Photo</span>
+                  <span class="avatar-file-name" id="avatarFileName">No file chosen</span>
+                </div>
+              </label>
+              <p class="avatar-hint">Please upload a formal 1×1 photo — wear your school uniform or a plain white shirt, against a plain white background. Accepted formats: JPG, PNG, or WEBP. Maximum file size: 2MB.</p>
             </div>
           </div>
         </div>
@@ -967,7 +1012,7 @@ input[type="password"]::-ms-clear{
 
               <div class="form-group">
                 <label class="form-label" for="section">Section</label>
-                <input type="text" id="section" name="section" class="form-input" placeholder="Enter here" />
+                <input type="text" id="section" name="section" class="form-input" placeholder="e.g. A" />
               </div>
             </div>
           </div>
@@ -1245,6 +1290,31 @@ function setSignupFieldError(id, hasError) {
     }
 }
 
+function validateAvatarFile(input, previewId, nameId, btnId) {
+  const file      = input.files[0];
+  const previewEl = document.getElementById(previewId);
+  const nameEl    = document.getElementById(nameId);
+  const btnEl     = document.getElementById(btnId);
+  if (!file) return true;
+  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!allowed.includes(file.type)) {
+    alert('Only JPG, PNG, or WEBP images are allowed.');
+    input.value = ''; return false;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    alert('Image must be 2MB or smaller.');
+    input.value = ''; return false;
+  }
+  if (nameEl) nameEl.textContent = file.name;
+  if (btnEl) btnEl.innerHTML = '<ion-icon name="repeat-outline" style="vertical-align:-2px;margin-right:5px;"></ion-icon>Replace';
+  if (previewEl) {
+    const reader = new FileReader();
+    reader.onload = e => { previewEl.innerHTML = `<img src="${e.target.result}" alt="Preview">`; };
+    reader.readAsDataURL(file);
+  }
+  return true;
+}
+
 function clearSignupErrors() {
     ['studentId','password','confirmPassword','firstName','lastName',
      'email','course','yearLevel','section']
@@ -1326,6 +1396,12 @@ function handleSignUp() {
         return;
     }
 
+    /* ── Profile picture ── */
+    if (!document.getElementById('avatarFile')?.files[0]) {
+        showSignupStatus('Please upload a profile picture.', 'fail');
+        hasError = true;
+    }
+
     /* ── School information ── */
     if (!course)          { setSignupFieldError('course', true);          hasError = true; }
     if (!yearLevel)       { setSignupFieldError('yearLevel', true);       hasError = true; }
@@ -1345,18 +1421,39 @@ function handleSignUp() {
         }, { once: true });
     });
 
-    /* ── Store payload and send OTP ── */
-    window._pendingSignUpPayload = {
-        schoolId, firstName, lastName, middleName, email,
-        password, role: 'Student',
-        courseCode: course,
-        schoolYearId: null,        // set later by the treasurer (Payment Start)
-        semesterEntered: null,     // set later by the treasurer (Payment Start)
-        yearLevel: yearLevel ? parseInt(yearLevel) : null,
-        section, studentId
-    };
+    /* ── Check school ID before sending OTP ── */
+    const submitBtn = document.querySelector('#screenSignUp .submit-btn');
+    const origLabel = submitBtn ? submitBtn.textContent : '';
+    if (submitBtn) { submitBtn.textContent = 'Checking…'; submitBtn.disabled = true; }
 
-    sendSignupOTP(email);
+    fetch('/Home/CheckSchoolId?schoolId=' + encodeURIComponent(studentId))
+    .then(r => r.json())
+    .then(data => {
+        if (data.taken) {
+            if (submitBtn) { submitBtn.textContent = origLabel; submitBtn.disabled = false; }
+            alert('Registration failed: CTU ID is already registered.');
+            return;
+        }
+
+        if (submitBtn) { submitBtn.textContent = origLabel; submitBtn.disabled = false; }
+
+        /* ── Store payload and send OTP ── */
+        window._pendingSignUpPayload = {
+            schoolId, firstName, lastName, middleName, email,
+            password, role: 'Student',
+            courseCode: course,
+            schoolYearId: null,
+            semesterEntered: null,
+            yearLevel: yearLevel ? parseInt(yearLevel) : null,
+            section, studentId
+        };
+
+        sendSignupOTP(email);
+    })
+    .catch(() => {
+        if (submitBtn) { submitBtn.textContent = origLabel; submitBtn.disabled = false; }
+        alert('An error occurred. Please try again.');
+    });
 }
 
 function updatePasswordChecklist(pw) {
@@ -1443,8 +1540,15 @@ function handleEmailOTPVerify() {
       body: JSON.stringify(payload)
     })
     .then(r => r.json())
-    .then(regData => {
+    .then(async regData => {
       if (regData.success) {
+        const avatarFile = document.getElementById('avatarFile')?.files[0];
+        if (avatarFile && regData.account?.id) {
+          const fd = new FormData();
+          fd.append('accountId', regData.account.id);
+          fd.append('avatar', avatarFile);
+          await fetch('/Home/UploadAvatar', { method: 'POST', body: fd });
+        }
         alert(`Account created! ${regData.message}`);
         window._pendingSignUpPayload = null;
         document.querySelectorAll('.form-input').forEach(i => i.value = '');
@@ -1524,7 +1628,17 @@ function handleResetPassword() {
 
   if (!studentId) { alert('Session expired. Please start over.'); goToForgot(); return; }
   if (!newPassword) { alert('Please enter a new password'); return; }
-  if (newPassword.length < 6) { alert('Password must be at least 6 characters'); return; }
+  if (
+    newPassword.length < 8 ||
+    !/[A-Z]/.test(newPassword) ||
+    !/[a-z]/.test(newPassword) ||
+    !/[0-9]/.test(newPassword) ||
+    !/[^A-Za-z0-9]/.test(newPassword) ||
+    /\s/.test(newPassword)
+  ) {
+    alert('Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.');
+    return;
+  }
   if (newPassword !== confirmPassword) { alert('Passwords do not match'); return; }
 
   const btn = event.target; const orig = btn.textContent;

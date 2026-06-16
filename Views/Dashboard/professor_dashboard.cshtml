@@ -1,16 +1,23 @@
 @{
     ViewData["Title"] = "Professor Dashboard";
     Layout = null;
-    var firstName = Context.Session.GetString("FirstName") ?? "Professor";
-    var lastName = Context.Session.GetString("LastName") ?? "";
-    var schoolId = Context.Session.GetString("SchoolId") ?? "";
-    var initials = (firstName.Length > 0 ? firstName[0].ToString() : "") + (lastName.Length > 0 ? lastName[0].ToString() : "");
+    var firstName     = Context.Session.GetString("FirstName") ?? "Professor";
+    var lastName      = Context.Session.GetString("LastName") ?? "";
+    var middleName    = Context.Session.GetString("MiddleName") ?? "";
+    var schoolId      = Context.Session.GetString("SchoolId") ?? "";
+    var email         = Context.Session.GetString("Email") ?? "";
+    var accountId     = Context.Session.GetString("AccountId") ?? "";
+    var initials      = (firstName.Length > 0 ? firstName[0].ToString() : "") + (lastName.Length > 0 ? lastName[0].ToString() : "");
+    var avatarPath    = Context.Session.GetString("AvatarPath") ?? "";
+    var middleInitial = middleName.Length > 0 ? middleName[0].ToString().ToUpper() + "." : "";
+    var displayName   = (firstName + (middleInitial.Length > 0 ? " " + middleInitial : "") + (lastName.Length > 0 ? " " + lastName : "")).Trim();
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/js/csrf.js"></script>
     <title>SSG Finance - Professor</title>
     <link rel="icon" type="image/png" href="~/images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -48,7 +55,8 @@
         .sb-spacer{flex:1}
         .sb-user{padding:10px 8px;border-top:1px solid rgba(255,255,255,.05)}
         .user-card{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;background:var(--glass)}
-        .user-av{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+        .user-av{width:36px;min-width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden}
+        .user-av img{width:100%;height:100%;object-fit:cover;display:block;border-radius:8px;pointer-events:none}
         .user-name{font-size:12px;font-weight:600;color:#fff}
         .user-role{font-size:10.5px;color:var(--text-d)}
         .signout{display:flex;align-items:center;gap:7px;padding:7px 10px;margin-top:3px;border-radius:8px;font-size:12.5px;font-weight:500;color:var(--text-d);cursor:pointer;transition:all .15s}
@@ -61,8 +69,8 @@
         .top-accent{height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);position:fixed;top:0;left:0;right:0;z-index:10}
 
         /* ── PAGES ── */
-        .page{display:none}.page.active{display:block}
-        .page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+        .page{display:none;max-width:1200px;margin-left:auto;margin-right:auto}.page.active{display:block}
+        .page-hdr{display:flex;align-items:center;justify-content:center;text-align:center;margin-bottom:22px;position:relative}
         .page-title{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.03em}
         .page-sub{font-size:12px;color:var(--text-m);margin-top:2px}
 
@@ -102,6 +110,14 @@
         .filter-select option{background:#0a1f10}
         table{width:100%;border-collapse:collapse;font-size:12.5px}
         thead th{padding:10px 16px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);border-bottom:1px solid rgba(255,255,255,.05);text-align:left;white-space:nowrap;background:rgba(255,255,255,.02)}
+        /* Scrollable table viewport: vertical + horizontal scrollbars, sticky header */
+        .tbl-scroll{max-height:min(540px,62vh);overflow:auto;scrollbar-width:thin;scrollbar-color:rgba(39,167,68,.45) rgba(255,255,255,.04)}
+        .tbl-scroll thead th{position:sticky;top:0;z-index:4;background:#142d1d}
+        .tbl-scroll::-webkit-scrollbar{width:10px;height:10px}
+        .tbl-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
+        .tbl-scroll::-webkit-scrollbar-thumb{background:rgba(39,167,68,.4);border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+        .tbl-scroll::-webkit-scrollbar-thumb:hover{background:rgba(39,167,68,.6);background-clip:padding-box}
+        .tbl-scroll::-webkit-scrollbar-corner{background:transparent}
         tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
         tbody tr:last-child{border-bottom:none}
         tbody tr:hover{background:rgba(39,167,68,.04)}
@@ -146,11 +162,20 @@
         .notice svg{width:16px;height:16px;flex-shrink:0;margin-top:1px}
         .notice-text{font-size:12px;color:var(--text-m);line-height:1.6}
 
-        /* ── PROFILE CARD ── */
-        .profile-info-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
-        .info-field{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 16px}
-        .info-field label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);display:block;margin-bottom:4px}
-        .info-field span{font-size:13px;font-weight:500;color:var(--text)}
+        /* ── PROFILE HERO ── */
+        .profile-hero{display:flex;flex-direction:column;align-items:center;padding:32px 20px 24px;border-bottom:1px solid rgba(255,255,255,.05)}
+        .profile-avatar-wrap{position:relative;width:88px;height:88px;margin-bottom:14px;flex-shrink:0}
+        .profile-avatar{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;overflow:hidden;border:2px solid rgba(39,167,68,.3);box-shadow:0 0 18px rgba(39,167,68,.18)}
+        .profile-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+        .avatar-edit-badge{position:absolute;bottom:0;right:0;width:28px;height:28px;border-radius:50%;background:#27a744;border:2px solid var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:3;transition:background .15s,transform .15s;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+        .avatar-edit-badge:hover{background:#2fbf52;transform:scale(1.08)}
+        .profile-hero-name{font-size:16px;font-weight:700;color:#fff;text-align:center;letter-spacing:-.01em;line-height:1.3}
+        .profile-hero-role{font-size:11.5px;color:var(--text-d);margin-top:3px}
+        .profile-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px}
+        .profile-field{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 16px}
+        .profile-field label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);display:block;margin-bottom:4px}
+        .profile-field span{font-size:13px;font-weight:500;color:var(--text);word-break:break-word}
+        .profile-field.full{grid-column:1/-1}
 
         /* ── PROGRESS BAR ── */
         .progress-wrap{margin-top:6px}
@@ -202,37 +227,30 @@
         </div>
     </div>
 
-    <div class="sb-label">Overview</div>
-    <div class="nav-item active" onclick="showPage('dashboard',this)">
-        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
-        Dashboard
-    </div>
-
-    <div class="sb-label">Students</div>
-    <div class="nav-item" onclick="showPage('students',this)">
+    <div class="sb-label">Menu</div>
+    <div class="nav-item active" onclick="showPage('students',this)">
         <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        My Students
-    </div>
-    <div class="nav-item" onclick="showPage('payment-status',this)">
-        <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M2 10V7a2 2 0 012-2h16a2 2 0 012 2v3" stroke="currentColor" stroke-width="1.8"/></svg>
-        Payment Status
-    </div>
-
-    <div class="sb-label">Account</div>
-    <div class="nav-item" onclick="showPage('profile',this)">
-        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        My Profile
+        Students
     </div>
 
     <div class="sb-spacer"></div>
     <div class="sb-user">
-        <div class="user-card">
-            <div class="user-av">@initials.ToUpper()</div>
+        <button class="user-card" onclick="showPage('profile',null)" style="width:100%;text-align:left;cursor:pointer;background:var(--glass);border:1px solid transparent;border-radius:9px;padding:8px 10px;transition:all .15s;font-family:inherit;color:inherit;display:flex;align-items:center;gap:9px" onmouseover="this.style.background='var(--green-glow)';this.style.borderColor='rgba(74,222,128,.12)'" onmouseout="this.style.background='var(--glass)';this.style.borderColor='transparent'">
+            <div class="user-av">
+              @if (!string.IsNullOrEmpty(avatarPath))
+              {
+                <img src="@avatarPath" alt="@initials.ToUpper()" />
+              }
+              else
+              {
+                @initials.ToUpper()
+              }
+            </div>
             <div>
                 <div class="user-name">@firstName @lastName</div>
                 <div class="user-role">Professor</div>
             </div>
-        </div>
+        </button>
         <div class="signout" onclick="window.location.href='@Url.Action("Logout", "Home")'">
             <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Sign Out
@@ -243,93 +261,11 @@
 <!-- ── MAIN ── -->
 <div class="main">
 
-    <!-- ══ DASHBOARD ══ -->
-    <div class="page active" id="page-dashboard">
+    <!-- ══ STUDENTS ══ -->
+    <div class="page active" id="page-students">
         <div class="page-hdr">
             <div>
-                <div class="page-title">Dashboard</div>
-                <div class="page-sub">Welcome back, @firstName</div>
-            </div>
-            <div style="font-size:11.5px;color:var(--text-m);background:rgba(39,167,68,.1);border:1px solid rgba(39,167,68,.2);padding:6px 13px;border-radius:8px;display:flex;align-items:center;gap:6px">
-                <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;display:inline-block"></span>
-                Live
-            </div>
-        </div>
-
-        <!-- Stat Cards -->
-        <div class="stat-grid-3">
-            <div class="stat-card green">
-                <div class="stat-lbl">Total Students</div>
-                <div class="stat-row">
-                    <div class="stat-val" id="s-total">0</div>
-                    <div class="stat-icon g">
-                        <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#27a744" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="#27a744" stroke-width="1.8"/></svg>
-                    </div>
-                </div>
-                <div class="stat-sub" id="s-total-sub">Across all sections</div>
-            </div>
-            <div class="stat-card green">
-                <div class="stat-lbl">Fees Paid</div>
-                <div class="stat-row">
-                    <div class="stat-val" id="s-paid">0</div>
-                    <div class="stat-icon g">
-                        <svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div>
-                </div>
-                <div class="stat-sub" id="s-paid-sub">Org fee settled</div>
-            </div>
-            <div class="stat-card red">
-                <div class="stat-lbl">Fees Pending</div>
-                <div class="stat-row">
-                    <div class="stat-val" id="s-pending">0</div>
-                    <div class="stat-icon r">
-                        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#f87171" stroke-width="1.8"/><path d="M12 8v4l3 3" stroke="#f87171" stroke-width="1.8" stroke-linecap="round"/></svg>
-                    </div>
-                </div>
-                <div class="stat-sub" id="s-pending-sub">Awaiting payment</div>
-            </div>
-        </div>
-
-        <!-- Charts -->
-        <div class="charts-grid">
-            <div class="content-card">
-                <div class="cc-hdr">
-                    <div class="cc-title">Payment Overview by Section</div>
-                    <select class="filter-select" id="chart-section-filter" onchange="updateBarChart()">
-                        <option value="all">All Sections</option>
-                    </select>
-                </div>
-                <div class="chart-wrap"><canvas id="barChart"></canvas></div>
-            </div>
-            <div class="content-card">
-                <div class="cc-hdr"><div class="cc-title">Payment Breakdown</div></div>
-                <div class="donut-wrap">
-                    <div class="donut-canvas"><canvas id="donutChart"></canvas></div>
-                    <div class="donut-legend" id="donut-legend"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent Activity -->
-        <div class="content-card">
-            <div class="cc-hdr">
-                <div class="cc-title">Recent Student Activity</div>
-                <span class="badge by" id="recent-badge">Loading…</span>
-            </div>
-            <table>
-                <thead><tr><th>Student</th><th>ID</th><th>Course / Section</th><th>Payment</th><th>Status</th></tr></thead>
-                <tbody id="recent-tbody">
-                    <tr class="empty-row"><td colspan="5">Loading student data…</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- ══ MY STUDENTS ══ -->
-    <div class="page" id="page-students">
-        <div class="page-hdr">
-            <div>
-                <div class="page-title">My Students</div>
+                <div class="page-title">Students</div>
                 <div class="page-sub" id="students-page-sub">All students in your class</div>
             </div>
         </div>
@@ -337,86 +273,42 @@
             <div class="toolbar">
                 <div class="search-box">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
-                    <input type="text" placeholder="Search by name, ID, course…" oninput="filterStudentsPage(this.value)"/>
+                    <input type="text" id="students-search" placeholder="Search by name, ID, course…" oninput="filterStudentsPage(this.value)"/>
                 </div>
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <select class="filter-select" id="students-filter-status" onchange="applyStudentsPageFilters()">
+                        <option value="">All Payment Status</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Partial">Partial</option>
+                        <option value="Unpaid">Unpaid</option>
+                    </select>
                     <select class="filter-select" id="students-filter-course" onchange="applyStudentsPageFilters()">
                         <option value="">All Courses</option>
+                    </select>
+                    <select class="filter-select" id="students-filter-year" onchange="applyStudentsPageFilters()">
+                        <option value="">All Year Levels</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
                     </select>
                     <select class="filter-select" id="students-filter-sy" onchange="applyStudentsPageFilters()">
                         <option value="">All School Years</option>
                     </select>
+                    <button class="btn-outline" onclick="resetStudentsPageFilters()" title="Reset filters to default" style="padding:7px 14px">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L3 8"/></svg>
+                        Default
+                    </button>
                 </div>
             </div>
+            <div class="tbl-scroll">
             <table>
-                <thead><tr><th>#</th><th>School ID</th><th>Name</th><th>Course · Year &amp; Section</th><th>1st Sem</th><th>2nd Sem</th><th>Org Fees</th></tr></thead>
+                <thead><tr><th>#</th><th>CTU ID</th><th>Name</th><th>Course · Year &amp; Section</th><th>Org Fee Balance – 1st Semester</th><th>Org Fee Balance – 2nd Semester</th><th>Ledger</th></tr></thead>
                 <tbody id="students-page-tbody">
                     <tr class="empty-row"><td colspan="7">Loading students…</td></tr>
                 </tbody>
             </table>
-        </div>
-    </div>
-
-    <!-- ══ PAYMENT STATUS ══ -->
-    <div class="page" id="page-payment-status">
-        <div class="page-hdr">
-            <div>
-                <div class="page-title">Payment Status</div>
-                <div class="page-sub">Track organizational fee collection progress</div>
             </div>
-        </div>
-
-        <!-- Payment stat cards -->
-        <div class="stat-grid-3" style="margin-bottom:14px">
-            <div class="stat-card green">
-                <div class="stat-lbl">Fully Paid</div>
-                <div class="stat-row">
-                    <div class="stat-val" id="ps-paid">0</div>
-                    <div class="stat-icon g"><svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                </div>
-                <div class="stat-sub">Complete payment received</div>
-            </div>
-            <div class="stat-card yellow">
-                <div class="stat-lbl">Partial</div>
-                <div class="stat-row">
-                    <div class="stat-val" id="ps-partial">0</div>
-                    <div class="stat-icon y"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#fbbf24" stroke-width="1.8"/><path d="M12 8v4l3 3" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-                </div>
-                <div class="stat-sub">Incomplete payment</div>
-            </div>
-            <div class="stat-card red">
-                <div class="stat-lbl">Unpaid</div>
-                <div class="stat-row">
-                    <div class="stat-val" id="ps-unpaid">0</div>
-                    <div class="stat-icon r"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#f87171" stroke-width="1.8"/><path d="M15 9l-6 6M9 9l6 6" stroke="#f87171" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-                </div>
-                <div class="stat-sub">No payment recorded</div>
-            </div>
-        </div>
-
-        <!-- Progress bar card -->
-        <div class="content-card" style="margin-bottom:14px">
-            <div class="cc-hdr"><div class="cc-title">Collection Progress</div><span class="badge bg" id="ps-pct-badge">0%</span></div>
-            <div style="padding:16px 20px">
-                <div class="progress-bar"><div class="progress-fill" id="ps-progress" style="width:0%;background:linear-gradient(90deg,#1a7a4a,#27a744)"></div></div>
-                <div class="progress-label"><span id="ps-prog-left">0 students paid</span><span id="ps-prog-right">0 remaining</span></div>
-            </div>
-        </div>
-
-        <div class="content-card">
-            <div class="cc-hdr">
-                <div class="cc-title">Student Payment List</div>
-                <div class="search-box" style="min-width:200px">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
-                    <input type="text" placeholder="Search…" oninput="filterPaymentTable(this.value)"/>
-                </div>
-            </div>
-            <table>
-                <thead><tr><th>#</th><th>Name</th><th>School ID</th><th>Course / Yr-Sec</th><th>Amount Paid</th><th>Status</th></tr></thead>
-                <tbody id="payment-tbody">
-                    <tr class="empty-row"><td colspan="6">Loading payment data…</td></tr>
-                </tbody>
-            </table>
         </div>
     </div>
 
@@ -426,13 +318,36 @@
             <div><div class="page-title">My Profile</div><div class="page-sub">Your account information</div></div>
         </div>
         <div class="content-card">
-            <div class="cc-hdr"><div class="cc-title">Personal Information</div><span class="badge bg">Professor</span></div>
-            <div style="padding:20px">
-                <div class="profile-info-row">
-                    <div class="info-field"><label>First Name</label><span>@firstName</span></div>
-                    <div class="info-field"><label>Last Name</label><span>@(lastName.Length > 0 ? lastName : "—")</span></div>
-                    <div class="info-field"><label>School ID</label><span style="font-family:'DM Mono',monospace;font-size:12px">@(schoolId.Length > 0 ? schoolId : "—")</span></div>
-                    <div class="info-field"><label>Role</label><span>Professor</span></div>
+            <div class="profile-hero">
+                <div class="profile-avatar-wrap">
+                    <div class="profile-avatar" id="profileAvatarCircle">
+                        @if (!string.IsNullOrEmpty(avatarPath))
+                        {
+                            <img src="@avatarPath" alt="@displayName" id="profileAvatarImg" />
+                        }
+                        else
+                        {
+                            <span id="profileAvatarInitials">@initials.ToUpper()</span>
+                        }
+                    </div>
+                    <button class="avatar-edit-badge" onclick="triggerAvatarUpload()"
+                        title="@(string.IsNullOrEmpty(avatarPath) ? "Add photo" : "Change photo")"
+                        aria-label="@(string.IsNullOrEmpty(avatarPath) ? "Add photo" : "Change photo")">
+                        <svg viewBox="0 0 24 24" fill="none" style="width:14px;height:14px;color:#fff"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.8"/></svg>
+                    </button>
+                    <input type="file" id="avatarFileInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleAvatarChange(this)" />
+                </div>
+                <div class="profile-hero-name">@displayName</div>
+                <div class="profile-hero-role">Professor</div>
+            </div>
+            <div class="profile-fields">
+                <div class="profile-field">
+                    <label>CTU ID</label>
+                    <span style="font-family:'DM Mono',monospace;font-size:12px">@(schoolId.Length > 0 ? schoolId : "—")</span>
+                </div>
+                <div class="profile-field">
+                    <label>Email</label>
+                    <span>@(email.Length > 0 ? email : "—")</span>
                 </div>
             </div>
         </div>
@@ -458,14 +373,11 @@ function showPage(name, navEl) {
     const page = document.getElementById('page-' + name);
     if (page) page.classList.add('active');
     if (navEl) navEl.classList.add('active');
-    else {
-        const navItems = document.querySelectorAll('.nav-item');
-        const pageMap = { dashboard: 0, students: 2, 'payment-status': 3, profile: 4 };
-        if (pageMap[name] !== undefined && navItems[pageMap[name]]) {
-            navItems[pageMap[name]].classList.add('active');
-        }
+    else if (name === 'students') {
+        // Profile opens from the user card; keep the Students nav highlighted otherwise.
+        const nav = document.querySelector('.nav-item');
+        if (nav) nav.classList.add('active');
     }
-    if (name === 'dashboard') setTimeout(renderCharts, 100);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -478,6 +390,46 @@ function showToast(msg, type) {
     const t = document.getElementById('toast');
     t.textContent = msg; t.className = 'show ' + type;
     clearTimeout(t._t); t._t = setTimeout(() => t.className = '', 3000);
+}
+
+function triggerAvatarUpload() {
+    const proceed = confirm(
+        'Photo Guidelines\n\n' +
+        'Please upload a formal photo that meets the following requirements:\n' +
+        '• Format: 1×1 (square)\n' +
+        '• Attire: your official school uniform or a plain white shirt\n' +
+        '• Background: a plain white background\n\n' +
+        'Click OK to choose your photo.'
+    );
+    if (!proceed) return;
+    document.getElementById('avatarFileInput').click();
+}
+async function handleAvatarChange(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const allowed = ['image/jpeg','image/png','image/webp'];
+    if (!allowed.includes(file.type)) { showToast('Only JPG, PNG, or WEBP allowed.','fail'); input.value=''; return; }
+    if (file.size > 2*1024*1024) { showToast('Image must be 2 MB or smaller.','fail'); input.value=''; return; }
+    const fd = new FormData();
+    fd.append('accountId', '@accountId');
+    fd.append('avatar', file);
+    showToast('Uploading photo…','ok');
+    try {
+        const res  = await fetch('/Home/UploadAvatar', { method:'POST', body:fd });
+        const data = await res.json();
+        if (!data.success) { showToast(data.message||'Upload failed.','fail'); return; }
+        const newSrc = data.avatarPath;
+        const circle = document.getElementById('profileAvatarCircle');
+        const initEl = document.getElementById('profileAvatarInitials');
+        let imgEl = document.getElementById('profileAvatarImg');
+        if (initEl) initEl.remove();
+        if (!imgEl) { imgEl = document.createElement('img'); imgEl.id='profileAvatarImg'; Object.assign(imgEl.style,{width:'100%',height:'100%',objectFit:'cover',display:'block'}); circle.appendChild(imgEl); }
+        imgEl.src = newSrc;
+        const sideAv = document.querySelector('.user-av');
+        if (sideAv) sideAv.innerHTML = `<img src="${newSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`;
+        showToast('Photo updated.','ok');
+    } catch { showToast('Upload failed. Try again.','fail'); }
+    input.value = '';
 }
 
 function statusBadge(status) {
@@ -736,9 +688,7 @@ function updateBarChart() {
 
 // ── Init ──────────────────────────────────────────────────────────
 async function init() {
-    await loadStudents();
-    await renderRecentActivity();
-    setTimeout(renderCharts, 200);
+    await loadStudentsPage();
 }
 
 init();
@@ -754,28 +704,10 @@ async function refreshCurrentProfPage() {
     const activePage = document.querySelector('.page.active');
     if (!activePage) return;
     const pageId = activePage.id.replace('page-', '');
-
-    switch (pageId) {
-        case 'dashboard':
-            await loadStudents();
-            await renderRecentActivity();
-            break;
-        case 'students':
-            await loadStudents();
-            filterStudentsTable(
-                document.querySelector('#page-students .search-box input')?.value || ''
-            );
-            break;
-        case 'payment-status':
-            await loadStudents();
-            filterPaymentTable(
-                document.querySelector('#page-payment-status .search-box input')?.value || ''
-            );
-            break;
-        case 'profile':
-            // nothing dynamic to refresh
-            break;
+    if (pageId === 'students') {
+        await loadStudentsPage(document.getElementById('students-filter-sy')?.value || null);
     }
+    // profile: nothing dynamic to refresh
 }
 
 setInterval(async () => {
@@ -885,6 +817,19 @@ function renderStudentsPage(filtered) {
     tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No students found.</td></tr>';
     return;
   }
+  // Read-only semester cell, matching the treasurer's clean single-line style:
+  // "₱0.00 (paid)" when settled, otherwise the amount due. Professors cannot
+  // record payments, so there is no Pay button.
+  const profSemCell = (required, paid, status) => {
+    const sl = (status || '').toLowerCase();
+    if (sl === 'n/a' || ((required || 0) <= 0 && (paid || 0) <= 0))
+      return '<span style="color:var(--text-d);font-size:11px">—</span>';
+    if (sl === 'paid')
+      return '<span style="font-family:\'DM Mono\',monospace;font-size:12px;color:#5fdd8e">₱0.00 <span style="color:var(--text-d)">(paid)</span></span>';
+    const bal = Math.max(0, (required || 0) - (paid || 0));
+    return `<span style="font-family:'DM Mono',monospace;font-size:12px;color:#f87171">₱${bal.toFixed(2)}</span>`;
+  };
+
   tbody.innerHTML = data.map((s, i) => {
     const courseYr = `${escapeHtml(s.courseCode)} ${escapeHtml(s.yearSection)}`;
     const roleTag = s.role === 'Treasurer'
@@ -895,11 +840,11 @@ function renderStudentsPage(filtered) {
       <td class="td-mono td-m">${escapeHtml(s.schoolId)}</td>
       <td><strong>${escapeHtml(s.name)}</strong>${roleTag}</td>
       <td class="td-m">${courseYr}</td>
-      <td>${feeStatusBadge(s.firstSemStatus)}</td>
-      <td>${feeStatusBadge(s.secondSemStatus)}</td>
+      <td>${profSemCell(s.firstSemRequired,  s.firstSemPaid,  s.firstSemStatus)}</td>
+      <td>${profSemCell(s.secondSemRequired, s.secondSemPaid, s.secondSemStatus)}</td>
       <td>
-        <button class="btn-outline" style="padding:5px 12px;font-size:11px" onclick="openStudentOrgFeeModal(${s.userId})">
-          Org Fees
+        <button class="btn-outline" title="Ledger" aria-label="Ledger" style="padding:5px 7px;display:inline-flex;align-items:center;justify-content:center" onclick="openStudentOrgFeeModal(${s.userId})">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </td>
     </tr>`;
@@ -921,8 +866,9 @@ async function initStudentsPageFilters() {
     const currentSY = data.schoolYears.find(sy => sy.yearStatus === 'Current');
     sySel.innerHTML = data.schoolYears.map(sy =>
       `<option value="${sy.yearStart}–${sy.yearEnd}">${sy.yearStart}–${sy.yearEnd}</option>`
-    ).join('');
+    ).join('') + '<option value="">All School Years</option>';
     if (currentSY) sySel.value = `${currentSY.yearStart}–${currentSY.yearEnd}`;
+    sySel.dataset.currentSy = sySel.value;   // remember default SY for the Default button
     sySel.dataset.listenerAttached = 'true';
     sySel.addEventListener('change', () => loadStudentsPage(sySel.value));
   } catch {}
@@ -941,6 +887,8 @@ function populateStudentsPageFilters() {
 
 function applyStudentsPageFilters() {
   studentsPageCourse = document.getElementById('students-filter-course')?.value || '';
+  const yearFilter   = document.getElementById('students-filter-year')?.value || '';
+  const statusFilter = document.getElementById('students-filter-status')?.value || '';
   const filtered = ALL_STUDENTS_PAGE.filter(s => {
     const name = (s.name || '').toLowerCase();
     const schoolId = (s.schoolId || '').toLowerCase();
@@ -950,21 +898,45 @@ function applyStudentsPageFilters() {
       || name.includes(studentsPageQ) || schoolId.includes(studentsPageQ)
       || course.includes(studentsPageQ) || yearSection.includes(studentsPageQ);
     const matchesCourse = !studentsPageCourse || (s.courseCode || '') === studentsPageCourse;
-    return matchesQ && matchesCourse;
+    // yearSection looks like "3-A" → the year level is the part before the dash.
+    const studentYear = (s.yearSection || '').split('-')[0].trim();
+    const matchesYear = !yearFilter || studentYear === yearFilter;
+    // "Paid" requires BOTH semesters paid; "Partial"/"Unpaid" matches EITHER semester.
+    let matchesStatus = true;
+    if (statusFilter) {
+      const s1 = (s.firstSemStatus || '').toLowerCase();
+      const s2 = (s.secondSemStatus || '').toLowerCase();
+      const f  = statusFilter.toLowerCase();
+      matchesStatus = (f === 'paid') ? (s1 === 'paid' && s2 === 'paid') : (s1 === f || s2 === f);
+    }
+    return matchesQ && matchesCourse && matchesYear && matchesStatus;
   });
   renderStudentsPage(filtered);
+}
+
+// "Default" button: clear search + status + course + year, reset to the current
+// school year, and reload the list.
+function resetStudentsPageFilters() {
+  studentsPageQ = '';
+  const search = document.getElementById('students-search');
+  if (search) search.value = '';
+  ['students-filter-status', 'students-filter-course', 'students-filter-year'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const sySel = document.getElementById('students-filter-sy');
+  if (sySel && sySel.dataset.currentSy) sySel.value = sySel.dataset.currentSy;
+  loadStudentsPage(sySel ? sySel.value : null);
 }
 
 async function openStudentOrgFeeModal(userId) {
   const nameEl = document.getElementById('student-orgfee-name');
   const subEl = document.getElementById('student-orgfee-sub');
-  const summaryEl = document.getElementById('student-orgfee-summary');
   const tbody = document.getElementById('student-orgfee-tbody');
 
-  nameEl.textContent = 'Student Org Fees';
+  nameEl.textContent = 'Ledger';
   subEl.textContent = 'Loading…';
-  summaryEl.innerHTML = '';
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">Loading…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-d)">Loading…</td></tr>';
   openModal('modal-student-orgfee');
 
   try {
@@ -972,32 +944,74 @@ async function openStudentOrgFeeModal(userId) {
     const data = await res.json();
     if (!data.success) {
       subEl.textContent = data.message || 'Unable to load org fee details.';
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">No data available.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-d)">No data available.</td></tr>';
       return;
     }
     const s = data.student;
     nameEl.textContent = s.name;
     subEl.textContent = `${s.schoolId} · ${s.courseCode} ${s.yearSection}${s.role === 'Treasurer' ? ' · Treasurer' : ''}${data.schoolYear ? ' · A.Y. ' + data.schoolYear : ''}`;
-    summaryEl.innerHTML = renderCurrentFeesTable(data.schoolYear, data.fees);
-    const txs = data.transactions || [];
-    if (!txs.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">No org fee transactions recorded.</td></tr>';
+
+    const fees = data.fees || [];
+    const txs  = data.transactions || [];
+    if (!fees.length && !txs.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-d)">No org fee records.</td></tr>';
       return;
     }
-    tbody.innerHTML = txs.map(t => {
-      const semLabel = t.semester === 'First' ? '1st' : '2nd';
+
+    // Group by (schoolYear, semester) from both fees and payments, so a current
+    // semester with no payments still appears, and a paid prior semester shows too.
+    const groupKey = (sy, sem) => `${sy || ''}|${sem || ''}`;
+    const groups = new Map();
+    fees.forEach(f => {
+      const k = groupKey(f.schoolYear, f.semester);
+      if (!groups.has(k)) groups.set(k, { schoolYear: f.schoolYear, semester: f.semester, fee: null, payments: [] });
+      groups.get(k).fee = f;
+    });
+    txs.forEach(t => {
+      const k = groupKey(t.schoolYear, t.semester);
+      if (!groups.has(k)) groups.set(k, { schoolYear: t.schoolYear, semester: t.semester, fee: null, payments: [] });
+    });
+    groups.forEach(g => { g.payments = []; });
+    txs.forEach(t => { groups.get(groupKey(t.schoolYear, t.semester)).payments.push(t); });
+
+    // Current semester floats to the top, then newest year first (2nd sem before 1st).
+    const sorted = [...groups.values()].sort((a, b) => {
+      const aCur = a.fee && a.fee.isCurrent ? 1 : 0;
+      const bCur = b.fee && b.fee.isCurrent ? 1 : 0;
+      if (aCur !== bCur) return bCur - aCur;
+      const sa = parseInt((a.schoolYear || '').split('–')[0], 10) || 0;
+      const sb = parseInt((b.schoolYear || '').split('–')[0], 10) || 0;
+      if (sa !== sb) return sb - sa;
+      const semOrder = { 'First': 1, 'Second': 2 };
+      return (semOrder[b.semester] || 0) - (semOrder[a.semester] || 0);
+    });
+
+    tbody.innerHTML = sorted.map((g, idx) => {
+      const semLabel  = g.semester === 'First' ? '1st Semester' : g.semester === 'Second' ? '2nd Semester' : (g.semester || '—');
+      const totalPaid = g.payments.reduce((sum, pay) => sum + (pay.amount || 0), 0);
+      const required  = g.fee?.requiredAmount ?? null;
+      const balance   = g.fee ? g.fee.balance : (required != null ? Math.max(0, required - totalPaid) : 0);
+      let status;
+      if (required != null && required <= 0) status = 'N/A';
+      else if (totalPaid <= 0)               status = 'Unpaid';
+      else if (balance <= 0)                 status = 'Paid';
+      else                                   status = 'Partial';
+      const dates = g.payments.map(pay => pay.date).filter(Boolean).sort();
+      const latestDate = dates.length ? fd(dates[dates.length - 1]) : '—';
       return `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
-        <td style="padding:9px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${fd(t.date)}</td>
-        <td style="padding:9px 12px;color:var(--text)">${escapeHtml(t.schoolYear)} · ${semLabel}</td>
-        <td style="padding:9px 12px">${renderReceiptCell(t.paymentId, t.receiptNumber, t.hasReceipt)}</td>
-        <td style="padding:9px 12px;text-align:right;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:#5fdd8e">${p(t.amount)}</td>
-        <td style="padding:9px 12px">${feeStatusBadge(t.paymentStatus)}</td>
+        <td style="padding:10px 12px;color:var(--text-m);font-size:11px">${idx + 1}</td>
+        <td style="padding:10px 12px;color:var(--text);font-weight:600">${semLabel}</td>
+        <td style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${escapeHtml(g.schoolYear || '—')}</td>
+        <td style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:12px;color:${balance > 0 ? '#f87171' : '#5fdd8e'}">${p(balance)}</td>
+        <td style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text)">${p(totalPaid)}</td>
+        <td style="padding:10px 12px">${feeStatusBadge(status)}</td>
+        <td style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${latestDate}</td>
       </tr>`;
     }).join('');
   } catch (err) {
     console.error('Failed to load student org fee details:', err);
     subEl.textContent = 'Failed to load org fee details.';
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">Request failed.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-d)">Request failed.</td></tr>';
   }
 }
 
@@ -1008,6 +1022,23 @@ async function openStudentOrgFeeModal(userId) {
     origShowPage(name, navEl);
     if (name === 'students') loadStudentsPage();
   };
+})();
+
+// ── SERVER-SENT EVENTS ───────────────────────────────────────────────
+(function() {
+    function connect() {
+        const sse = new EventSource('/Home/Events');
+        sse.addEventListener('accounts-changed',  () => {
+            const p = document.querySelector('.page.active')?.id?.replace('page-','');
+            if (p === 'students') loadStudentsPage();
+        });
+        sse.addEventListener('payments-changed', () => {
+            const p = document.querySelector('.page.active')?.id?.replace('page-','');
+            if (p === 'students') loadStudentsPage();
+        });
+        sse.onerror = () => { sse.close(); setTimeout(connect, 5000); };
+    }
+    connect();
 })();
 </script>
 
@@ -1022,17 +1053,18 @@ async function openStudentOrgFeeModal(userId) {
       </div>
       <button class="modal-close" onclick="closeModal('modal-student-orgfee')">✕</button>
     </div>
-    <div id="student-orgfee-summary" style="margin-bottom:18px"></div>
-    <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:8px">Transaction History</div>
-    <div style="max-height:280px;overflow-y:auto;border:1px solid rgba(255,255,255,.06);border-radius:10px">
+    <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:8px">Org Fee Ledger</div>
+    <div style="max-height:340px;overflow-y:auto;border:1px solid rgba(255,255,255,.06);border-radius:10px">
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
           <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
-            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Date</th>
-            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">School Year / Sem</th>
-            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Receipt</th>
-            <th style="padding:8px 12px;text-align:right;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Amount</th>
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">#</th>
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Semester</th>
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">School Year</th>
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Balance</th>
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Paid Amount</th>
             <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Status</th>
+            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Date</th>
           </tr>
         </thead>
         <tbody id="student-orgfee-tbody"></tbody>

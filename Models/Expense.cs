@@ -32,5 +32,8 @@ namespace MyMvcApp.Models
 
         [ForeignKey(nameof(SchoolYearId))]
         public SchoolYear? SchoolYear { get; set; }
+
+        // Receipt images (hardcopy photos) attached to this expense
+        public ICollection<ExpenseImage> Images { get; set; } = new List<ExpenseImage>();
     }
 }

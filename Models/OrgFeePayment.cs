@@ -16,8 +16,11 @@ public class OrgFeePayment
     [Column("payment_id")]
     public int PaymentId { get; set; }
 
+    // Nullable so a student account can be deleted while their payment rows
+    // are retained for the treasurer's income/balance totals. On delete of the
+    // student (User), this FK is set to NULL (see ApplicationDbContext).
     [Column("user_id")]
-    public int UserId { get; set; }
+    public int? UserId { get; set; }
 
     [Column("full_amount_id")]
     public int FullAmountId { get; set; }
@@ -44,7 +47,7 @@ public class OrgFeePayment
     public string? SectionAtPayment { get; set; }
 
     // Navigation properties
-    public User User { get; set; } = null!;
+    public User? User { get; set; }
     public FullAmount FullAmount { get; set; } = null!;
     public Account Receiver { get; set; } = null!;
     public ICollection<Receipt> Receipts { get; set; } = new List<Receipt>();

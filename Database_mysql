@@ -25,6 +25,7 @@ CREATE TABLE users (
   first_name  VARCHAR(100) NULL,
   last_name   VARCHAR(100) NULL,
   middle_name VARCHAR(100) NULL,
+  avatar_path VARCHAR(500) NULL,
 
   PRIMARY KEY (user_id),
   UNIQUE KEY uq_users_account (account_id),
@@ -67,7 +68,7 @@ CREATE TABLE academic_profile (
   semester_entered    ENUM('First','Second') NULL,
   year_level          INT                    NULL,
   section             VARCHAR(50)            NULL,
-  academic_status     ENUM('Enrolled','Transferred','Graduated','Dropped') NOT NULL DEFAULT 'Enrolled',
+  academic_status     ENUM('Enrolled','Dropped') NOT NULL DEFAULT 'Enrolled',
 
   PRIMARY KEY (academic_profile_id),
   UNIQUE KEY uq_academic_user (user_id),
@@ -101,7 +102,7 @@ CREATE TABLE full_amount (
 -- 7. org_fee_payments
 CREATE TABLE org_fee_payments (
   payment_id            INT           NOT NULL AUTO_INCREMENT,
-  user_id               INT           NOT NULL,
+  user_id               INT           NULL,
   full_amount_id        INT           NOT NULL,
   amount                DECIMAL(10,2) NOT NULL,
   payment_status        ENUM('Partial','Paid') NOT NULL,
@@ -113,7 +114,7 @@ CREATE TABLE org_fee_payments (
   PRIMARY KEY (payment_id),
   CONSTRAINT fk_payment_user
     FOREIGN KEY (user_id) REFERENCES users (user_id)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT fk_payment_full_amount
     FOREIGN KEY (full_amount_id) REFERENCES full_amount (full_amount_id)
     ON UPDATE CASCADE ON DELETE RESTRICT,
@@ -128,7 +129,7 @@ CREATE TABLE other_funds (
   source         VARCHAR(200)  NULL,
   description    TEXT          NULL,
   amount         DECIMAL(10,2) NOT NULL,
-  category       VARCHAR(50)   NULL;
+  category       VARCHAR(50)   NULL,
   received_by    INT           NOT NULL,
   received_date  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   school_year_id INT           NULL,
@@ -158,6 +159,19 @@ CREATE TABLE expenses (
   CONSTRAINT fk_expense_school_year
     FOREIGN KEY (school_year_id) REFERENCES school_years (school_year_id)
     ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+-- 9b. expense_images (receipt hardcopy photos per expense; files on disk, path stored here)
+CREATE TABLE expense_images (
+  image_id    INT          NOT NULL AUTO_INCREMENT,
+  expense_id  INT          NOT NULL,
+  image_path  VARCHAR(255) NOT NULL,
+  uploaded_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (image_id),
+  CONSTRAINT fk_expense_image_expense
+    FOREIGN KEY (expense_id) REFERENCES expenses (expense_id)
+    ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 -- 10. receipts
@@ -231,3 +245,46 @@ CREATE TABLE report_items (
     FOREIGN KEY (report_id) REFERENCES reports (report_id)
     ON UPDATE CASCADE ON DELETE CASCADE
 );
+
+-- 14. student_fee_exemptions
+CREATE TABLE student_fee_exemptions (
+    exemption_id INT NOT NULL AUTO_INCREMENT,
+    user_id      INT NOT NULL,
+    school_year_id INT NOT NULL,
+    semester     VARCHAR(10) NOT NULL,
+    PRIMARY KEY (exemption_id),
+    UNIQUE KEY uq_exemption (user_id, school_year_id, semester),
+    CONSTRAINT fk_exemption_user
+        FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_exemption_school_year
+        FOREIGN KEY (school_year_id) REFERENCES school_years(school_year_id)
+        ON DELETE CASCADE
+);
+
+-- ============================================================================
+-- MIGRATION STATEMENTS
+-- A fresh database created from the CREATE TABLE statements above ALREADY
+-- includes everything below, so a brand-new setup can ignore this section.
+-- If you ALREADY have an older copy of this database, run ONLY the statements
+-- below to bring it up to date.
+-- ============================================================================
+
+-- 1. Convert existing Graduated/Transferred students to Dropped
+--    (keeps them inactive and fee-exempt, as they were before).
+UPDATE academic_profile
+SET academic_status = 'Dropped'
+WHERE academic_status IN ('Graduated', 'Transferred');
+
+-- 2. Tighten the column so only the two allowed values remain.
+ALTER TABLE academic_profile
+MODIFY COLUMN academic_status ENUM('Enrolled','Dropped') NOT NULL DEFAULT 'Enrolled';
+
+ALTER TABLE org_fee_payments DROP FOREIGN KEY fk_payment_user;
+
+ALTER TABLE org_fee_payments MODIFY user_id INT NULL;
+
+ALTER TABLE org_fee_payments
+  ADD CONSTRAINT fk_payment_user
+  FOREIGN KEY (user_id) REFERENCES users (user_id)
+  ON UPDATE CASCADE ON DELETE SET NULL;

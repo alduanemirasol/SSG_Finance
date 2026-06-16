@@ -100,17 +100,6 @@ public class ChangeRoleRequest
     public string Role      { get; set; } = string.Empty;
 }
 
-public class AddProfessorRequest
-{
-    public string  FirstName  { get; set; } = string.Empty;
-    public string  LastName   { get; set; } = string.Empty;
-    public string? MiddleName { get; set; }
-    public string  SchoolId   { get; set; } = string.Empty;
-    public string? Email      { get; set; }
-    public string  Password   { get; set; } = string.Empty;
-}
-
-
 public class AddSchoolYearRequest
 {
     public int       YearStart      { get; set; }
@@ -258,4 +247,13 @@ public class StudentExemptionRequest
 public class RemoveStudentExemptionRequest
 {
     public int ExemptionId { get; set; }
+}
+
+public class ReturnFromLeaveRequest
+{
+    public int    UserId                   { get; set; }
+    // The student's last attended semester; the server exempts every semester
+    // between this and the current term.
+    public int    LastAttendedSchoolYearId { get; set; }
+    public string LastAttendedSemester     { get; set; } = string.Empty; // "First"/"Second"
 }

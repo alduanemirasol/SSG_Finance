@@ -18,6 +18,7 @@ namespace MyMvcApp.Data
         public DbSet<OrgFeePayment> OrgFeePayments { get; set; }
         public DbSet<OtherFund> OtherFunds { get; set; }
         public DbSet<Expense> Expenses { get; set; }
+        public DbSet<ExpenseImage> ExpenseImages { get; set; }
         public DbSet<Receipt> Receipts { get; set; }
         public DbSet<TreasurerSignature> TreasurerSignatures { get; set; }
         public DbSet<Report> Reports { get; set; }
@@ -55,6 +56,7 @@ namespace MyMvcApp.Data
                 entity.Property(e => e.FirstName).HasMaxLength(100).HasColumnName("first_name");
                 entity.Property(e => e.LastName).HasMaxLength(100).HasColumnName("last_name");
                 entity.Property(e => e.MiddleName).HasMaxLength(100).HasColumnName("middle_name");
+                entity.Property(e => e.AvatarPath).HasMaxLength(500).HasColumnName("avatar_path");
 
                 entity.HasIndex(e => e.AccountId).IsUnique().HasDatabaseName("uq_users_account");
 
@@ -154,7 +156,7 @@ namespace MyMvcApp.Data
                 entity.ToTable("org_fee_payments");
                 entity.HasKey(e => e.PaymentId);
                 entity.Property(e => e.PaymentId).HasColumnName("payment_id");
-                entity.Property(e => e.UserId).IsRequired().HasColumnName("user_id");
+                entity.Property(e => e.UserId).HasColumnName("user_id");
                 entity.Property(e => e.FullAmountId).IsRequired().HasColumnName("full_amount_id");
                 entity.Property(e => e.Amount).IsRequired().HasPrecision(10, 2).HasColumnName("amount");
                 entity.Property(e => e.PaymentStatus)
@@ -173,7 +175,7 @@ namespace MyMvcApp.Data
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Payments)
                     .HasForeignKey(e => e.UserId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                    .OnDelete(DeleteBehavior.SetNull);
 
                 entity.HasOne(e => e.FullAmount)
                     .WithMany(fa => fa.OrgFeePayments)

@@ -19,12 +19,10 @@ public static class FeeRules
         FullAmount fee,
         HashSet<(int schoolYearId, Semester semester)>? exemptions = null)
     {
-        // Students who are no longer active (graduated, transferred, dropped)
-        // or who have reached the completion year level (5) no longer owe fees.
+        // Students who are no longer active (dropped) or who have reached the
+        // completion year level (5) no longer owe fees.
         if (academicProfile != null
-            && (academicProfile.AcademicStatus == AcademicStatus.Graduated
-                || academicProfile.AcademicStatus == AcademicStatus.Transferred
-                || academicProfile.AcademicStatus == AcademicStatus.Dropped
+            && (academicProfile.AcademicStatus == AcademicStatus.Dropped
                 || academicProfile.YearLevel == 5))
             return false;
 

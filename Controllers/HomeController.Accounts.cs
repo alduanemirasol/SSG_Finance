@@ -25,7 +25,7 @@ public partial class HomeController : AppController
                 return Json(new { success = false, message = "Registration request is null." });
 
             if (string.IsNullOrWhiteSpace(request.SchoolId) || string.IsNullOrWhiteSpace(request.Password))
-                return Json(new { success = false, message = "School ID and password are required." });
+                return Json(new { success = false, message = "CTU ID and password are required." });
 
             if (!string.IsNullOrWhiteSpace(request.Email) && !IsValidEmail(request.Email))
                 return Json(new { success = false, message = "Invalid email format." });
@@ -83,7 +83,8 @@ public partial class HomeController : AppController
 
         if (!string.IsNullOrEmpty(user.AvatarPath))
         {
-            var fullPath = Path.Combine(_env.WebRootPath, user.AvatarPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            var cleanPath = user.AvatarPath.Split('?')[0];
+            var fullPath  = Path.Combine(_env.WebRootPath, cleanPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
             if (System.IO.File.Exists(fullPath))
                 System.IO.File.Delete(fullPath);
         }
@@ -346,12 +347,12 @@ Best regards,<br>SSG Financial Management System";
         <h2 style='color:#1a1a1a;margin-bottom:6px;'>Hello, {fullName}!</h2>
         <p style='color:#555;margin-bottom:24px;'>
             Great news — your account request has been <strong style='color:#1a7a4a;'>approved</strong>!
-            You can now log in to the SSG Finance system using your School ID and password.
+            You can now log in to the SSG Finance system using your CTU ID and password.
         </p>
 
         <table style='width:100%;border-collapse:collapse;margin-bottom:24px;'>
             <tr style='background:#f0f9f4;'>
-                <td style='padding:12px 16px;font-weight:600;color:#1a7a4a;width:40%;'>School ID</td>
+                <td style='padding:12px 16px;font-weight:600;color:#1a7a4a;width:40%;'>CTU ID</td>
                 <td style='padding:12px 16px;color:#1a1a1a;'>{account.SchoolId}</td>
             </tr>
             <tr>
@@ -397,7 +398,7 @@ Best regards,<br>SSG Financial Management System";
 
         <table style='width:100%;border-collapse:collapse;margin-bottom:24px;'>
             <tr style='background:#fff5f5;'>
-                <td style='padding:12px 16px;font-weight:600;color:#dc2626;width:40%;'>School ID</td>
+                <td style='padding:12px 16px;font-weight:600;color:#dc2626;width:40%;'>CTU ID</td>
                 <td style='padding:12px 16px;color:#1a1a1a;'>{account.SchoolId}</td>
             </tr>
             <tr>
@@ -428,10 +429,12 @@ Best regards,<br>SSG Financial Management System";
                                 catch
                                 {
                                         // Don't fail the whole request if email fails — status was already saved
+                                        await _sse.BroadcastAsync("accounts-changed");
                                         return Json(new { success = true, message = $"Account {request.Status} successfully, but email notification could not be sent." });
                                 }
                         }
 
+                        await _sse.BroadcastAsync("accounts-changed");
                         return Json(new { success = true, message = $"Account {request.Status} successfully. Email notification sent." });
                 }
                 catch (Exception ex)
@@ -460,9 +463,10 @@ Best regards,<br>SSG Financial Management System";
 
             account.IsActive = !account.IsActive;
             await _context.SaveChangesAsync();
+            await _sse.BroadcastAsync("accounts-changed");
 
-            return Json(new { 
-                success = true, 
+            return Json(new {
+                success = true,
                 isActive = account.IsActive,
                 message = account.IsActive ? "Account reactivated." : "Account deactivated."
             });
@@ -492,6 +496,18 @@ Best regards,<br>SSG Financial Management System";
             if (account == null)
                 return Json(new { success = false, message = "Account not found." });
 
+            // An approved student must be no longer active — either Dropped, or completed
+            // (year level 5) — before they can be deleted, so a currently-enrolled student
+            // can't be removed by mistake. Pending accounts (being rejected from the
+            // requests list) and non-students are unaffected.
+            if (account.RequestStatus == RequestStatus.Approved
+                && account.User?.AcademicProfile != null
+                && account.User.AcademicProfile.AcademicStatus != AcademicStatus.Dropped
+                && account.User.AcademicProfile.YearLevel != 5)
+            {
+                return Json(new { success = false, message = "Only dropped or graduated students can be deleted. Set the student's status to Dropped first if they are still enrolled." });
+            }
+
             // 1. delete academic profile first
             if (account.User?.AcademicProfile != null)
                 _context.AcademicProfiles.Remove(account.User.AcademicProfile);
@@ -504,6 +520,7 @@ Best regards,<br>SSG Financial Management System";
             _context.Accounts.Remove(account);
 
             await _context.SaveChangesAsync();
+            await _sse.BroadcastAsync("accounts-changed");
 
             return Json(new { success = true, message = "Account deleted successfully." });
         }
@@ -721,6 +738,7 @@ Best regards,<br>SSG Financial Management System";
 
             account.Role = newRole;
             await _context.SaveChangesAsync();
+            await _sse.BroadcastAsync("accounts-changed");
 
             return Json(new { success = true, message = "Role changed to " + request.Role + " successfully." });
         }
@@ -738,52 +756,6 @@ Best regards,<br>SSG Financial Management System";
 
         var requests = await GetPendingAccountsAsync();
         return Json(new { success = true, requests });
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> GetRejectedRequests()
-    {
-        var guard = RequireRole("Admin");
-        if (guard != null) return guard;
-
-
-        try
-        {
-
-            var rejected = await _context.Accounts
-                .Where(a => a.RequestStatus == RequestStatus.Rejected && a.Role == UserRole.Student)
-                .Include(a => a.User)
-                    .ThenInclude(u => u!.AcademicProfile)
-                        .ThenInclude(ap => ap!.Course)
-                .Select(a => new RequestedAccountViewModel
-                {
-                    AccountId  = a.AccountId,
-                    SchoolId   = a.SchoolId,
-                    Fullname   = a.User != null
-                        ? $"{(a.User.LastName != null ? a.User.LastName.ToUpper() : "")}, {(a.User.FirstName != null ? a.User.FirstName.ToUpper() : "")}"
-                          + (a.User.MiddleName != null && a.User.MiddleName.Length > 0 ? " " + a.User.MiddleName.Substring(0, 1).ToUpper() + "." : "")
-                        : a.SchoolId.ToUpper(),
-                    CourseCode = a.User != null && a.User.AcademicProfile != null && a.User.AcademicProfile.Course != null
-                        ? a.User.AcademicProfile.Course.CourseCode : null,
-                    YearLevel  = a.User != null && a.User.AcademicProfile != null && a.User.AcademicProfile.YearLevel != null
-                        ? a.User.AcademicProfile.YearLevel.ToString() : null,
-                Section    = a.User != null && a.User.AcademicProfile != null
-                    ? a.User.AcademicProfile.Section : null,
-                Role       = a.Role.ToString(),
-                CreatedAt  = a.CreatedAt,
-                Status     = a.RequestStatus,
-                AvatarPath = a.User != null ? a.User.AvatarPath : null
-                })
-                .OrderByDescending(a => a.CreatedAt)
-                .ToListAsync();
-
-            return Json(new { success = true, requests = rejected });
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error: {ex}");
-            return Json(new { success = false, message = "An error occurred. Please try again." });
-        }
     }
 
     [HttpGet]
@@ -1183,137 +1155,4 @@ Best regards,<br>SSG Financial Management System";
         return professors.OrderBy(p => p.FullName).ToList();
     }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddProfessor([FromBody] AddProfessorRequest request)
-
-    {
-        var guard = RequireRole("Admin");
-        if (guard != null) return guard;
-
-        try
-        {
-
-            if (string.IsNullOrWhiteSpace(request.FirstName) || string.IsNullOrWhiteSpace(request.LastName))
-                return Json(new { success = false, message = "First and last name are required." });
-
-            if (string.IsNullOrWhiteSpace(request.SchoolId))
-                return Json(new { success = false, message = "School ID is required." });
-
-            if (!IsPasswordCompliant(request.Password, out var passwordPolicyError))
-                return Json(new { success = false, message = passwordPolicyError ?? "Password does not meet policy requirements." });
-
-
-            // check if school ID already exists
-            var existing = await _context.Accounts
-                .FirstOrDefaultAsync(a => a.SchoolId.ToLower() == request.SchoolId.ToLower());
-
-            if (existing != null)
-                return Json(new { success = false, message = "School ID is already taken." });
-
-            // create account
-            var account = new Account
-            {
-                SchoolId      = request.SchoolId,
-                Email         = request.Email,
-                PasswordHash  = AuthService.HashPassword(request.Password),
-                Role          = UserRole.Professor,
-                RequestStatus = RequestStatus.Approved,
-                IsActive      = true,
-                CreatedAt     = DateTime.UtcNow
-            };
-
-            _context.Accounts.Add(account);
-            await _context.SaveChangesAsync();
-
-            // create user
-            var user = new User
-            {
-                AccountId  = account.AccountId,
-                FirstName  = request.FirstName,
-                LastName   = request.LastName,
-                MiddleName = request.MiddleName
-            };
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            // Send welcome email if an email address was provided
-            if (!string.IsNullOrWhiteSpace(request.Email))
-            {
-                var middlePart = string.IsNullOrWhiteSpace(request.MiddleName) ? "" : $" {request.MiddleName}";
-                var fullName = $"{request.FirstName}{middlePart} {request.LastName}";
-
-                var emailBody = $@"
-<html>
-<body style='font-family:Arial,sans-serif;background:#f4f4f4;padding:30px;'>
-  <div style='max-width:500px;margin:auto;background:#ffffff;border-radius:12px;
-              padding:32px;box-shadow:0 4px 20px rgba(0,0,0,0.08);'>
-
-    <div style='text-align:center;margin-bottom:24px;'>
-      <div style='display:inline-block;background:#1a7a4a;border-radius:10px;padding:10px 18px;'>
-        <span style='color:#fff;font-size:18px;font-weight:700;'>SSG Finance</span>
-      </div>
-    </div>
-
-    <h2 style='color:#1a1a1a;margin-bottom:6px;'>Welcome, {fullName}!</h2>
-    <p style='color:#555;margin-bottom:24px;'>
-      Your professor account has been created. Here are your login credentials:
-    </p>
-
-    <table style='width:100%;border-collapse:collapse;margin-bottom:24px;'>
-      <tr style='background:#f0f9f4;'>
-        <td style='padding:12px 16px;font-weight:600;color:#1a7a4a;width:40%;'>Full Name</td>
-        <td style='padding:12px 16px;color:#1a1a1a;'>{fullName}</td>
-      </tr>
-      <tr>
-        <td style='padding:12px 16px;font-weight:600;color:#1a7a4a;'>School ID</td>
-        <td style='padding:12px 16px;color:#1a1a1a;'>{request.SchoolId}</td>
-      </tr>
-      <tr style='background:#f0f9f4;'>
-        <td style='padding:12px 16px;font-weight:600;color:#1a7a4a;'>Email</td>
-        <td style='padding:12px 16px;color:#1a1a1a;'>{request.Email}</td>
-      </tr>
-      <tr>
-        <td style='padding:12px 16px;font-weight:600;color:#1a7a4a;'>Password</td>
-        <td style='padding:12px 16px;color:#1a1a1a;font-family:monospace;font-size:15px;'>
-          {request.Password}
-        </td>
-      </tr>
-    </table>
-
-    <p style='color:#888;font-size:12px;text-align:center;'>
-      Please keep your credentials secure. You can change your password after logging in.
-    </p>
-
-    <div style='text-align:center;margin-top:20px;'>
-      <span style='color:#1a7a4a;font-weight:600;font-size:13px;'>SSG Finance Admin Panel</span>
-    </div>
-  </div>
-</body>
-</html>";
-
-                try
-                {
-                    await _emailService.SendEmailAsync(
-                        request.Email,
-                        "Your SSG Finance Professor Account",
-                        emailBody
-                    );
-                }
-                catch
-                {
-                    return Json(new { success = true, message = "Professor added successfully, but welcome email could not be sent." });
-                }
-            }
-
-            return Json(new { success = true, message = string.IsNullOrWhiteSpace(request.Email)
-                ? "Professor added successfully."
-                : "Professor added and welcome email sent successfully." });
-        }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, message = "Failed to add professor: " + ex.Message });
-        }
-    }
 }

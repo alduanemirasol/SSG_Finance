@@ -11,6 +11,7 @@ namespace MyMvcApp.Models
         public string? YearLevel { get; set; }
         public string? Section { get; set; }
         public string? Role { get; set; }
+        public string? AvatarPath { get; set; }
 
         public DateTime CreatedAt { get; set; }
         public RequestStatus Status { get; set; }

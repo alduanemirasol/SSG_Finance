@@ -45,8 +45,6 @@ namespace MyMvcApp.Models
     public enum AcademicStatus
     {
         Enrolled,
-        Transferred,
-        Graduated,
         Dropped
     }
 }

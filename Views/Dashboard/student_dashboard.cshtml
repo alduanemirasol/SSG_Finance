@@ -1,16 +1,34 @@
 @model MyMvcApp.Models.DashboardViewModel
 @{
     ViewData["Title"] = "Student Dashboard";
-    var firstName   = Context.Session.GetString("FirstName") ?? "Student";
-    var lastName    = Context.Session.GetString("LastName") ?? "";
-    var middleName  = Context.Session.GetString("MiddleName") ?? "";
-    var schoolId    = Context.Session.GetString("SchoolId") ?? "";
-    var studentId   = schoolId;
-    var courseCode  = Context.Session.GetString("CourseCode") ?? "";
-    var courseName  = Context.Session.GetString("CourseName") ?? "";
-    var yearLevel   = Context.Session.GetString("YearLevel") ?? "";
-    var section     = Context.Session.GetString("Section") ?? "";
-    var initials    = (firstName.Length > 0 ? firstName[0].ToString() : "") + (lastName.Length > 0 ? lastName[0].ToString() : "");
+    var firstName     = Context.Session.GetString("FirstName") ?? "Student";
+    var lastName      = Context.Session.GetString("LastName") ?? "";
+    var middleName    = Context.Session.GetString("MiddleName") ?? "";
+    var schoolId      = Context.Session.GetString("SchoolId") ?? "";
+    var studentId     = schoolId;
+    var courseCode    = Context.Session.GetString("CourseCode") ?? "";
+    var courseName    = Context.Session.GetString("CourseName") ?? "";
+    var yearLevel     = Context.Session.GetString("YearLevel") ?? "";
+    var section       = Context.Session.GetString("Section") ?? "";
+    var email         = Context.Session.GetString("Email") ?? "";
+    var accountId     = Context.Session.GetString("AccountId") ?? "";
+    var initials      = (firstName.Length > 0 ? firstName[0].ToString() : "") + (lastName.Length > 0 ? lastName[0].ToString() : "");
+    var avatarPath    = Context.Session.GetString("AvatarPath") ?? "";
+    var middleInitial = middleName.Length > 0 ? middleName[0].ToString().ToUpper() + "." : "";
+    var displayName   = (firstName + (middleInitial.Length > 0 ? " " + middleInitial : "") + (lastName.Length > 0 ? " " + lastName : "")).Trim();
+    var yearDisplay   = yearLevel == "5" ? "4 Completed" : (yearLevel.Length > 0 ? yearLevel : "—");
+    var courseDisplay = (courseCode.Length > 0 ? courseCode : "") +
+                        (yearDisplay != "—" ? " — " + yearDisplay + (section.Length > 0 && yearLevel != "5" ? section : "") : "");
+
+    // Shorten a semester label ("First"/"Second"/…) to "1st" / "2nd".
+    string SemShort(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return "-";
+        var t = s.Trim().ToLowerInvariant();
+        if (t.StartsWith("first")  || t.StartsWith("1")) return "1st";
+        if (t.StartsWith("second") || t.StartsWith("2")) return "2nd";
+        return s;
+    }
   }
 
 <!DOCTYPE html>
@@ -18,6 +36,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="/js/csrf.js"></script>
   <title>SSG Finance - Student Dashboard</title>
   <link rel="icon" type="image/png" href="~/images/favicon.png" />
   <style>
@@ -50,11 +69,13 @@
     body{font-family:'DM Sans',sans-serif;background:var(--bg);display:flex;min-height:100vh;color:var(--text);font-size:14px;width:100%;overflow-x:hidden}
 
     /* ── SIDEBAR ── */
-    .sidebar{width:210px;background:var(--sidebar);border-right:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;flex-shrink:0;transition:transform 0.3s ease;z-index:100;position:fixed;height:100vh;left:0;top:0}
+    .sidebar{width:210px;background:var(--sidebar);border-right:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;flex-shrink:0;transition:transform 0.3s ease;z-index:100;position:fixed;height:100vh;height:100dvh;left:0;top:0}
     .sidebar.collapsed{transform:translateX(-100%)}
     .mobile-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99}
-    .mobile-overlay.active{display:block}
+    .mobile-overlay.active{display:block;left:210px}
     .mobile-menu-btn{display:none;position:fixed;top:20px;left:20px;z-index:101;background:var(--card);border:1px solid var(--card-b);border-radius:8px;padding:8px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+    .sb-close-btn{display:none;position:absolute;top:12px;right:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px;align-items:center;justify-content:center;font-family:inherit;z-index:1}
+    .sb-close-btn:hover{background:rgba(239,68,68,.12);color:#f87171}
     .mobile-menu-btn svg{width:20px;height:20px;color:var(--text)}
     .sb-brand{display:flex;align-items:center;gap:10px;padding:20px 16px 18px;border-bottom:1px solid rgba(255,255,255,.05)}
     .sb-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 14px rgba(39,167,68,.3)}
@@ -70,7 +91,8 @@
     .sb-spacer{flex:1}
     .sb-user{padding:10px 8px 10px;border-top:1px solid rgba(255,255,255,.05)}
     .user-card{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;background:var(--glass)}
-    .user-av{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+    .user-av{width:36px;min-width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden}
+    .user-av img{width:100%;height:100%;object-fit:cover;display:block;border-radius:8px;pointer-events:none}
     .user-name{font-size:12px;font-weight:600;color:#fff}
     .user-role{font-size:10.5px;color:var(--text-d)}
     .signout{display:flex;align-items:center;gap:7px;padding:7px 10px;margin-top:3px;border-radius:8px;font-size:12.5px;font-weight:500;color:var(--text-d);cursor:pointer;transition:all .15s;text-decoration:none}
@@ -82,9 +104,9 @@
     .main.sidebar-collapsed{margin-left:0}
     .main::before{content:'';position:absolute;top:-80px;right:-80px;width:380px;height:380px;background:radial-gradient(circle,rgba(39,167,68,.06) 0%,transparent 70%);pointer-events:none;border-radius:50%}
 
-    .page{display:none}.page.active{display:block}
+    .page{display:none;max-width:1200px;margin-left:auto;margin-right:auto}.page.active{display:block}
 
-    .page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+    .page-hdr{display:flex;align-items:center;justify-content:center;text-align:center;margin-bottom:22px;position:relative}
     .page-title{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.03em}
     .page-sub{font-size:12px;color:var(--text-m);margin-top:2px}
 
@@ -113,6 +135,14 @@
 
     /* ── TABLES ── */
     .tbl-wrap{overflow-x:auto}
+    /* Scrollable table viewport: vertical + horizontal scrollbars, sticky header */
+    .tbl-scroll{max-height:min(540px,62vh);overflow:auto;scrollbar-width:thin;scrollbar-color:rgba(39,167,68,.45) rgba(255,255,255,.04)}
+    .tbl-scroll thead th{position:sticky;top:0;z-index:4;background:#142d1d}
+    .tbl-scroll::-webkit-scrollbar{width:10px;height:10px}
+    .tbl-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
+    .tbl-scroll::-webkit-scrollbar-thumb{background:rgba(39,167,68,.4);border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+    .tbl-scroll::-webkit-scrollbar-thumb:hover{background:rgba(39,167,68,.6);background-clip:padding-box}
+    .tbl-scroll::-webkit-scrollbar-corner{background:transparent}
     table{width:100%;border-collapse:collapse;font-size:12.5px}
     thead th{padding:10px 15px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);border-bottom:1px solid rgba(255,255,255,.05);text-align:left;white-space:nowrap;background:rgba(255,255,255,.02)}
     tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
@@ -238,6 +268,21 @@
     .info-field label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);display:block;margin-bottom:4px}
     .info-field span{font-size:13px;font-weight:500;color:var(--text)}
 
+    /* ── PROFILE HERO ── */
+    .profile-hero{display:flex;flex-direction:column;align-items:center;padding:32px 20px 24px;border-bottom:1px solid rgba(255,255,255,.05)}
+    .profile-avatar-wrap{position:relative;width:88px;height:88px;margin-bottom:14px;flex-shrink:0}
+    .profile-avatar{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;overflow:hidden;border:2px solid rgba(39,167,68,.3);box-shadow:0 0 18px rgba(39,167,68,.18)}
+    .profile-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+    .avatar-edit-badge{position:absolute;bottom:0;right:0;width:28px;height:28px;border-radius:50%;background:#27a744;border:2px solid var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:3;transition:background .15s,transform .15s;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+        .avatar-edit-badge:hover{background:#2fbf52;transform:scale(1.08)}
+    .profile-hero-name{font-size:16px;font-weight:700;color:#fff;text-align:center;letter-spacing:-.01em;line-height:1.3}
+    .profile-hero-role{font-size:11.5px;color:var(--text-d);margin-top:3px}
+    .profile-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px}
+    .profile-field{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 16px}
+    .profile-field label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);display:block;margin-bottom:4px}
+    .profile-field span{font-size:13px;font-weight:500;color:var(--text);word-break:break-word}
+    .profile-field.full{grid-column:1/-1}
+
     /* ── PRINT STYLES ── */
     @@media print {
       /* Collapse ALL page layout so nothing pushes the receipt down */
@@ -297,14 +342,20 @@
     /* ── MOBILE RESPONSIVE ── */
     @@media (max-width: 768px) {
       .mobile-menu-btn{display:flex;align-items:center;justify-content:center}
+      .sb-close-btn{display:flex}
       .sidebar{transform:translateX(-100%)}
       .sidebar.mobile-open{transform:translateX(0)}
       .main{margin-left:0;padding:20px 16px 60px}
-      .page-hdr{padding-left:48px}
+      /* Left-align title so it clears the hamburger button */
+      .page-hdr{padding-left:48px;justify-content:flex-start}
+      /* Hide the date badge — it overlaps the title on small screens */
+      .page-date-badge{display:none}
       .stat-grid{grid-template-columns:1fr;gap:10px}
       .stat-val{font-size:24px}
       .page-title{font-size:20px}
       .profile-info-row{grid-template-columns:1fr}
+      /* Fix profile fields: stay 2-col → drop to 1-col */
+      .profile-fields{grid-template-columns:1fr}
       .modal-box{max-width:95%;margin:20px;padding:20px}
       .tbl-wrap{border-radius:8px}
       table{font-size:11.5px}
@@ -314,12 +365,15 @@
       .sb-brand{padding:16px 12px}
       .notice{padding:12px 14px}
       .notice-text{font-size:11px}
-      .receipt-modal-inner{padding:8px}
+      /* Receipt: scroll horizontally instead of fragile scale+margin hack */
+      .receipt-modal-inner{padding:8px;overflow-x:auto;align-items:flex-start}
       .receipt-controls{max-width:95vw}
-      .receipt-paper{
-        transform: scale(0.56);
-        transform-origin: top center;
-        margin-bottom: -420px; 
+      .receipt-paper{transform:none;margin-bottom:0}
+      /* Hide # and Semester columns in Payment History — too many cols on mobile */
+      #page-history thead th:nth-child(1),
+      #page-history td:nth-child(1),
+      #page-history thead th:nth-child(3),
+      #page-history td:nth-child(3){display:none}
     }
 
     @@media (max-width: 480px) {
@@ -358,6 +412,7 @@
 
 <!-- ── SIDEBAR ── -->
 <aside class="sidebar">
+  <button class="sb-close-btn" onclick="closeMobileMenu()" aria-label="Close navigation">✕</button>
   <div class="sb-brand">
     <div class="sb-logo">
       <img src="~/logo.png" alt="SSG Finance Logo" />
@@ -382,21 +437,24 @@
     Payment History
   </a>
 
-  <div class="sb-label">Account</div>
-  <a class="nav-item" id="nav-profile" onclick="showPage('profile',this)">
-    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    My Profile
-  </a>
-
   <div class="sb-spacer"></div>
   <div class="sb-user">
-    <div class="user-card">
-      <div class="user-av">@initials.ToUpper()</div>
+    <button class="user-card" onclick="showPage('profile', null)" style="width:100%;text-align:left;cursor:pointer;background:var(--glass);border:1px solid transparent;border-radius:9px;padding:8px 10px;transition:all .15s;font-family:inherit;color:inherit;display:flex;align-items:center;gap:9px" onmouseover="this.style.background='var(--green-glow)';this.style.borderColor='rgba(74,222,128,.12)'" onmouseout="this.style.background='var(--glass)';this.style.borderColor='transparent'">
+      <div class="user-av">
+        @if (!string.IsNullOrEmpty(avatarPath))
+        {
+          <img src="@avatarPath" alt="@initials.ToUpper()" />
+        }
+        else
+        {
+          @initials.ToUpper()
+        }
+      </div>
       <div>
         <div class="user-name">@firstName @lastName</div>
         <div class="user-role">Student</div>
       </div>
-    </div>
+    </button>
     <a class="signout" href="/Home/Logout">
       <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Sign Out
@@ -414,7 +472,7 @@
         <div class="page-title">Overview</div>
         <div class="page-sub">Welcome back, @firstName</div>
       </div>
-      <div style="font-size:11.5px;color:var(--text-m);background:rgba(39,167,68,.1);border:1px solid rgba(39,167,68,.2);padding:6px 13px;border-radius:8px;display:flex;align-items:center;gap:6px">
+      <div class="page-date-badge" style="position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:11.5px;color:var(--text-m);background:rgba(39,167,68,.1);border:1px solid rgba(39,167,68,.2);padding:6px 13px;border-radius:8px;display:flex;align-items:center;gap:6px">
         <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;display:inline-block"></span>
         @DateTime.Now.ToString("MMMM dd, yyyy")
       </div>
@@ -439,7 +497,7 @@
         <div class="stat-trend @(totalBalance > 0 ? "warn" : "ok")">@(totalBalance > 0 ? "Amount due" : "Fully settled")</div>
       </div>
       <div class="stat-card">
-        <div class="stat-lbl">Total Paid</div>
+        <div class="stat-lbl">Total Paid Amount</div>
         <div class="stat-row">
           <div class="stat-val amount">₱@totalPaid.ToString("N2")</div>
           <div class="stat-icon g">
@@ -449,14 +507,14 @@
         <div class="stat-trend ok">All confirmed payments</div>
       </div>
       <div class="stat-card">
-        <div class="stat-lbl">Pending Terms</div>
+        <div class="stat-lbl">Pending Semesters</div>
         <div class="stat-row">
           <div class="stat-val">@pendingCount</div>
           <div class="stat-icon y">
             <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#fbbf24" stroke-width="1.8"/><path d="M12 8v4l3 3" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/></svg>
           </div>
         </div>
-        <div class="stat-trend @(pendingCount > 0 ? "warn" : "ok")">@(pendingCount > 0 ? "Awaiting payment" : "All terms paid")</div>
+        <div class="stat-trend @(pendingCount > 0 ? "warn" : "ok")">@(pendingCount > 0 ? "Semesters not yet fully paid" : "All semesters paid")</div>
       </div>
     </div>
 
@@ -479,14 +537,15 @@
         <div class="cc-title">Fee Breakdown</div>
         <span class="badge by">@((Model.PaymentHistory?.Count(ph => ph.OverallStatus != "Paid") ?? 0)) pending</span>
       </div>
-      <div class="tbl-wrap">
+      <div class="tbl-wrap tbl-scroll">
         <table>
           <thead>
-            <tr><th>School Year</th><th>Semester</th><th>Balance</th><th>Amount</th><th>Status</th><th>Action</th></tr>
+            <tr><th>#</th><th>Semester</th><th>School Year</th><th>Org Fee Balance</th><th>Paid Amount</th><th>Status</th><th>To Pay</th></tr>
           </thead>
           <tbody>
             @if (Model.PaymentHistory != null && Model.PaymentHistory.Any())
             {
+              int feeIdx = 1;
               @foreach (var h in Model.PaymentHistory.Where(ph => ph.OverallStatus != "Paid"))
               {
                 var total = h.Payments.Where(p => p.Status == "Total").Sum(p => p.Amount);
@@ -501,30 +560,23 @@
                   default:        sc = "by"; break;
                 }
                 <tr>
+                  <td class="td-mono td-m">@(feeIdx++)</td>
+                  <td class="td-m"><strong>@SemShort(h.Semester)</strong></td>
                   <td class="td-mono td-m">@h.Term</td>
-                  <td class="td-m">@(!string.IsNullOrWhiteSpace(h.Semester) ? h.Semester : "-")</td>
                   <td class="td-mono" style="color:@(bal > 0 ? "#f87171" : "#5fdd8e")">₱@bal.ToString("N2")</td>
-                  <td>₱@total.ToString("N2")</td>
+                  <td class="td-mono">₱@paid.ToString("N2")</td>
                   <td><span class="badge @sc">@h.OverallStatus</span></td>
                   <td>
-                    @if (bal > 0)
-                    {
-                      <button class="btn-pay" onclick="showPayModal('@h.Term', @bal)">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                        Pay Now
-                      </button>
-                    }
-                    else
-                    {
-                      <span style="font-size:12px;color:var(--text-d)">—</span>
-                    }
+                    <button class="btn-pay" onclick="showPayModal('@h.Term', @bal)" title="How to pay" style="display:inline-flex;align-items:center;justify-content:center;padding:5px 9px">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/><path d="M9.6 9.2a2.4 2.4 0 014.6.8c0 1.6-2.2 2.2-2.2 2.2M12 17h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
                   </td>
                 </tr>
               }
             }
             else
             {
-              <tr class="empty-row"><td colspan="5">No fee records found.</td></tr>
+              <tr class="empty-row"><td colspan="7">No fee records found.</td></tr>
             }
           </tbody>
         </table>
@@ -537,18 +589,19 @@
     <div class="page-hdr">
       <div>
         <div class="page-title">Payment History</div>
-        <div class="page-sub">@((Model.PaymentHistory?.SelectMany(ph => ph.Payments).Count(p => p.Status != "Total") ?? 0)) payment records</div>
+        @{ var txRecordCount = Model.PaymentHistory?.SelectMany(ph => ph.Payments).Count(p => p.Status != "Total") ?? 0; }
+        <div class="page-sub">@txRecordCount payment record@(txRecordCount == 1 ? "" : "s")</div>
       </div>
     </div>
     <div class="content-card">
       <div class="cc-hdr">
         <div class="cc-title">All Transactions</div>
-        <span class="badge bg">@((Model.PaymentHistory?.SelectMany(ph => ph.Payments).Count(p => p.Status != "Total") ?? 0)) records</span>
+        <span class="badge bg">@txRecordCount record@(txRecordCount == 1 ? "" : "s")</span>
       </div>
-      <div class="tbl-wrap">
+      <div class="tbl-wrap tbl-scroll">
         <table>
           <thead>
-            <tr><th>#</th><th>Term</th><th>Semester</th><th>Amount</th><th>Remaining Balance</th><th>Status</th><th>Payment Date</th><th>Receipt</th></tr>
+            <tr><th>#</th><th>Semester</th><th>School Year</th><th>Paid Amount</th><th>Status</th><th>Received By</th><th>Date of Payment</th><th>Receipt</th></tr>
           </thead>
           <tbody>
             @{
@@ -583,11 +636,11 @@
                 }
                 <tr>
                   <td class="td-mono td-m">@(idx++)</td>
+                  <td class="td-m"><strong>@SemShort(!string.IsNullOrWhiteSpace(payment.Semester) ? payment.Semester : h.Semester)</strong></td>
                   <td class="td-mono td-m">@h.Term</td>
-                  <td class="td-mono td-m">@(h.Payments.FirstOrDefault()?.Semester ?? "—")</td>
                   <td>₱@total.ToString("N2")</td>
-                  <td class="td-mono" style="color:@(balance > 0 ? "#f87171" : "#5fdd8e")">₱@balance.ToString("N2")</td>
                   <td><span class="badge @sc">@payment.Status</span></td>
+                  <td class="td-m">@(!string.IsNullOrWhiteSpace(payment.TreasurerName) ? payment.TreasurerName : "—")</td>
                   <td class="td-mono td-m">
                     @{
                       var paymentDate = payment.PaymentDate;
@@ -595,14 +648,13 @@
                     }
                   </td>
                   <td>
-                    <!-- RECEIPT BUTTON replaces View button -->
                     <button
-                      style="display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--text-m);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s"
+                      title="View receipt"
+                      style="display:inline-flex;align-items:center;justify-content:center;background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--text-m);padding:5px 8px;border-radius:6px;cursor:pointer;font-family:inherit;transition:all .15s"
                       onmouseover="this.style.borderColor='#fbbf24';this.style.color='#fbbf24'"
                       onmouseout="this.style.borderColor='rgba(255,255,255,.12)';this.style.color='var(--text-m)'"
                       onclick="printReceipt(@(item.Index))">
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="1.8"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.8"/><line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="1.8"/><line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="1.8"/><polyline points="10 9 9 9 8 9" stroke="currentColor" stroke-width="1.8"/></svg>
-                      Receipt
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="1.8"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.8"/><line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="1.8"/><line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="1.8"/><polyline points="10 9 9 9 8 9" stroke="currentColor" stroke-width="1.8"/></svg>
                     </button>
                   </td>
                 </tr>
@@ -627,20 +679,47 @@
       </div>
     </div>
     <div class="content-card">
-      <div class="cc-hdr">
-        <div class="cc-title">Personal Information</div>
-        <span class="badge bg">Student</span>
+      <!-- Hero -->
+      <div class="profile-hero">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar" id="profileAvatarCircle">
+            @if (!string.IsNullOrEmpty(avatarPath))
+            {
+              <img src="@avatarPath" alt="@displayName" id="profileAvatarImg" />
+            }
+            else
+            {
+              <span id="profileAvatarInitials">@initials.ToUpper()</span>
+            }
+          </div>
+          <button class="avatar-edit-badge" onclick="triggerAvatarUpload()"
+            title="@(string.IsNullOrEmpty(avatarPath) ? "Add photo" : "Change photo")"
+            aria-label="@(string.IsNullOrEmpty(avatarPath) ? "Add photo" : "Change photo")">
+            <svg viewBox="0 0 24 24" fill="none" style="width:14px;height:14px;color:#fff"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.8"/></svg>
+          </button>
+          <input type="file" id="avatarFileInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleAvatarChange(this)" />
+        </div>
+        <div class="profile-hero-name">@displayName</div>
+        <div class="profile-hero-role">Student</div>
       </div>
-      <div style="padding:20px">
-        <div class="profile-info-row">
-          <div class="info-field"><label>First Name</label><span>@firstName</span></div>
-          <div class="info-field"><label>Last Name</label><span>@lastName</span></div>
-          <div class="info-field"><label>Middle Name</label><span>@(middleName.Length > 0 ? middleName : "—")</span></div>
-          <div class="info-field"><label>Student ID</label><span style="font-family:'DM Mono',monospace;font-size:12px">@(studentId.Length > 0 ? studentId : "—")</span></div>
-          <div class="info-field"><label>Course Code</label><span>@(courseCode.Length > 0 ? courseCode : "—")</span></div>
-          <div class="info-field"><label>Course Name</label><span>@(courseName.Length > 0 ? courseName : "—")</span></div>
-          <div class="info-field"><label>Year Level</label><span>@(yearLevel == "5" ? "4 Completed" : (yearLevel.Length > 0 ? yearLevel : "—"))</span></div>
-          <div class="info-field"><label>Section</label><span>@(section.Length > 0 ? section : "—")</span></div>
+
+      <!-- Info fields -->
+      <div class="profile-fields">
+        <div class="profile-field">
+          <label>CTU ID</label>
+          <span style="font-family:'DM Mono',monospace;font-size:12px">@(studentId.Length > 0 ? studentId : "—")</span>
+        </div>
+        <div class="profile-field">
+          <label>Email</label>
+          <span>@(email.Length > 0 ? email : "—")</span>
+        </div>
+        <div class="profile-field">
+          <label>Course</label>
+          <span>@(courseDisplay.Length > 0 ? courseDisplay.TrimStart(' ', '—').Trim() : "—")</span>
+        </div>
+        <div class="profile-field">
+          <label>Course Name</label>
+          <span>@(courseName.Length > 0 ? courseName : "—")</span>
         </div>
       </div>
     </div>
@@ -665,7 +744,7 @@
       <button class="modal-close" onclick="closePayModal()">✕</button>
     </div>
     <div style="background:rgba(39,167,68,.08);border:1px solid rgba(39,167,68,.2);border-radius:10px;padding:16px 20px;margin-bottom:20px">
-      <div style="font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);margin-bottom:4px">Amount Due</div>
+      <div style="font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);margin-bottom:4px">Org Fee Balance</div>
       <div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-.03em" id="payModalAmount"></div>
     </div>
     <div style="font-size:12px;color:var(--text-m);line-height:1.6;margin-bottom:20px">
@@ -714,7 +793,7 @@
       <div class="rp-field"><span class="rp-field-label">Name:</span><span class="rp-field-value handwritten" id="rp-name">—</span></div>
       <div class="rp-field"><span class="rp-field-label">ID Number:</span><span class="rp-field-value handwritten" id="rp-id">—</span></div>
       <div class="rp-field"><span class="rp-field-label">Course/Year/Section:</span><span class="rp-field-value handwritten" id="rp-course">—</span></div>
-      <div class="rp-field"><span class="rp-field-label">Term:</span><span class="rp-field-value" id="rp-term">—</span></div>
+      <div class="rp-field"><span class="rp-field-label">S.Y.-Semester:</span><span class="rp-field-value" id="rp-term">—</span></div>
       <div class="rp-field"><span class="rp-field-label">Amount Paid:</span><span class="rp-field-value handwritten" id="rp-amount">—</span></div>
       <div class="rp-field"><span class="rp-field-label">Amount in words:</span><span class="rp-field-value handwritten" id="rp-amount-words">—</span></div>
       <div class="rp-field"><span class="rp-field-label">Status:</span><span class="rp-field-value"><span class="rp-status-badge" id="rp-status">—</span></span></div>
@@ -1037,12 +1116,14 @@
       const isOpen = sidebar?.classList.toggle('mobile-open') ?? false;
       overlay?.classList.toggle('active', isOpen);
       button?.setAttribute('aria-expanded', String(isOpen));
+      if (button) button.style.display = isOpen ? 'none' : 'flex';
     }
 
     function closeMobileMenu() {
       document.querySelector('.sidebar')?.classList.remove('mobile-open');
       document.querySelector('.mobile-overlay')?.classList.remove('active');
-      document.querySelector('.mobile-menu-btn')?.setAttribute('aria-expanded', 'false');
+      const button = document.querySelector('.mobile-menu-btn');
+      if (button) { button.setAttribute('aria-expanded', 'false'); button.style.display = ''; }
     }
 
     function showPayModal(term, amount) {
@@ -1064,6 +1145,75 @@
       const t = document.getElementById('toast');
       t.textContent = msg; t.className = 'show ' + type;
       clearTimeout(t._t); t._t = setTimeout(() => t.className = '', 3000);
+    }
+
+    /* ── AVATAR UPLOAD ── */
+    function triggerAvatarUpload() {
+      const proceed = confirm(
+        'Photo Guidelines\n\n' +
+        'Please upload a formal photo that meets the following requirements:\n' +
+        '• Format: 1×1 (square)\n' +
+        '• Attire: your official school uniform or a plain white shirt\n' +
+        '• Background: a plain white background\n\n' +
+        'Click OK to choose your photo.'
+      );
+      if (!proceed) return;
+      document.getElementById('avatarFileInput').click();
+    }
+
+    async function handleAvatarChange(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowed.includes(file.type)) {
+        showToast('Only JPG, PNG, or WEBP images are allowed.', 'fail');
+        input.value = '';
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        showToast('Image must be 2 MB or smaller.', 'fail');
+        input.value = '';
+        return;
+      }
+
+      const accountId = '@accountId';
+      const fd = new FormData();
+      fd.append('accountId', accountId);
+      fd.append('avatar', file);
+
+      showToast('Uploading photo…', 'ok');
+      try {
+        const res  = await fetch('/Home/UploadAvatar', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!data.success) { showToast(data.message || 'Upload failed.', 'fail'); return; }
+
+        const newSrc = data.avatarPath;
+
+        // Update profile page avatar
+        const circle = document.getElementById('profileAvatarCircle');
+        const initEl = document.getElementById('profileAvatarInitials');
+        let imgEl = document.getElementById('profileAvatarImg');
+        if (initEl) initEl.remove();
+        if (!imgEl) {
+          imgEl = document.createElement('img');
+          imgEl.id = 'profileAvatarImg';
+          Object.assign(imgEl.style, { width:'100%', height:'100%', objectFit:'cover', display:'block' });
+          circle.appendChild(imgEl);
+        }
+        imgEl.src = newSrc;
+
+        // Update sidebar avatar
+        const sideAv = document.querySelector('.user-av');
+        if (sideAv) {
+          sideAv.innerHTML = `<img src="${newSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" />`;
+        }
+
+        showToast('Photo updated successfully.', 'ok');
+      } catch {
+        showToast('Upload failed. Please try again.', 'fail');
+      }
+      input.value = '';
     }
 
     // ================================================================
@@ -1104,9 +1254,16 @@
       } catch { /* silent fail — don't disturb student */ }
     }
 
-    setInterval(async () => {
-      await refreshStudentData();
-    }, STUDENT_REFRESH_INTERVAL);
+    // ── SERVER-SENT EVENTS ───────────────────────────────────────────
+    (function() {
+        function connect() {
+            const sse = new EventSource('/Home/Events');
+            sse.addEventListener('fees-changed',     () => refreshStudentData());
+            sse.addEventListener('payments-changed',  () => refreshStudentData());
+            sse.onerror = () => { sse.close(); setTimeout(connect, 5000); };
+        }
+        connect();
+    })();
   </script>
 </body>
 </html>

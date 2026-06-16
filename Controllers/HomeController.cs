@@ -17,16 +17,48 @@ namespace MyMvcApp.Controllers;
     private readonly IEmailService _emailService;
     private readonly ApplicationDbContext _context;
     private readonly IWebHostEnvironment _env;
+    private readonly SseService _sse;
 
     // Login-lockout helpers (IsTemporarilyLocked / RecordFailedAttempt / RecordSuccessfulLogin /
     // BuildLoginKey) moved to AppController base.
 
-    public HomeController(IAuthService authService, IEmailService emailService, ApplicationDbContext context, IWebHostEnvironment env)
+    public HomeController(IAuthService authService, IEmailService emailService, ApplicationDbContext context, IWebHostEnvironment env, SseService sse)
     {
         _authService = authService;
         _emailService = emailService;
         _context = context;
         _env = env;
+        _sse = sse;
+    }
+
+    // ----------------------------------------------------------------
+    // SERVER-SENT EVENTS
+    // ----------------------------------------------------------------
+
+    [HttpGet]
+    public async Task Events(CancellationToken ct)
+    {
+        var role = GetSessionRole();
+        if (string.IsNullOrEmpty(role))
+        {
+            Response.StatusCode = 401;
+            return;
+        }
+
+        Response.Headers["Content-Type"] = "text/event-stream";
+        Response.Headers["Cache-Control"] = "no-cache";
+        Response.Headers["X-Accel-Buffering"] = "no";
+        Response.Headers["Connection"] = "keep-alive";
+
+        var clientId = _sse.Subscribe(Response);
+
+        // initial ping so the browser knows the connection is live
+        await Response.WriteAsync(": ping\n\n");
+        await Response.Body.FlushAsync();
+
+        try { await Task.Delay(Timeout.Infinite, ct); }
+        catch (OperationCanceledException) { }
+        finally { _sse.Unsubscribe(clientId); }
     }
 
     // ----------------------------------------------------------------
@@ -112,6 +144,56 @@ namespace MyMvcApp.Controllers;
         return all.GroupBy(e => e.UserId)
                   .ToDictionary(g => g.Key,
                                 g => g.Select(e => (e.SchoolYearId, e.Semester)).ToHashSet());
+    }
+
+    // RULE: a student can't pay for a school year until every APPLICABLE fee from
+    // PREVIOUS school years is fully settled. Returns the earliest such unpaid
+    // prior-year fee (or null if none). Only fees that actually apply to the student
+    // (per FeeRules.IsFeeApplicableToStudent) count, so a student is never blocked by
+    // years before they enrolled. Shared by the payment write path (AddOrgFeePayment)
+    // and the read path that drives the treasurer UI (GetStudentFeeStatus) so the two
+    // can never disagree about whether a payment is allowed.
+    private async Task<FullAmount?> GetEarliestUnpaidPriorYearFeeAsync(
+        int userId,
+        AcademicProfile? academicProfile,
+        FullAmount targetFee,
+        HashSet<(int, Semester)> exemptions)
+    {
+        if (targetFee.SchoolYear == null)
+            return null;
+
+        var previousYearFees = await _context.FullAmounts
+            .Include(f => f.SchoolYear)
+            .Where(f => f.SchoolYear != null
+                     && f.SchoolYear.YearStart < targetFee.SchoolYear.YearStart)
+            .ToListAsync();
+
+        var applicablePrevFees = previousYearFees
+            .Where(f => FeeRules.IsFeeApplicableToStudent(academicProfile, f, exemptions))
+            .OrderBy(f => f.SchoolYear!.YearStart)
+            .ThenBy(f => FeeRules.GetSemesterOrder(f.Semester))
+            .ToList();
+
+        if (!applicablePrevFees.Any())
+            return null;
+
+        var prevFeeIds = applicablePrevFees.Select(f => f.FullAmountId).ToList();
+
+        var prevPayments = await _context.OrgFeePayments
+            .Where(p => p.UserId == userId && prevFeeIds.Contains(p.FullAmountId))
+            .ToListAsync();
+
+        foreach (var prevFee in applicablePrevFees)
+        {
+            var paidForPrevFee = prevPayments
+                .Where(p => p.FullAmountId == prevFee.FullAmountId)
+                .Sum(p => p.Amount);
+
+            if (paidForPrevFee < prevFee.Amount)
+                return prevFee;
+        }
+
+        return null;
     }
 
     // ----------------------------------------------------------------
@@ -381,7 +463,7 @@ namespace MyMvcApp.Controllers;
         {
             if (string.IsNullOrWhiteSpace(request.SchoolId) || string.IsNullOrWhiteSpace(request.Password))
             {
-                return Json(new { success = false, message = "School ID and password are required." });
+                return Json(new { success = false, message = "CTU ID and password are required." });
             }
 
             // Apply login attempt limiting (prevents brute force)
@@ -391,7 +473,7 @@ namespace MyMvcApp.Controllers;
                 return Json(new { success = false, message = "Account temporarily locked. Try again in 15 minutes." });
             }
 
-            // Step 1: Find account by School ID
+            // Step 1: Find account by CTU ID
             var account = await _context.Accounts
                 .FirstOrDefaultAsync(a => a.SchoolId.ToLower() == request.SchoolId.ToLower());
 
@@ -400,7 +482,7 @@ namespace MyMvcApp.Controllers;
                 // Record failed attempt against the login key even when account doesn't exist
                 var loginKeyForFailure = BuildLoginKey(request.SchoolId, HttpContext.Connection.RemoteIpAddress?.ToString());
                 RecordFailedAttempt(loginKeyForFailure);
-                return Json(new { success = false, message = "Invalid School ID or password." });
+                return Json(new { success = false, message = "Invalid CTU ID or password." });
             }
 
 
@@ -422,7 +504,7 @@ namespace MyMvcApp.Controllers;
             if (!BCrypt.Net.BCrypt.Verify(request.Password, account.PasswordHash))
             {
                 RecordFailedAttempt(loginKey);
-                return Json(new { success = false, message = "Invalid School ID or password." });
+                return Json(new { success = false, message = "Invalid CTU ID or password." });
             }
 
 

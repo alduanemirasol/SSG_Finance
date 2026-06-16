@@ -1,18 +1,27 @@
 @model MyMvcApp.Models.DashboardViewModel
 @{
     Layout = null;
-    var firstName = Context.Session.GetString("FirstName") ?? "Admin";
-    var lastName  = Context.Session.GetString("LastName") ?? "";
-    var schoolId  = Context.Session.GetString("SchoolId") ?? "";
-    var initials  = (firstName.Length > 0 ? firstName[0].ToString() : "") + (lastName.Length > 0 ? lastName[0].ToString() : "");
+    var firstName     = Context.Session.GetString("FirstName") ?? "Admin";
+    var lastName      = Context.Session.GetString("LastName") ?? "";
+    var middleName    = Context.Session.GetString("MiddleName") ?? "";
+    var schoolId      = Context.Session.GetString("SchoolId") ?? "";
+    var email         = Context.Session.GetString("Email") ?? "";
+    var accountId     = Context.Session.GetString("AccountId") ?? "";
+    var initials      = (firstName.Length > 0 ? firstName[0].ToString() : "") + (lastName.Length > 0 ? lastName[0].ToString() : "");
+    var avatarPath    = Context.Session.GetString("AvatarPath") ?? "";
+    var middleInitial = middleName.Length > 0 ? middleName[0].ToString().ToUpper() + "." : "";
+    var displayName   = (firstName + (middleInitial.Length > 0 ? " " + middleInitial : "") + (lastName.Length > 0 ? " " + lastName : "")).Trim();
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/js/csrf.js"></script>
     <title>SSG Finance - Admin Panel</title>
     <link rel="icon" type="image/png" href="~/images/favicon.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         @@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
 
@@ -56,19 +65,37 @@
         .sb-spacer{flex:1}
         .sb-user{padding:10px 8px 10px;border-top:1px solid rgba(255,255,255,.05)}
         .user-card{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;background:var(--glass)}
-        .user-av{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+        .user-av{width:36px;min-width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden}
+        .user-av img{width:100%;height:100%;object-fit:cover;display:block;border-radius:8px;pointer-events:none}
         .user-name{font-size:12px;font-weight:600;color:#fff}
         .user-role{font-size:10.5px;color:var(--text-d)}
         .signout{display:flex;align-items:center;gap:7px;padding:7px 10px;margin-top:3px;border-radius:8px;font-size:12.5px;font-weight:500;color:var(--text-d);cursor:pointer;transition:all .15s}
         .signout:hover{background:rgba(239,68,68,.08);color:#f87171}
         .signout svg{width:14px;height:14px}
 
+        /* ── PROFILE HERO ── */
+        .profile-hero{display:flex;flex-direction:column;align-items:center;padding:32px 20px 24px;border-bottom:1px solid rgba(255,255,255,.05)}
+        .profile-avatar-wrap{position:relative;width:88px;height:88px;margin-bottom:14px;flex-shrink:0}
+        .profile-avatar{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;overflow:hidden;border:2px solid rgba(39,167,68,.3);box-shadow:0 0 18px rgba(39,167,68,.18)}
+        .profile-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+        .avatar-edit-badge{position:absolute;bottom:0;right:0;width:28px;height:28px;border-radius:50%;background:var(--green);border:2px solid var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:3;transition:background .15s,transform .15s;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+        .avatar-edit-badge:hover{background:#2fbf52;transform:scale(1.08)}
+        .profile-hero-name{font-size:16px;font-weight:700;color:#fff;text-align:center;letter-spacing:-.01em;line-height:1.3}
+        .profile-hero-role{font-size:11.5px;color:var(--text-d);margin-top:3px}
+        .profile-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px}
+        .profile-field{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 16px}
+        .profile-field label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);display:block;margin-bottom:4px}
+        .profile-field span{font-size:13px;font-weight:500;color:var(--text);word-break:break-word}
+        .notice{display:flex;align-items:flex-start;gap:10px;padding:13px 16px;border-radius:10px;margin-bottom:16px}
+        .notice svg{width:16px;height:16px;flex-shrink:0;margin-top:1px}
+        .notice-text{font-size:12px;color:var(--text-m);line-height:1.6}
+
         .main{margin-left:0;flex:1;min-width:0;padding:36px 36px 60px;background:var(--bg);overflow-y:auto;overflow-x:hidden;position:relative;height:100vh}
         .main::before{content:'';position:absolute;top:-80px;right:-80px;width:380px;height:380px;background:radial-gradient(circle,rgba(39,167,68,.06) 0%,transparent 70%);pointer-events:none;border-radius:50%}
 
-        .page{display:none}.page.active{display:block}
+        .page{display:none;max-width:1200px;margin-left:auto;margin-right:auto}.page.active{display:block}
 
-        .page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+        .page-hdr{display:flex;align-items:center;justify-content:center;text-align:center;margin-bottom:22px;position:relative}
         .page-title{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.03em}
         .page-sub{font-size:12px;color:var(--text-m);margin-top:2px}
 
@@ -88,6 +115,41 @@
         .stat-trend{font-size:11px;font-weight:500;color:var(--green)}
         .stat-trend.warn{color:#fbbf24}
 
+        /* ── ACCOUNTS OVERVIEW (added) ── */
+        .acct-overview{margin-bottom:18px;width:100%}
+        .acct-summary-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;padding:20px 24px;display:flex;gap:24px;align-items:stretch;position:relative;overflow:hidden;backdrop-filter:blur(8px);margin-bottom:12px}
+        .acct-summary-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(39,167,68,.25),transparent)}
+        .acct-summary-left{flex:0 0 300px;display:flex;flex-direction:column;justify-content:center}
+        .acct-summary-lbl{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px}
+        .acct-summary-row{display:flex;align-items:center;gap:14px}
+        .acct-summary-num{font-size:46px;font-weight:800;color:#fff;line-height:1;letter-spacing:-.04em}
+        .acct-approved-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;font-size:11.5px;font-weight:600;background:var(--green-badge);color:var(--green-badge-t)}
+        .acct-approved-badge.warn{background:var(--yellow-badge);color:var(--yellow-badge-t)}
+        .acct-approved-badge svg{width:13px;height:13px}
+        .acct-summary-sub{font-size:12px;color:var(--text-m);margin-top:10px}
+        .acct-summary-divider{width:1px;background:rgba(255,255,255,.07);flex-shrink:0}
+        .acct-summary-right{flex:1;display:flex;flex-direction:column;justify-content:center;min-width:0}
+        .acct-dist-lbl{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:14px}
+        .acct-legend{display:flex;flex-wrap:wrap;gap:18px;margin-bottom:14px}
+        .acct-leg{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text-m)}
+        .acct-leg i{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+        .acct-leg b{color:#fff;font-weight:700;margin-left:2px}
+        .acct-bar{display:flex;gap:5px;height:13px;width:100%}
+        .acct-bar span{height:100%;border-radius:5px;min-width:3px;transition:width .4s}
+        .acct-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+        .acct-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden;backdrop-filter:blur(8px)}
+        .acct-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(39,167,68,.18),transparent)}
+        .acct-card-top{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+        .acct-card-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .acct-card-ic svg{width:19px;height:19px}
+        .acct-card-name{font-size:13.5px;font-weight:700;color:#fff;line-height:1.2}
+        .acct-card-role{font-size:11px;color:var(--text-d);margin-top:1px}
+        .acct-card-bot{display:flex;align-items:center;gap:14px}
+        .acct-card-num{font-size:34px;font-weight:800;color:#fff;line-height:1;letter-spacing:-.04em;flex-shrink:0}
+        .acct-card-track{flex:1;height:7px;border-radius:5px;background:rgba(255,255,255,.07);overflow:hidden}
+        .acct-card-fill{height:100%;border-radius:5px;transition:width .4s}
+        @@media (max-width:1100px){.acct-cards{grid-template-columns:repeat(2,1fr)}.acct-summary-card{flex-direction:column;gap:18px}.acct-summary-left{flex:none}.acct-summary-divider{width:auto;height:1px}}
+
         .content-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;overflow:visible;margin-bottom:16px;backdrop-filter:blur(8px);position:relative;width:100%;isolation:isolate}
         .content-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(39,167,68,.2),transparent);z-index:1}
         .cc-hdr{display:flex;align-items:center;justify-content:space-between;padding:15px 20px 13px;border-bottom:1px solid rgba(255,255,255,.05)}
@@ -101,6 +163,14 @@
         .search-box svg{width:14px;height:14px;color:var(--text-d);flex-shrink:0}
 
         .tbl-wrap{overflow-x:visible}
+        /* Scrollable table viewport: vertical + horizontal scrollbars, sticky header */
+        .tbl-scroll{max-height:min(540px,62vh);overflow:auto;scrollbar-width:thin;scrollbar-color:rgba(39,167,68,.45) rgba(255,255,255,.04)}
+        .tbl-scroll thead th{position:sticky;top:0;z-index:4;background:#142d1d}
+        .tbl-scroll::-webkit-scrollbar{width:10px;height:10px}
+        .tbl-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
+        .tbl-scroll::-webkit-scrollbar-thumb{background:rgba(39,167,68,.4);border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+        .tbl-scroll::-webkit-scrollbar-thumb:hover{background:rgba(39,167,68,.6);background-clip:padding-box}
+        .tbl-scroll::-webkit-scrollbar-corner{background:transparent}
         table{width:100%;border-collapse:collapse;font-size:12.5px}
         thead th{padding:10px 15px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);border-bottom:1px solid rgba(255,255,255,.05);text-align:left;white-space:nowrap;background:rgba(255,255,255,.02)}
         tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
@@ -127,6 +197,15 @@
         .view-all-wrap{display:flex;justify-content:center;padding:14px 0 4px}
         .btn-outline{padding:7px 24px;border:1px solid rgba(255,255,255,.12);border-radius:7px;font-size:12px;font-weight:600;color:var(--text-m);background:transparent;cursor:pointer;font-family:inherit;transition:all .15s}
         .btn-outline:hover{border-color:var(--green);color:var(--green);background:var(--green-glow2)}
+        /* Used by the Payment Start modal (ported from the treasurer dashboard) */
+        .btn-primary{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s;background:var(--green);color:#fff}
+        .btn-primary:hover{background:#22963d;transform:translateY(-1px)}
+        .form-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:6px;display:block}
+        .form-input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none;transition:border-color .2s}
+        .form-input:focus{border-color:var(--green);background:rgba(39,167,68,.06)}
+        .form-input::placeholder{color:var(--text-d)}
+        .form-input option{background:#0a1f10;color:#fff}
+        .form-input option:checked{background:#1a6e2e;color:#fff}
 
         #toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:9px;font-size:12.5px;font-weight:500;background:#1f2937;color:#fff;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;z-index:999;pointer-events:none;display:flex;align-items:center;gap:7px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
         #toast.show{opacity:1;transform:translateY(0)}
@@ -169,6 +248,86 @@
         .btn-outline:hover{border-color:var(--green);color:#5fdd8e;background:rgba(39,167,68,.08)}
         .filter-select{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:7px 28px 7px 11px;font-size:12px;color:var(--text-m);font-family:inherit;cursor:pointer;outline:none;appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23e8f5ec%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 6px center;background-size:18px}
         .filter-select option{background:#0a1f10}
+
+        /* ── AVATAR PREVIEW MODAL ── */
+        #avatarModal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;cursor:pointer}
+        #avatarModal.open{display:flex}
+        #avatarModal img{width:280px;height:280px;border-radius:50%;object-fit:cover;border:4px solid rgba(39,167,68,.6);box-shadow:0 20px 60px rgba(0,0,0,.6);pointer-events:none}
+        #avatarModal .av-name{margin-top:16px;font-size:14px;font-weight:600;color:#fff;text-align:center;letter-spacing:.02em}
+        #avatarModal .av-hint{margin-top:6px;font-size:11px;color:rgba(255,255,255,.45);text-align:center}
+        #avatarModal .av-inner{display:flex;flex-direction:column;align-items:center}
+
+        /* ── RECEIPT MODAL ── */
+        .receipt-modal{display:none;position:fixed;inset:0;z-index:700;align-items:center;justify-content:center}
+        .receipt-modal.open{display:flex}
+        .receipt-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px)}
+        .receipt-modal-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:12px;max-height:95vh;overflow-y:auto;padding:16px}
+        .receipt-controls{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 14px;width:100%;max-width:620px}
+        .receipt-ctrl-title{flex:1;font-size:12.5px;font-weight:600;color:var(--text-m)}
+        .btn-pdf{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(39,167,68,.3);background:rgba(39,167,68,.15);color:#5fdd8e;transition:all .15s;font-family:inherit;flex-shrink:0}
+        .btn-pdf:hover{background:rgba(39,167,68,.25)}
+        .btn-receipt-close{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;font-family:inherit;flex-shrink:0}
+        .btn-receipt-close:hover{background:rgba(239,68,68,.12);color:#f87171}
+        .receipt-paper{width:620px;min-height:auto;background:#fff;border:1px solid #ccc;box-shadow:0 8px 40px rgba(0,0,0,.45);padding:24px 56px 28px;font-family:Arial,Helvetica,sans-serif;color:#111;position:relative;flex-shrink:0}
+        .rp-header{text-align:center;margin-bottom:12px;position:relative;z-index:1}
+        .rp-org{font-size:12px;font-weight:700;letter-spacing:.01em;margin-bottom:1px}
+        .rp-campus{font-size:11px;font-weight:400}
+        .rp-divider{border:none;border-top:1px solid #555;margin:8px 0 6px}
+        .rp-type{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-top:6px}
+        .rp-copy{font-size:11px;font-style:italic;color:#111;margin-top:1px}
+        .rp-meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;position:relative;z-index:1;gap:8px}
+        .rp-meta-label{font-size:11px;font-weight:400}
+        .rp-meta-value{font-size:12px;font-weight:700;color:#111;border-bottom:1px solid #888;min-width:140px;display:inline-block;padding-bottom:2px;text-align:center}
+        .rp-section-title{text-align:center;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;position:relative;z-index:1}
+        .rp-field{display:flex;align-items:baseline;margin-bottom:6px;position:relative;z-index:1}
+        .rp-field-label{font-size:12px;font-weight:400;min-width:150px;flex-shrink:0}
+        .rp-field-value{flex:1;font-size:12px;font-weight:700;border-bottom:1px solid #888;padding-bottom:2px;min-height:18px;padding-left:6px;font-family:Arial,Helvetica,sans-serif}
+        .rp-field-value.handwritten{font-family:Arial,Helvetica,sans-serif;font-style:none;font-size:12px;letter-spacing:.01em}
+        .rp-status-badge{display:inline-block;padding:1px 10px;border:none;font-size:12px;font-weight:700;background:transparent;color:#111}
+        .rp-signature-section{margin-top:24px;display:flex;justify-content:flex-end;position:relative;z-index:1}
+        .rp-sig-block{text-align:center;min-width:220px}
+        .rp-sig-label{font-size:11px;margin-bottom:6px}
+        .rp-sig-name-label{font-size:11px;color:#111}
+        .rp-watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:90px;font-weight:700;color:rgba(0,0,0,.04);pointer-events:none;letter-spacing:.2em;z-index:0;font-family:Arial,sans-serif;text-transform:uppercase}
+        @@media (max-width:768px){.receipt-paper{transform:scale(0.56);transform-origin:top center;margin-bottom:-420px}}
+        @@media print{
+          /* Hide ALL direct body children first — this collapses layout so nothing occupies space */
+          body > *{display:none!important}
+
+          html,body{
+            background:#fff!important;margin:0!important;padding:0!important;
+            display:block!important;overflow:visible!important;
+            height:auto!important;min-height:0!important;
+          }
+
+          /* Reveal only the receipt modal */
+          #treasurerReceiptModal{
+            display:block!important;position:static!important;
+            background:#fff!important;padding:0!important;margin:0!important;
+          }
+          #treasurerReceiptModal .receipt-modal-backdrop,
+          #treasurerReceiptModal .receipt-controls{display:none!important}
+          #treasurerReceiptModal .receipt-modal-inner{
+            display:block!important;position:static!important;
+            padding:0!important;margin:0!important;
+            max-height:none!important;overflow:visible!important;
+            background:#fff!important;
+          }
+
+          #trBothReceiptPapers{position:static!important;display:block!important}
+          .receipt-paper{
+            position:static!important;transform:none!important;
+            margin:0 auto!important;box-shadow:none!important;
+            border:none!important;background:#fff!important;
+            page-break-inside:avoid;
+          }
+          .receipt-paper,.receipt-paper *{
+            -webkit-print-color-adjust:exact!important;
+            print-color-adjust:exact!important;
+          }
+          .receipt-cut-line,.receipt-cut-line *{visibility:visible!important}
+          @@page{margin:12mm;size:auto}
+        }
     </style>
 </head>
 <body>
@@ -192,14 +351,6 @@
     <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
     Dashboard
   </a>
-  <a class="nav-item" id="nav-requests" onclick="showPage('requests',this)">
-    <svg viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.8"/><path d="M9 12h6M9 16h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    Requests
-    @if ((Model.RequestedAccounts?.Count ?? 0) > 0)
-    {
-        <span class="nav-badge">@Model.RequestedAccounts!.Count</span>
-    }
-  </a>
 
   <div class="sb-label">Users</div>
   <a class="nav-item" id="nav-students" onclick="showPage('students',this)">
@@ -219,26 +370,22 @@
 
   <div class="sb-spacer"></div>
   <div class="sb-user">
-    <div class="user-card">
-      <div class="user-av">@initials.ToUpper()</div>
+    <button class="user-card" onclick="showPage('profile',null)" style="width:100%;text-align:left;cursor:pointer;background:var(--glass);border:1px solid transparent;border-radius:9px;padding:8px 10px;transition:all .15s;font-family:inherit;color:inherit;display:flex;align-items:center;gap:9px" onmouseover="this.style.background='var(--green-glow)';this.style.borderColor='rgba(74,222,128,.12)'" onmouseout="this.style.background='var(--glass)';this.style.borderColor='transparent'">
+      <div class="user-av">
+        @if (!string.IsNullOrEmpty(avatarPath))
+        {
+          <img src="@avatarPath" alt="@initials.ToUpper()" />
+        }
+        else
+        {
+          @initials.ToUpper()
+        }
+      </div>
       <div>
-        <div class="user-name">
-          @if (firstName.Length > 0 && lastName.Length > 0)
-          {
-            @($"Prof. {firstName} {lastName}")
-          }
-          else if (firstName.Length > 0)
-          {
-            @($"Prof. {firstName}")
-          }
-          else
-          {
-            <span>Administrator</span>
-          }
-        </div>
+        <div class="user-name">@displayName</div>
         <div class="user-role">Administrator</div>
       </div>
-    </div>
+    </button>
     <div class="signout" onclick="window.location.href='@Url.Action("Logout", "Home")'">
       <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Sign Out
@@ -255,60 +402,75 @@
         <div class="page-title">Dashboard</div>
         <div class="page-sub">Welcome back, @firstName</div>
       </div>
-      <div style="font-size:11.5px;color:var(--text-m);background:rgba(39,167,68,.1);border:1px solid rgba(39,167,68,.2);padding:6px 13px;border-radius:8px;display:flex;align-items:center;gap:6px">
+      <div style="position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:11.5px;color:var(--text-m);background:rgba(39,167,68,.1);border:1px solid rgba(39,167,68,.2);padding:6px 13px;border-radius:8px;display:flex;align-items:center;gap:6px">
         <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;display:inline-block"></span>
         System Online
       </div>
     </div>
 
-    <div class="stat-grid">
-      <div class="stat-card">
-        <div class="stat-lbl">Registered Accounts</div>
-        <div class="stat-row">
-          <div class="stat-val" id="dash-registered">@Model.ApprovedAccountsCount</div>
-          <div class="stat-icon g">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#27a744" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="#27a744" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="#27a744" stroke-width="1.8" stroke-linecap="round"/></svg>
-          </div>
-        </div>
-        <div class="stat-trend">All approved accounts</div>
-      </div>
-      <div class="stat-col">
-        <div class="stat-card stat-card-half">
-          <div class="stat-lbl">Students</div>
-          <div class="stat-row">
-            <div class="stat-val" id="dash-students">@(Model.Students?.Count ?? 0)</div>
-            <div class="stat-icon g" onclick="showPage('students',document.getElementById('nav-students'))" style="cursor:pointer" title="View Students">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          </div>
-        </div>
-        <div class="stat-card stat-card-half">
-          <div class="stat-lbl">Treasurers</div>
-          <div class="stat-row">
-            <div class="stat-val" id="dash-treasurers">@(Model.Treasurers?.Count ?? 0)</div>
-            <div class="stat-icon g" onclick="showPage('treasurers',document.getElementById('nav-treasurers'))" style="cursor:pointer" title="View Treasurers">
-              <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="#27a744" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="#27a744" stroke-width="1.8" stroke-linecap="round"/></svg>
+    @{
+        var ci          = System.Globalization.CultureInfo.InvariantCulture;
+        var nStud       = Model.Students?.Count ?? 0;
+        var nProf       = Model.Professors?.Count ?? 0;
+        var nTreas      = Model.Treasurers?.Count ?? 0;
+        var nAdmin      = Model.Admins?.Count ?? 0;
+        var nPending    = Model.RequestedAccounts?.Count ?? 0;
+        var distTotal   = nStud + nProf + nTreas + nAdmin;
+        var maxRole     = Math.Max(1, Math.Max(Math.Max(nStud, nProf), Math.Max(nTreas, nAdmin)));
+        Func<int, string> distPct = n => (distTotal > 0 ? n * 100.0 / distTotal : 0).ToString("0.##", ci);
+        Func<int, string> barPct  = n => (n * 100.0 / maxRole).ToString("0.##", ci);
+    }
+    <div class="acct-overview">
+      <div class="acct-cards">
+        <div class="acct-card" onclick="showPage('students',document.getElementById('nav-students'))" style="cursor:pointer">
+          <div class="acct-card-top">
+            <div class="acct-card-ic" style="background:rgba(190,242,100,.14)">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="#bef264" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 12v5c0 1.657 2.686 3 6 3s6-1.343 6-3v-5" stroke="#bef264" stroke-width="1.8" stroke-linecap="round"/></svg>
             </div>
+            <div><div class="acct-card-name">Students</div><div class="acct-card-role">Enrolled</div></div>
+          </div>
+          <div class="acct-card-bot">
+            <div class="acct-card-num" id="dash-students">@nStud</div>
+            <div class="acct-card-track"><div class="acct-card-fill" style="width:@(barPct(nStud))%;background:linear-gradient(90deg,#a3e635,#bef264)"></div></div>
           </div>
         </div>
-      </div>
-      <div class="stat-col">
-        <div class="stat-card stat-card-half">
-          <div class="stat-lbl">Professors</div>
-          <div class="stat-row">
-            <div class="stat-val" id="dash-professors">@(Model.Professors?.Count ?? 0)</div>
-            <div class="stat-icon g" onclick="showPage('professors',document.getElementById('nav-professors'))" style="cursor:pointer" title="View Professors">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M12 14l9-5-9-5-9 5 9 5z" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
+        <div class="acct-card" onclick="showPage('professors',document.getElementById('nav-professors'))" style="cursor:pointer">
+          <div class="acct-card-top">
+            <div class="acct-card-ic" style="background:rgba(103,232,249,.12)">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#67e8f9" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="#67e8f9" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="#67e8f9" stroke-width="1.8" stroke-linecap="round"/></svg>
             </div>
+            <div><div class="acct-card-name">Professors</div><div class="acct-card-role">Faculty</div></div>
+          </div>
+          <div class="acct-card-bot">
+            <div class="acct-card-num" id="dash-professors">@nProf</div>
+            <div class="acct-card-track"><div class="acct-card-fill" style="width:@(barPct(nProf))%;background:linear-gradient(90deg,#22d3ee,#67e8f9)"></div></div>
           </div>
         </div>
-        <div class="stat-card stat-card-half">
-          <div class="stat-lbl">Admins</div>
-          <div class="stat-row">
-            <div class="stat-val" id="dash-admins">@(Model.Admins?.Count ?? 0)</div>
-            <div class="stat-icon g" onclick="showPage('admins',document.getElementById('nav-admins'))" style="cursor:pointer" title="View Admins">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
+        <div class="acct-card">
+          <div class="acct-card-top">
+            <div class="acct-card-ic" style="background:rgba(52,211,153,.14)">
+              <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="#4ade80" stroke-width="1.8"/><path d="M2 7l10 6 10-6" stroke="#4ade80" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
+            <div><div class="acct-card-name">Treasurers</div><div class="acct-card-role">Finance</div></div>
+          </div>
+          <div class="acct-card-bot">
+            <div class="acct-card-num" id="dash-treasurers">@nTreas</div>
+            <div class="acct-card-track"><div class="acct-card-fill" style="width:@(barPct(nTreas))%;background:linear-gradient(90deg,#34d399,#4ade80)"></div></div>
+          </div>
+        </div>
+
+        <div class="acct-card">
+          <div class="acct-card-top">
+            <div class="acct-card-ic" style="background:rgba(245,158,11,.14)">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div><div class="acct-card-name">Admins</div><div class="acct-card-role">Full access</div></div>
+          </div>
+          <div class="acct-card-bot">
+            <div class="acct-card-num" id="dash-admins">@nAdmin</div>
+            <div class="acct-card-track"><div class="acct-card-fill" style="width:@(barPct(nAdmin))%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></div></div>
           </div>
         </div>
       </div>
@@ -316,105 +478,22 @@
 
     <div class="content-card">
       <div class="cc-hdr">
-        <div class="cc-title">Recent Account Requests</div>
-        <span class="badge by">@(Model.AllAccountRequests?.Count ?? 0) total</span>
+        <div class="cc-title">Account Requests</div>
+        <span class="badge by" id="req-count-badge">@(Model.RequestedAccounts?.Count ?? 0) pending</span>
       </div>
-      <div class="tbl-wrap">
-        <table>
-<thead>
-            <tr><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Role</th><th>Date</th></tr>
-          </thead>
-          <tbody id="recent-tbody">
-            @if (Model.AllAccountRequests != null && Model.AllAccountRequests.Any())
-            {
-                int idx = 0;
-                @foreach (var acct in Model.AllAccountRequests)
-                {
-                    var hidden = idx >= 5 ? "display:none" : "";
-                        <tr class="recent-row" style="@hidden">
-                        <td class="td-mono td-m">@(acct.SchoolId ?? "—")</td>
-                        <td><strong>@acct.Fullname</strong></td>
-                        <td class="td-m">@(acct.CourseCode ?? "—")</td>
-                        <td class="td-m">@(acct.YearLevel == "5" ? "4 Completed" : $"{(acct.YearLevel ?? "—")}-{(acct.Section ?? "—")}")</td>
-                        <td class="td-m">@(acct.Role ?? "—")</td>
-                        <td class="td-mono td-m">@acct.CreatedAt.ToString("MM-dd-yyyy")</td>
-                    </tr>
-
-                    idx++;
-                }
-            }
-            else
-            {
-                <tr class="empty-row"><td colspan="6">No account requests found.</td></tr>
-            }
-          </tbody>
-        </table>
-      </div>
-      @if ((Model.AllAccountRequests?.Count ?? 0) > 5)
-      {
-          <div class="view-all-wrap">
-              <button class="btn-outline" id="view-all-btn" 
-                      data-total="@Model.AllAccountRequests!.Count"
-                      data-expanded="false"
-                      onclick="toggleRecentRows()">
-                  View All (@Model.AllAccountRequests!.Count)
-              </button>
-          </div>
-      }
-    </div>
-  </div>
-
-  <!-- REQUESTS PAGE -->
-  <div class="page" id="page-requests">
-    <div class="page-hdr">
-      <div>
-        <div class="page-title">Account Requests</div>
-        <div class="page-sub">@(Model.RequestedAccounts?.Count ?? 0) pending approval</div>
-      </div>
-    </div>
-    <div class="content-card">
-      <div class="tbl-wrap">
+      <div class="tbl-wrap tbl-scroll">
         <table>
           <thead>
-            <tr><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Role</th><th>Date</th><th>Actions</th></tr>
+            <tr><th>#</th><th>CTU ID</th><th>Photo</th><th>Name</th><th>Course.Year.Section</th><th>Role</th><th>Date</th><th>Action</th></tr>
           </thead>
-          <tbody>
-            @if (Model.RequestedAccounts != null && Model.RequestedAccounts.Any())
-            {
-                @foreach (var acct in Model.RequestedAccounts)
-                {
-                    <tr id="req-row-@acct.AccountId">
-                        <td class="td-mono td-m">@(acct.SchoolId ?? "—")</td>
-                        <td><strong>@acct.Fullname</strong></td>
-                        <td class="td-m">@(acct.CourseCode ?? "—")</td>
-                        <td class="td-m">@(acct.YearLevel == "5" ? "4 Completed" : $"{(acct.YearLevel ?? "—")}-{(acct.Section ?? "—")}")</td>
-                        <td class="td-m">@(acct.Role ?? "—")</td>
-                        <td class="td-mono td-m">@acct.CreatedAt.ToString("MM-dd-yyyy")</td>
-                        <td>
-
-                            <div class="action-btns">
-                                <button class="btn-ap" onclick="updateStatus(@acct.AccountId, 'Approved')">
-                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                    Approve
-                                </button>
-                                <button class="btn-rj" onclick="rejectAndDelete(@acct.AccountId)">
-                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-                                    Reject
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr class="empty-row"><td colspan="7">No pending requests.</td></tr>
-            }
+          <tbody id="req-tbody">
+            <tr class="empty-row"><td colspan="8">Loading…</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </div>
+
 
   <!-- STUDENTS PAGE -->
   <div class="page" id="page-students">
@@ -428,19 +507,46 @@
       <div class="toolbar">
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
-          <input type="text" placeholder="Search by name, school ID, course…" oninput="filterStudentsPage(this.value)" />
+          <input type="text" id="students-search" placeholder="Search by name, CTU ID, course…" oninput="filterStudentsPage(this.value)" />
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select class="filter-select" id="students-filter-status" onchange="applyStudentsPageFilters()">
+            <option value="">All Payment Status</option>
+            <option value="Paid">Paid</option>
+            <option value="Partial">Partial</option>
+            <option value="Unpaid">Unpaid</option>
+          </select>
           <select class="filter-select" id="students-filter-course" onchange="applyStudentsPageFilters()">
             <option value="">All Courses</option>
+          </select>
+          <select class="filter-select" id="students-filter-year" onchange="applyStudentsPageFilters()">
+            <option value="">All Year Levels</option>
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
+            <option value="5">Graduated</option>
           </select>
           <select class="filter-select" id="students-filter-sy" onchange="applyStudentsPageFilters()">
             <option value="">All School Years</option>
           </select>
+          <button class="btn-outline" onclick="resetStudentsPageFilters()" title="Reset filters and sort to default" style="padding:7px 14px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L3 8"/></svg>
+            Default
+          </button>
         </div>
       </div>
-      <div class="tbl-wrap">
-        <table><thead><tr><th>#</th><th>School ID</th><th>Name</th><th>Course · Year &amp; Section</th><th>1st Sem</th><th>2nd Sem</th><th>Org Fees</th><th></th></tr></thead>
+      <div class="tbl-wrap tbl-scroll">
+        <table><thead><tr>
+          <th>#</th>
+          <th>CTU ID</th>
+          <th>Photo</th>
+          <th>Name</th>
+          <th>Course.Year.Section</th>
+          <th><span id="adm-th-sem1-label">Org Fee Balance – 1st Semester</span></th>
+          <th><span id="adm-th-sem2-label">Org Fee Balance – 2nd Semester</span></th>
+          <th style="text-align:center">Action</th>
+        </tr></thead>
         <tbody id="students-tb">
           <tr class="empty-row"><td colspan="8">Loading students…</td></tr>
         </tbody></table>
@@ -463,13 +569,9 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
           <input type="text" placeholder="Search professors…" oninput="filterTable(this,'profs-tb')" />
         </div>
-        <button class="btn-ap" onclick="showAddProfessorModal()">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-          Add Professor
-        </button>
       </div>
-      <div class="tbl-wrap">
-        <table><thead><tr><th>#</th><th>Name</th><th>School ID</th><th>Email</th><th></th></tr></thead>
+      <div class="tbl-wrap tbl-scroll">
+        <table><thead><tr><th>#</th><th>CTU ID</th><th>Name</th><th>Email</th><th></th></tr></thead>
         <tbody id="profs-tb">
           @if (Model.Professors != null && Model.Professors.Any())
           {
@@ -478,13 +580,13 @@
               {
                   <tr>
                       <td class="td-mono td-m">@(i++)</td>
+                      <td class="td-mono td-m">@p.SchoolId</td>
                       <td>
     <strong>@p.FullName</strong>
     @if (p.Role == "Admin") {
         <span style="font-size:10px;font-weight:600;background:rgba(39,167,68,.15);color:#5fdd8e;border:1px solid rgba(39,167,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Admin</span>
     }
 </td>
-                      <td class="td-mono td-m">@p.SchoolId</td>
                       <td class="td-m">@p.Email</td>
                   <td style="width:40px;text-align:right">
     <div class="dropdown-wrap">
@@ -532,6 +634,51 @@
   </div>
 
   
+  <!-- PROFILE PAGE -->
+  <div class="page" id="page-profile">
+    <div class="page-hdr">
+      <div><div class="page-title">My Profile</div><div class="page-sub">Your account information</div></div>
+    </div>
+    <div class="content-card">
+      <div class="profile-hero">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar" id="profileAvatarCircle">
+            @if (!string.IsNullOrEmpty(avatarPath))
+            {
+              <img src="@avatarPath" alt="@displayName" id="profileAvatarImg" />
+            }
+            else
+            {
+              <span id="profileAvatarInitials">@initials.ToUpper()</span>
+            }
+          </div>
+          <button class="avatar-edit-badge" onclick="triggerAvatarUpload()"
+            title="@(string.IsNullOrEmpty(avatarPath) ? "Add photo" : "Change photo")"
+            aria-label="@(string.IsNullOrEmpty(avatarPath) ? "Add photo" : "Change photo")">
+            <svg viewBox="0 0 24 24" fill="none" style="width:14px;height:14px;color:#fff"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.8"/></svg>
+          </button>
+          <input type="file" id="avatarFileInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleAvatarChange(this)" />
+        </div>
+        <div class="profile-hero-name">@displayName</div>
+        <div class="profile-hero-role">Administrator</div>
+      </div>
+      <div class="profile-fields">
+        <div class="profile-field">
+          <label>CTU ID</label>
+          <span style="font-family:'DM Mono',monospace;font-size:12px">@(schoolId.Length > 0 ? schoolId : "—")</span>
+        </div>
+        <div class="profile-field">
+          <label>Email</label>
+          <span>@(email.Length > 0 ? email : "—")</span>
+        </div>
+      </div>
+    </div>
+    <div class="notice" style="background:rgba(59,130,246,.06);border-color:rgba(59,130,246,.18)">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#93c5fd" stroke-width="1.8"/><path d="M12 8v4M12 16h.01" stroke="#93c5fd" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <p class="notice-text">To update your personal information, please contact the system owner.</p>
+    </div>
+  </div>
+
   <!-- SETTINGS PAGE -->
   <div class="page" id="page-settings">
     <div class="page-hdr">
@@ -613,7 +760,7 @@
 
       <div class="content-card">
         <div class="cc-hdr"><div class="cc-title">School Years</div><span class="badge by" id="sy-count-badge">0 total</span></div>
-        <div class="tbl-wrap">
+        <div class="tbl-wrap tbl-scroll">
           <table>
             <thead><tr><th>#</th><th>School Year</th><th>Semesters</th><th>Status</th><th></th></tr></thead>
             <tbody id="sy-tbody">
@@ -650,7 +797,7 @@
 
       <div class="content-card">
         <div class="cc-hdr"><div class="cc-title">Courses</div><span class="badge by" id="courses-count-badge">0 total</span></div>
-        <div class="tbl-wrap">
+        <div class="tbl-wrap tbl-scroll">
           <table>
             <thead><tr><th>#</th><th>Code</th><th>Course Name</th><th></th></tr></thead>
             <tbody id="courses-tbody">
@@ -687,26 +834,9 @@
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-        <div class="content-card">
-          <div style="padding:16px 20px">
-            <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:6px">1st Semester Fee</div>
-            <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-.03em" id="fee-1st-val">₱—</div>
-            <div style="font-size:11px;color:var(--text-m);margin-top:3px" id="fee-1st-sub">No fee set</div>
-          </div>
-        </div>
-        <div class="content-card">
-          <div style="padding:16px 20px">
-            <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:6px">2nd Semester Fee</div>
-            <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-.03em" id="fee-2nd-val">₱—</div>
-            <div style="font-size:11px;color:var(--text-m);margin-top:3px" id="fee-2nd-sub">No fee set</div>
-          </div>
-        </div>
-      </div>
-
       <div class="content-card">
-        <div class="cc-hdr"><div class="cc-title">Fee History</div></div>
-        <div class="tbl-wrap">
+        <div class="cc-hdr"><div class="cc-title">Organization Fees</div></div>
+        <div class="tbl-wrap tbl-scroll">
           <table>
             <thead><tr><th>School Year</th><th>Semester</th><th>Amount</th><th>Status</th><th></th></tr></thead>
             <tbody id="fees-tbody">
@@ -722,7 +852,7 @@
       <div class="content-card" style="margin-bottom:14px">
         <div class="cc-hdr"><div class="cc-title">Change Password</div></div>
         <div style="padding:20px 24px">
-          <div style="display:grid;gap:12px;margin-bottom:16px">
+          <div style="display:grid;gap:12px;margin-bottom:16px;max-width:480px">
             <div>
               <label class="settings-label">Current Password</label>
               <input id="pwd-current" type="password" class="settings-input" placeholder="Enter current password" />
@@ -737,7 +867,7 @@
             </div>
             <div id="pwd-match-message" style="font-size:12px;color:var(--text-m);min-height:18px"></div>
           </div>
-          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;max-width:480px">
             <button class="btn-ap" onclick="changeAdminPassword()">Change Password</button>
           </div>
         </div>
@@ -807,6 +937,7 @@
           <option value="2">2nd Year</option>
           <option value="3">3rd Year</option>
           <option value="4">4th Year</option>
+          <option value="5">Graduated</option>
         </select>
       </div>
       <div>
@@ -820,8 +951,6 @@
       <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Status</label>
       <select id="edit-academicStatus" style="width:100%;background:#0a1f10;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23fff%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;background-size:20px">
         <option value="Enrolled">Enrolled</option>
-        <option value="Transferred">Transferred</option>
-        <option value="Graduated">Graduated</option>
         <option value="Dropped">Dropped</option>
       </select>
     </div>
@@ -830,6 +959,42 @@
     <div style="display:flex;gap:10px;justify-content:flex-end">
       <button onclick="closeEditModal()" style="padding:9px 20px;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text-m);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
       <button onclick="saveStudent()" style="padding:9px 24px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- RETURN FROM LEAVE MODAL -->
+<div id="returnLeaveModal" style="display:none;position:fixed;inset:0;z-index:500;align-items:center;justify-content:center;">
+  <div onclick="closeReturnFromLeaveModal()" style="position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)"></div>
+  <div style="position:relative;z-index:1;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 32px;width:100%;max-width:460px;box-shadow:0 24px 60px rgba(0,0,0,.5)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#fff">Return from Leave</div>
+        <div id="rl-sub" style="font-size:11.5px;color:var(--text-m);margin-top:2px">—</div>
+      </div>
+      <button onclick="closeReturnFromLeaveModal()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+
+    <input type="hidden" id="rl-userid" />
+
+    <div style="font-size:12px;color:var(--text-m);line-height:1.5;margin:14px 0 18px">
+      Re-enrols the student and exempts every semester between when they left and the current term, so they are not back-billed for the time they were away.
+    </div>
+
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Last semester attended</label>
+      <select id="rl-last" onchange="updateReturnPreview()" style="width:100%;background:#0a1f10;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23fff%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;background-size:20px"></select>
+    </div>
+
+    <div style="font-size:12.5px;color:var(--text-m);margin-bottom:14px">
+      Returns at: <strong id="rl-returns" style="color:#fff">—</strong> <span style="color:var(--text-d)">(current term)</span>
+    </div>
+
+    <div id="rl-preview" style="font-size:12px;color:var(--text-m);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 12px;margin:0 0 20px;line-height:1.5;min-height:20px"></div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeReturnFromLeaveModal()" style="padding:9px 20px;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text-m);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+      <button id="rl-confirm" onclick="confirmReturnFromLeave()" style="padding:9px 24px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Confirm Return</button>
     </div>
   </div>
 </div>
@@ -866,7 +1031,7 @@
 
     <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Account Information</div>
     <div style="margin-bottom:10px">
-      <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">School ID</label>
+      <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">CTU ID</label>
       <input id="edit-prof-schoolId" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
     </div>
     <div style="margin-bottom:24px">
@@ -911,8 +1076,7 @@
         else { var n = document.getElementById('nav-' + name); if (n) n.classList.add('active'); }
 
         // refresh the tab data
-        if (name === 'dashboard')   refreshDashboard();
-        if (name === 'requests')    refreshRequests();
+        if (name === 'dashboard')   { refreshDashboard(); refreshRequests(); }
         if (name === 'students')    refreshStudents();
         if (name === 'professors')  refreshProfessors();
         if (name === 'settings')    await refreshSchoolYears();
@@ -930,8 +1094,8 @@
             if (data.success) {
                 const row = document.getElementById(`req-row-${accountId}`);
                 if (row) { row.style.opacity = '0'; row.style.transition = 'opacity .3s'; setTimeout(() => row.remove(), 300); }
-                const badge = document.querySelector('.nav-badge');
-                if (badge) { const count = parseInt(badge.textContent) - 1; if (count <= 0) badge.remove(); else badge.textContent = count; }
+                const badge = document.getElementById('req-count-badge');
+                if (badge) { const count = parseInt(badge.textContent) - 1; badge.textContent = `${Math.max(0, count)} pending`; }
                 showToast(data.message, 'ok');
             } else {
                 showToast(data.message, 'fail');
@@ -965,12 +1129,8 @@
                     setTimeout(() => row.remove(), 300);
                 }
 
-                const badge = document.querySelector('.nav-badge');
-                if (badge) {
-                    const count = parseInt(badge.textContent) - 1;
-                    if (count <= 0) badge.remove();
-                    else badge.textContent = count;
-                }
+                const badge = document.getElementById('req-count-badge');
+                if (badge) { const count = parseInt(badge.textContent) - 1; badge.textContent = `${Math.max(0, count)} pending`; }
 
                 showToast('Account rejected and deleted successfully.', 'ok');
             } else {
@@ -992,137 +1152,105 @@
     t.textContent=msg;t.className='show '+type;
     clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3000);
     }
-    function showAddProfessorModal(){
-        // Create and show the professor modal
-        const modalHtml = `
-            <div id="addProfessorModal" style="display:flex;position:fixed;inset:0;z-index:500;align-items:center;justify-content:center;">
-                <div onclick="closeAddProfessorModal()" style="position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)"></div>
-                <div style="position:relative;z-index:1;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 32px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.5)">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
-                        <div>
-                            <div style="font-size:16px;font-weight:700;color:#fff">Add Professor</div>
-                            <div style="font-size:11.5px;color:var(--text-m);margin-top:2px">New professor will be saved to the database</div>
-                        </div>
-                        <button onclick="closeAddProfessorModal()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
-                    </div>
 
-                    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Personal Information</div>
-                    <div style="display:grid;grid-template-columns:1fr 60px 1fr;gap:10px;margin-bottom:10px">
-                        <div>
-                            <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">First Name</label>
-                            <input id="prof-firstName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
-                        </div>
-                        <div>
-                            <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Middle I.</label>
-                            <input id="prof-middleName" type="text" maxlength="3" placeholder="M.I." oninput="autoMiddlePeriod(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 8px;color:#fff;font-size:13px;font-family:inherit;outline:none;text-align:center" />
-                        </div>
-                        <div>
-                            <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Last Name</label>
-                            <input id="prof-lastName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
-                        </div>
-                    </div>
-
-                    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px;margin-top:16px">Account Information</div>
-                    <div style="margin-bottom:10px">
-                        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">School ID</label>
-                        <input id="prof-schoolId" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
-                    </div>
-                    <div style="margin-bottom:10px">
-                        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Email</label>
-                        <input id="prof-email" type="email" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
-                    </div>
-                    <div style="margin-bottom:24px">
-                        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Password</label>
-                        <input id="prof-password" type="password" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
-                    </div>
-
-                    <div style="display:flex;gap:10px;justify-content:flex-end">
-                        <button onclick="closeAddProfessorModal()" style="padding:9px 20px;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text-m);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
-                        <button onclick="saveNewProfessor()" style="padding:9px 24px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Add Professor</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Remove existing modal if present
-        const existingModal = document.getElementById('addProfessorModal');
-        if (existingModal) {
-            existingModal.remove();
-        }
-        
-        // Add modal to body
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    function triggerAvatarUpload() {
+      const proceed = confirm(
+        'Photo Guidelines\n\n' +
+        'Please upload a formal photo that meets the following requirements:\n' +
+        '• Format: 1×1 (square)\n' +
+        '• Attire: your official school uniform or a plain white shirt\n' +
+        '• Background: a plain white background\n\n' +
+        'Click OK to choose your photo.'
+      );
+      if (!proceed) return;
+      document.getElementById('avatarFileInput').click();
+    }
+    async function handleAvatarChange(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const allowed = ['image/jpeg','image/png','image/webp'];
+      if (!allowed.includes(file.type)) { showToast('Only JPG, PNG, or WEBP allowed.','fail'); input.value=''; return; }
+      if (file.size > 2*1024*1024) { showToast('Image must be 2 MB or smaller.','fail'); input.value=''; return; }
+      const fd = new FormData();
+      fd.append('accountId', '@accountId');
+      fd.append('avatar', file);
+      showToast('Uploading photo…','ok');
+      try {
+        const res  = await fetch('/Home/UploadAvatar', { method:'POST', body:fd });
+        const data = await res.json();
+        if (!data.success) { showToast(data.message||'Upload failed.','fail'); return; }
+        const newSrc = data.avatarPath;
+        const circle = document.getElementById('profileAvatarCircle');
+        const initEl = document.getElementById('profileAvatarInitials');
+        let imgEl = document.getElementById('profileAvatarImg');
+        if (initEl) initEl.remove();
+        if (!imgEl) { imgEl = document.createElement('img'); imgEl.id='profileAvatarImg'; Object.assign(imgEl.style,{width:'100%',height:'100%',objectFit:'cover',display:'block'}); circle.appendChild(imgEl); }
+        imgEl.src = newSrc;
+        const sideAv = document.querySelector('.user-av');
+        if (sideAv) sideAv.innerHTML = `<img src="${newSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`;
+        showToast('Photo updated.','ok');
+      } catch { showToast('Upload failed. Try again.','fail'); }
+      input.value = '';
     }
 
-    function closeAddProfessorModal() {
-        const modal = document.getElementById('addProfessorModal');
-        if (modal) {
-            modal.remove();
-        }
+    function resetDropdownPos(menu) {
+        menu.style.position = '';
+        menu.style.top = '';
+        menu.style.left = '';
+        menu.style.right = '';
+        menu.style.bottom = '';
     }
-
-    async function saveNewProfessor() {
-        const firstName  = document.getElementById('prof-firstName')?.value.trim();
-        const lastName   = document.getElementById('prof-lastName')?.value.trim();
-        const middleName = document.getElementById('prof-middleName')?.value.trim();
-        const schoolId   = document.getElementById('prof-schoolId')?.value.trim();
-        const email      = document.getElementById('prof-email')?.value.trim();
-        const password   = document.getElementById('prof-password')?.value.trim();
-
-        if (!firstName || !lastName)  { showToast('First and last name are required.', 'fail'); return; }
-        if (!schoolId)                { showToast('School ID is required.', 'fail'); return; }
-        if (!password || password.length < 6) { showToast('Password must be at least 6 characters.', 'fail'); return; }
-
-        try {
-            const res  = await fetch('/Home/AddProfessor', {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ firstName, lastName, middleName, schoolId, email, password })
-            });
-            const data = await res.json();
-
-            if (data.success) {
-                closeAddProfessorModal();
-                showToast(data.message, 'ok');
-                refreshProfessors(); // just refreshes the table, no page reload
-            } else {
-                showToast(data.message, 'fail');
-            }
-        } catch {
-            showToast('Request failed. Please try again.', 'fail');
-        }
-    }
-    function toggleRecentRows() {
-        var rows = document.querySelectorAll('.recent-row');
-        var btn = document.getElementById('view-all-btn');
-        var isExpanded = btn.getAttribute('data-expanded') === 'true';
-        
-        rows.forEach(function(row, i) {
-            if (i >= 5) {
-                row.style.display = isExpanded ? 'none' : '';
-            }
+    function closeAllDropdowns() {
+        // only top-level menus carry the fixed-position overrides
+        document.querySelectorAll('.dropdown-wrap > .dropdown-menu.open').forEach(function(m) {
+            m.classList.remove('open');
+            resetDropdownPos(m);
         });
-        
-        btn.setAttribute('data-expanded', isExpanded ? 'false' : 'true');
-        var total = btn.getAttribute('data-total');
-        btn.textContent = isExpanded ? 'View All (' + total + ')' : 'Show Less';
+        // hide any open role submenus (their inline position must be preserved)
+        document.querySelectorAll('[id^="role-submenu-"],[id^="prof-role-submenu-"]').forEach(function(s) {
+            s.style.display = 'none';
+            s.classList.remove('open');
+        });
     }
     function toggleDropdown(btn) {
-        // close all other open dropdowns first
-        document.querySelectorAll('.dropdown-menu.open').forEach(function(m) {
-            if (m !== btn.nextElementSibling) m.classList.remove('open');
-        });
-        btn.nextElementSibling.classList.toggle('open');
+        var menu = btn.nextElementSibling;
+        var willOpen = !menu.classList.contains('open');
+        closeAllDropdowns();
+        if (!willOpen) return;
+        menu.classList.add('open');
+
+        // Position as fixed so the menu can escape the scrollable table container.
+        // NOTE: an ancestor with backdrop-filter/filter/transform (e.g. .content-card
+        // uses backdrop-filter) becomes the containing block for position:fixed, so
+        // raw viewport coords would be offset. We measure where fixed (0,0) actually
+        // lands and subtract that offset, which is correct for any containing block.
+        var r = btn.getBoundingClientRect();
+        menu.style.position = 'fixed';
+        menu.style.right  = 'auto';
+        menu.style.bottom = 'auto';
+        menu.style.left = '0px';
+        menu.style.top  = '0px';
+        var base = menu.getBoundingClientRect();   // containing block's origin in viewport coords
+        var offX = base.left, offY = base.top;
+        var mw = menu.offsetWidth  || 180;
+        var mh = menu.offsetHeight || 200;
+
+        // Right-align the menu's right edge with the button's right edge.
+        menu.style.left = (r.right - mw - offX) + 'px';
+        // Open downward, or upward if there isn't room below.
+        if (r.bottom + mh + 8 > window.innerHeight) {
+            menu.style.top = (r.top - 4 - mh - offY) + 'px';
+        } else {
+            menu.style.top = (r.bottom + 4 - offY) + 'px';
+        }
     }
 
     // close dropdown when clicking outside
     document.addEventListener('click', function(e) {
-        if (!e.target.closest('.dropdown-wrap')) {
-            document.querySelectorAll('.dropdown-menu.open').forEach(function(m) {
-                m.classList.remove('open');
-            });
-        }
+        if (!e.target.closest('.dropdown-wrap')) closeAllDropdowns();
     });
+    // close dropdowns on any scroll so the fixed menus don't detach from their row
+    document.addEventListener('scroll', closeAllDropdowns, true);
 
     // holds courses list so we only fetch once
     let coursesCache = [];
@@ -1217,6 +1345,148 @@
         document.getElementById('email-feedback').textContent = '';
     }
 
+    // ── RETURN FROM LEAVE ───────────────────────────────────────────────────
+    // School years ordered ascending by start year; each expands into two
+    // semester "slots" so we can range over a leave window the same way the
+    // server does in HomeController.ReturnFromLeave.
+    let RL_SCHOOL_YEARS = [];
+
+    function rlSemLabel(sem) { return sem === 'First' ? '1st Sem' : '2nd Sem'; }
+
+    function rlBuildSlots() {
+        const slots = [];
+        for (const sy of RL_SCHOOL_YEARS) {
+            slots.push({ schoolYearId: sy.schoolYearId, semester: 'First',  label: `${sy.yearLabel} ${rlSemLabel('First')}` });
+            slots.push({ schoolYearId: sy.schoolYearId, semester: 'Second', label: `${sy.yearLabel} ${rlSemLabel('Second')}` });
+        }
+        return slots;
+    }
+
+    function rlSlotIndex(slots, schoolYearId, semester) {
+        return slots.findIndex(s => s.schoolYearId === schoolYearId && s.semester === semester);
+    }
+
+    // The fixed "returns at" end, resolved from the server's current term.
+    let RL_CURRENT_IDX = -1;
+
+    async function openReturnFromLeaveModal(userId) {
+        try {
+            const res  = await fetch(`/Home/GetReturnFromLeaveInfo?userId=${userId}`);
+            if (!res.ok) { showToast(`Failed to load (HTTP ${res.status}).`, 'fail'); return; }
+            const data = await res.json();
+            if (!data.success) { showToast(data.message || 'Failed to load.', 'fail'); return; }
+            if (!data.schoolYears || !data.schoolYears.length) {
+                showToast('No school years configured yet.', 'fail'); return;
+            }
+
+            RL_SCHOOL_YEARS = data.schoolYears; // ascending by YearStart
+            document.getElementById('rl-userid').value = userId;
+
+            const stu = ALL_STUDENTS_PAGE.find(s => s.userId === userId);
+            document.getElementById('rl-sub').textContent = stu ? `${stu.name} · ${stu.schoolId || ''}`.trim() : '';
+
+            const slots   = rlBuildSlots();
+            const lastSel = document.getElementById('rl-last');
+            const returns = document.getElementById('rl-returns');
+            const confirm = document.getElementById('rl-confirm');
+
+            RL_CURRENT_IDX = data.currentTerm
+                ? rlSlotIndex(slots, data.currentTerm.schoolYearId, data.currentTerm.semester)
+                : -1;
+
+            // Can't build a leave window when there's no current term, or when the
+            // current term is the very first semester on record (nothing before it
+            // to exempt). Open the modal anyway with an explanation, Confirm off.
+            if (!data.currentTerm || RL_CURRENT_IDX <= 0) {
+                lastSel.innerHTML = '';
+                returns.textContent = data.currentTerm
+                    ? data.currentTerm.yearLabel + ' ' + rlSemLabel(data.currentTerm.semester)
+                    : '— not set —';
+                document.getElementById('rl-preview').innerHTML = !data.currentTerm
+                    ? '<span style="color:#f87171">No current term is set, so the leave window can\'t be computed. Set the current term first.</span>'
+                    : '<span style="color:#f87171">There are no semesters before the current term, so there is nothing to exempt. Re-enrol this student via Edit → Status = Enrolled.</span>';
+                confirm.disabled = true;
+                confirm.style.opacity = '.5';
+                confirm.style.cursor = 'not-allowed';
+                document.getElementById('returnLeaveModal').style.display = 'flex';
+                return;
+            }
+
+            returns.textContent = data.currentTerm.yearLabel + ' ' + rlSemLabel(data.currentTerm.semester);
+
+            // "Last attended" options: every slot before the current term.
+            lastSel.innerHTML = slots.slice(0, RL_CURRENT_IDX)
+                .map(s => `<option value="${s.schoolYearId}|${s.semester}">${escapeHtml(s.label)}</option>`)
+                .join('');
+
+            // Default to the detected last-attended slot, clamped to before the current term.
+            let defaultIdx = data.lastAttended
+                ? rlSlotIndex(slots, data.lastAttended.schoolYearId, data.lastAttended.semester)
+                : RL_CURRENT_IDX - 1;
+            if (defaultIdx < 0 || defaultIdx >= RL_CURRENT_IDX) defaultIdx = RL_CURRENT_IDX - 1;
+            lastSel.value = `${slots[defaultIdx].schoolYearId}|${slots[defaultIdx].semester}`;
+
+            updateReturnPreview();
+            document.getElementById('returnLeaveModal').style.display = 'flex';
+        } catch (err) {
+            console.error('Return from Leave load error:', err);
+            showToast('Failed to load: ' + (err && err.message ? err.message : err), 'fail');
+        }
+    }
+
+    function updateReturnPreview() {
+        const slots   = rlBuildSlots();
+        const preview = document.getElementById('rl-preview');
+        const confirm = document.getElementById('rl-confirm');
+        const val     = document.getElementById('rl-last').value;
+        if (!val || RL_CURRENT_IDX < 0) return;
+
+        const [syId, sem] = val.split('|');
+        const lastIdx = rlSlotIndex(slots, parseInt(syId), sem);
+
+        // Gap = semesters strictly between last attended and the current term.
+        const gap = slots.slice(lastIdx + 1, RL_CURRENT_IDX);
+        if (gap.length === 0) {
+            preview.innerHTML = 'No gap — the student will simply be re-enrolled, with no exemptions.';
+        } else {
+            preview.innerHTML = `Will re-enrol and exempt <strong>${gap.length}</strong> semester(s): `
+                + gap.map(s => escapeHtml(s.label)).join(', ');
+        }
+        confirm.disabled = false;
+        confirm.style.opacity = '1';
+        confirm.style.cursor = 'pointer';
+    }
+
+    function closeReturnFromLeaveModal() {
+        document.getElementById('returnLeaveModal').style.display = 'none';
+    }
+
+    async function confirmReturnFromLeave() {
+        const userId = parseInt(document.getElementById('rl-userid').value);
+        const val    = document.getElementById('rl-last').value;
+        if (!val) { showToast('Select the last semester attended.', 'fail'); return; }
+        const [syId, sem] = val.split('|');
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        try {
+            const res  = await fetch('/Home/ReturnFromLeave', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+                body:    JSON.stringify({ userId, lastAttendedSchoolYearId: parseInt(syId), lastAttendedSemester: sem })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message || 'Welcomed back.', 'ok');
+                closeReturnFromLeaveModal();
+                refreshStudents();
+            } else {
+                showToast(data.message || 'Failed to return student from leave.', 'fail');
+            }
+        } catch {
+            showToast('Failed to return student from leave.', 'fail');
+        }
+    }
+
     async function saveStudent() {
         const accountId  = parseInt(document.getElementById('edit-accountId').value);
         const firstName  = document.getElementById('edit-firstName').value.trim();
@@ -1247,30 +1517,11 @@
             const data = await res.json();
 
             if (data.success) {
-                // update the row in the DOM without reload
-                const row       = document.querySelector(`[data-account="${accountId}"]`);
-                const nameCell  = row?.querySelector('td:nth-child(2)');
-                const courseCell = row?.querySelector('td:nth-child(3)');
-                const yearCell  = row?.querySelector('td:nth-child(4)');
-
-                if (nameCell) {
-                    const isActive = row.getAttribute('data-active') === 'true';
-                    const fullName = `${lastName.toUpperCase()}, ${firstName.toUpperCase()}`;
-                    nameCell.innerHTML = isActive
-                        ? `<strong>${fullName}</strong>` 
-                        : `<strong style="color:#f87171">${fullName}</strong>
-                        <span class="deactivated-badge" style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>`;
-                }
-                if (courseCell) {
-                    const courseName = coursesCache.find(c => c.courseId === courseId)?.courseCode ?? '';
-                    courseCell.innerHTML = `<span class="badge bg">${courseName}</span>`;
-                }
-                if (yearCell) {
-                    yearCell.textContent = fmtYearLevel(yearLevel, section);
-                }
-
+                // Re-render from server data so the row reflects every saved field
+                // in the correct columns (robust to column-order changes).
                 closeEditModal();
                 showToast(data.message, 'ok');
+                refreshStudents();
             } else {
                 showToast(data.message, 'fail');
             }
@@ -1357,7 +1608,7 @@
         const email      = document.getElementById('edit-prof-email').value.trim();
 
         if (!firstName || !lastName) { showToast('First and last name are required.', 'fail'); return; }
-        if (!schoolId)               { showToast('School ID is required.', 'fail'); return; }
+        if (!schoolId)               { showToast('CTU ID is required.', 'fail'); return; }
 
         const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
@@ -1403,35 +1654,10 @@
             const data = await res.json();
 
             if (data.success) {
-                row.setAttribute('data-active', data.isActive.toString());
-
-                // update button text and color
-                const span = el.querySelector('span');
-                if (span) span.textContent = data.isActive ? 'Deactivate Account' : 'Reactivate Account';
-                el.classList.remove('danger', 'reactivate');
-                el.classList.add(data.isActive ? 'danger' : 'reactivate');
-
-                // update the name cell — add/remove red color and badge
-                const nameCell = row.querySelector('td:nth-child(2)');
-                if (nameCell) {
-                    const strong = nameCell.querySelector('strong');
-                    const nameText = strong ? strong.textContent : '';
-
-                    if (!data.isActive) {
-                        // deactivated → red + badge
-                        nameCell.innerHTML = `
-                            <strong style="color:#f87171">${nameText}</strong>
-                            <span class="deactivated-badge" style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>
-                        `;
-                        row.style.opacity = '0.45';
-                    } else {
-                        // reactivated → back to normal
-                        nameCell.innerHTML = `<strong>${nameText}</strong>`;
-                        row.style.opacity = '1';
-                    }
-                }
-
+                // Re-render from server data so the name cell keeps its role/status
+                // tags and the deactivated styling lands in the right column.
                 showToast(data.message, 'ok');
+                refreshStudents();
             } else {
                 showToast(data.message, 'fail');
             }
@@ -1534,22 +1760,42 @@
             const data = await res.json();
             if (!data.success) return;
 
-            const tbody = document.querySelector('#page-requests tbody');
+            const tbody = document.getElementById('req-tbody');
             if (!tbody) return;
 
+            const badge = document.getElementById('req-count-badge');
+            if (badge) badge.textContent = `${data.requests.length} pending`;
+
             if (data.requests.length === 0) {
-                tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No pending requests.</td></tr>';
+                tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No pending requests.</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = data.requests.map(r => `
+            tbody.innerHTML = data.requests.map((r, i) => {
+                const parts = (r.fullname || '').split(',');
+                const last  = (parts[0] ?? '').trim();
+                const first = (parts[1] ?? '').trim();
+                const initials = (first[0] ?? '') + (last[0] ?? '');
+                const hasPhoto = !!r.avatarPath;
+                const avatarHtml = hasPhoto
+                    ? `<div onclick="viewAvatar('${escapeHtml(r.avatarPath)}','${escapeHtml(r.fullname)}')"
+                           style="width:50px;height:50px;border-radius:10px;overflow:hidden;border:1.5px solid rgba(39,167,68,.3);cursor:pointer;flex-shrink:0">
+                           <img src="${escapeHtml(r.avatarPath)}" style="width:50px;height:50px;object-fit:cover;display:block;pointer-events:none">
+                       </div>`
+                    : `<div style="width:50px;height:50px;border-radius:10px;overflow:hidden;border:1.5px solid rgba(39,167,68,.3);background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                           <span style="font-size:14px;font-weight:700;color:#fff">${escapeHtml(initials.toUpperCase())}</span>
+                       </div>`;
+                return `
                 <tr id="req-row-${r.accountId}">
+                    <td class="td-mono td-m">${i + 1}</td>
                     <td class="td-mono td-m">${r.schoolId ?? '—'}</td>
-                    <td><strong>${r.fullname}</strong></td>
-                    <td class="td-m">${r.courseCode ?? '—'}</td>
-                    <td class="td-m">${fmtYearLevel(r.yearLevel, r.section)}</td>
+                    <td>
+                        ${avatarHtml}
+                    </td>
+                    <td><strong>${escapeHtml(r.fullname)}</strong></td>
+                    <td class="td-m">${escapeHtml(r.courseCode ?? '—')} ${fmtYearLevel(r.yearLevel, r.section)}</td>
                     <td class="td-m">${r.role ?? '—'}</td>
-                    <td class="td-mono td-m">${r.createdAt}</td>
+                    <td class="td-mono td-m">${fd(r.createdAt)}</td>
                     <td>
                         <div class="action-btns">
                             <button class="btn-ap" onclick="updateStatus(${r.accountId}, 'Approved')">
@@ -1562,8 +1808,8 @@
                             </button>
                         </div>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         } catch {}
     }
 
@@ -1588,7 +1834,6 @@
 
     async function refreshStudents(schoolYear = null) {
         const tbody = document.getElementById('students-tb');
-        if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Loading students…</td></tr>';
         const sySel = document.getElementById('students-filter-sy');
         await initStudentsPageFilters();
         const selectedSY = schoolYear || sySel?.value || '';
@@ -1612,76 +1857,154 @@
 
     function renderStudentsPage(filtered) {
         const data = (filtered ?? ALL_STUDENTS_PAGE).slice()
-            .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' }));
+            .sort((a, b) => {
+                const ta = a.lastPaymentDate ? new Date(a.lastPaymentDate).getTime() : 0;
+                const tb = b.lastPaymentDate ? new Date(b.lastPaymentDate).getTime() : 0;
+                if (tb !== ta) return tb - ta;
+                return String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' });
+            });
         const tbody = document.getElementById('students-tb');
         if (!tbody) return;
         if (!data.length) {
             tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No students found.</td></tr>';
             return;
         }
+
+        // Clean single-line cell, matching the treasurer's student list:
+        // "₱0.00 (paid)" when settled, otherwise the amount due. Admins cannot
+        // record payments, so there is no Pay button; receipts are viewable in
+        // the per-student ledger modal (the eye button) instead.
+        const admSemCell = (required, paid, status) => {
+            const sl = (status || '').toLowerCase();
+            if (sl === 'n/a' || ((required || 0) <= 0 && (paid || 0) <= 0))
+                return '<span style="color:var(--text-d);font-size:11px">—</span>';
+            if (sl === 'paid')
+                return '<span style="font-family:\'DM Mono\',monospace;font-size:12px;color:#5fdd8e">₱0.00 <span style="color:var(--text-d)">(paid)</span></span>';
+            const bal = Math.max(0, (required || 0) - (paid || 0));
+            return `<span style="font-family:'DM Mono',monospace;font-size:12px;color:#f87171">₱${bal.toFixed(2)}</span>`;
+        };
+
         tbody.innerHTML = data.map((s, i) => {
-            const courseYr = `${escapeHtml(s.courseCode)} ${escapeHtml(fmtYearSection(s.yearSection))}`;
+            const initials = s.name.split(',').map(part => part.trim()).filter(Boolean).map(part => part[0] ?? '').join('').toUpperCase().slice(0, 2);
+            const trashBtn = s.avatarPath
+                ? `<button onclick="deleteAvatar(${s.userId},this)" title="Remove photo"
+                     style="position:absolute;bottom:0;right:0;width:20px;height:20px;border-radius:50%;background:#ef4444;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:1">
+                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                   </button>`
+                : '';
+            const avatarInner = s.avatarPath
+                ? `<div onclick="openAvatarModal('${escapeHtml(s.avatarPath)}','${escapeHtml(s.name)}')"
+                       style="width:50px;height:50px;border-radius:10px;overflow:hidden;border:1.5px solid rgba(39,167,68,.3);cursor:pointer;flex-shrink:0">
+                       <img src="${escapeHtml(s.avatarPath)}" style="width:50px;height:50px;object-fit:cover;display:block;pointer-events:none">
+                   </div>`
+                : `<div style="width:50px;height:50px;border-radius:10px;overflow:hidden;border:1.5px solid rgba(39,167,68,.3);background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                       <span style="font-size:14px;font-weight:700;color:#fff">${initials}</span>
+                   </div>`;
             const roleTag = s.role === 'Treasurer'
-                ? ' <span style="font-size:10px;font-weight:600;background:rgba(249,115,22,.15);color:#fdba74;border:1px solid rgba(249,115,22,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Treasurer</span>'
+                ? ' <span style="font-size:10px;font-weight:600;background:rgba(249,115,22,.15);color:#fdba74;border:1px solid rgba(249,115,22,.25);border-radius:5px;padding:1px 7px;margin-left:6px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle">Treasurer</span>'
                 : '';
             const inactiveTag = !s.isActive
-                ? ' <span style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>'
+                ? ' <span style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:6px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle">Deactivated</span>'
                 : '';
-            return `
-                <tr data-account="${s.accountId}" data-active="${s.isActive}">
-                    <td class="td-mono td-m">${i + 1}</td>
-                    <td class="td-mono td-m">${escapeHtml(s.schoolId)}</td>
-                    <td style="color:${s.isActive ? 'inherit' : '#f87171'}"><strong>${escapeHtml(s.name)}</strong>${roleTag}${inactiveTag}</td>
-                    <td class="td-m">${courseYr}</td>
-                    <td>${feeStatusBadge(s.firstSemStatus)}</td>
-                    <td>${feeStatusBadge(s.secondSemStatus)}</td>
-                    <td>
-                        <button class="btn-outline" style="padding:5px 12px;font-size:11px" onclick="openStudentOrgFeeModal(${s.userId})">Org Fees</button>
-                    </td>
-                    <td style="width:40px;text-align:right">
-                        <div class="dropdown-wrap">
-                            <button class="dot-btn" onclick="toggleDropdown(this)">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-                            </button>
-                            <div class="dropdown-menu">
-                                <div class="dropdown-item" onclick="editStudent(${s.accountId})">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                    Edit
-                                </div>
-                                <div class="dropdown-item has-submenu" onclick="showRoleSubmenu(this, ${s.accountId})">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                    Change Role
-                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                    <div class="dropdown-menu" id="role-submenu-${s.accountId}" style="display:none;position:absolute;left:-140px;top:0;min-width:130px">
-                                        <div class="dropdown-item" onclick="changeRole(${s.accountId}, 'Student'); event.stopPropagation()">
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                            Student
-                                        </div>
-                                        <div class="dropdown-item" onclick="changeRole(${s.accountId}, 'Treasurer'); event.stopPropagation()">
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                                            Treasurer
-                                        </div>
+            const isGraduated = String(s.yearSection ?? '').trim().split('-')[0].trim() === '5';
+            const statusTag = s.academicStatus === 'Dropped'
+                ? ' <span style="font-size:10px;font-weight:600;background:rgba(148,163,184,.15);color:#cbd5e1;border:1px solid rgba(148,163,184,.3);border-radius:5px;padding:1px 7px;margin-left:6px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle">Dropped</span>'
+                : isGraduated
+                    ? ' <span style="font-size:10px;font-weight:600;background:rgba(59,130,246,.15);color:#93c5fd;border:1px solid rgba(59,130,246,.3);border-radius:5px;padding:1px 7px;margin-left:6px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle">Graduated</span>'
+                    : ' <span style="font-size:10px;font-weight:600;background:rgba(39,167,68,.15);color:#5fdd8e;border:1px solid rgba(39,167,68,.3);border-radius:5px;padding:1px 7px;margin-left:6px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle">Enrolled</span>';
+            return `<tr data-account="${s.accountId}" data-active="${s.isActive}">
+                <td class="td-mono td-m">${i + 1}</td>
+                <td class="td-m"><div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:var(--text)">${escapeHtml(s.schoolId)}</div></td>
+                <td style="padding:8px 10px;vertical-align:middle;width:76px">
+                    <div style="position:relative;width:50px;height:50px">
+                        ${avatarInner}
+                        ${trashBtn}
+                    </div>
+                </td>
+                <td style="color:${s.isActive ? 'inherit' : '#f87171'}"><strong>${escapeHtml(s.name)}</strong>${roleTag}${statusTag}${inactiveTag}</td>
+                <td class="td-m"><div style="font-size:12px;color:var(--text-m)">${escapeHtml(s.courseCode)} ${escapeHtml(fmtYearSection(s.yearSection))}</div></td>
+                <td>${admSemCell(s.firstSemRequired,  s.firstSemPaid,  s.firstSemStatus)}</td>
+                <td>${admSemCell(s.secondSemRequired, s.secondSemPaid, s.secondSemStatus)}</td>
+                <td style="text-align:center">
+                  <div style="display:inline-flex;gap:6px;align-items:center;justify-content:center">
+                    <button class="btn-outline" title="View ledger" aria-label="View ledger" style="padding:6px 8px;display:inline-flex;align-items:center;justify-content:center" onclick="openStudentOrgFeeModal(${s.userId})">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                    <button class="${s.schoolYearId ? 'btn-outline' : 'btn-primary'}" title="Set the term from which the student begins to be charged fees" aria-label="Start of payment" style="padding:6px 8px;display:inline-flex;align-items:center;justify-content:center" onclick="openPaymentStartModal(${s.userId})">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    </button>
+                    <div class="dropdown-wrap">
+                        <button class="dot-btn" onclick="toggleDropdown(this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        </button>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item" onclick="editStudent(${s.accountId})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                Edit
+                            </div>
+                            ${s.academicStatus === 'Dropped' ? `
+                            <div class="dropdown-item reactivate" onclick="openReturnFromLeaveModal(${s.userId})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-7.5 4"/><polyline points="3 4 3 8 7 8"/></svg>
+                                Return from Leave
+                            </div>` : ''}
+                            <div class="dropdown-item has-submenu" onclick="showRoleSubmenu(this, ${s.accountId})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                Change Role
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                <div class="dropdown-menu" id="role-submenu-${s.accountId}" style="display:none;position:absolute;left:-140px;top:0;min-width:130px">
+                                    <div class="dropdown-item" onclick="changeRole(${s.accountId}, 'Student'); event.stopPropagation()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        Student
+                                    </div>
+                                    <div class="dropdown-item" onclick="changeRole(${s.accountId}, 'Treasurer'); event.stopPropagation()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                        Treasurer
                                     </div>
                                 </div>
-                                <div class="dropdown-item ${s.isActive ? 'danger' : 'reactivate'}" onclick="toggleActivation(${s.accountId}, this)">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                    <span>${s.isActive ? 'Deactivate Account' : 'Reactivate Account'}</span>
-                                </div>
-                                <div class="dropdown-item danger" onclick="deleteStudent(${s.accountId})">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                    Delete Account
-                                </div>
+                            </div>
+                            <div class="dropdown-item ${s.isActive ? 'danger' : 'reactivate'}" onclick="toggleActivation(${s.accountId}, this)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                <span>${s.isActive ? 'Deactivate Account' : 'Reactivate Account'}</span>
+                            </div>
+                            <div class="dropdown-item danger" onclick="deleteStudent(${s.accountId})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                Delete Account
                             </div>
                         </div>
-                    </td>
-                </tr>
-            `;
+                    </div>
+                  </div>
+                </td>
+            </tr>`;
         }).join('');
     }
 
     function filterStudentsPage(q) {
         studentsPageQ = (q || '').toLowerCase().trim();
         applyStudentsPageFilters();
+    }
+
+    // Reset all student-list filters/search and return the school year to its default (current).
+    function resetStudentsPageFilters() {
+        studentsPageQ = '';
+        const search = document.getElementById('students-search');
+        if (search) search.value = '';
+
+        ['students-filter-status', 'students-filter-course', 'students-filter-year'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+
+        const sySel = document.getElementById('students-filter-sy');
+        if (sySel) {
+            const def = sySel.dataset.currentSy || '';
+            if (def && [...sySel.options].some(o => o.value === def)) sySel.value = def;
+            refreshStudents(sySel.value);
+        } else {
+            applyStudentsPageFilters();
+        }
     }
 
     async function initStudentsPageFilters() {
@@ -1696,6 +2019,7 @@
                 `<option value="${sy.yearStart}–${sy.yearEnd}">${sy.yearStart}–${sy.yearEnd}</option>`
             ).join('');
             if (currentSY) sySel.value = `${currentSY.yearStart}–${currentSY.yearEnd}`;
+            sySel.dataset.currentSy = sySel.value; // remember default SY for the Default button
             sySel.dataset.listenerAttached = 'true';
             sySel.addEventListener('change', () => refreshStudents(sySel.value));
         } catch {}
@@ -1714,6 +2038,8 @@
 
     function applyStudentsPageFilters() {
         studentsPageCourse = document.getElementById('students-filter-course')?.value || '';
+        const statusFilter = document.getElementById('students-filter-status')?.value || '';
+        const yearFilter   = document.getElementById('students-filter-year')?.value || '';
         const filtered = ALL_STUDENTS_PAGE.filter(s => {
             const name = (s.name || '').toLowerCase();
             const schoolId = (s.schoolId || '').toLowerCase();
@@ -1723,7 +2049,11 @@
                 || name.includes(studentsPageQ) || schoolId.includes(studentsPageQ)
                 || course.includes(studentsPageQ) || yearSection.includes(studentsPageQ);
             const matchesCourse = !studentsPageCourse || (s.courseCode || '') === studentsPageCourse;
-            return matchesQ && matchesCourse;
+            const matchesStatus = !statusFilter || (s.firstSemStatus || '').toLowerCase() === statusFilter.toLowerCase()
+                || (s.secondSemStatus || '').toLowerCase() === statusFilter.toLowerCase();
+            const yrNum = yearSection.match(/^(\d)/)?.[1] || '';
+            const matchesYear = !yearFilter || yrNum === yearFilter;
+            return matchesQ && matchesCourse && matchesStatus && matchesYear;
         });
         renderStudentsPage(filtered);
     }
@@ -1737,9 +2067,16 @@
     function openModal(id) { document.getElementById(id).classList.add('open'); }
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
+    function viewAvatar(src, name) {
+        // Reuse the same modal/design as the student list avatar preview
+        openAvatarModal(src, name);
+    }
+
     function renderReceiptCell(paymentId, receiptNumber, hasReceipt) {
         if (!hasReceipt || !receiptNumber || receiptNumber === '—') return '<span style="color:var(--text-d)">—</span>';
-        return `<span style="font-family:'DM Mono',monospace;font-size:10.5px;color:var(--text-m)">${escapeHtml(receiptNumber)}</span>`;
+        const safe = String(receiptNumber).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        return `<button type="button" class="btn-outline" style="padding:2px 6px;font-size:10px;font-family:'DM Mono',monospace"
+            onclick="printPaymentReceipt(${paymentId},'${safe}')">${escapeHtml(receiptNumber)}</button>`;
     }
 
     function renderCurrentFeesTable(currentSchoolYear, fees) {
@@ -1775,46 +2112,158 @@
 
     async function openStudentOrgFeeModal(userId) {
         const nameEl = document.getElementById('student-orgfee-name');
-        const subEl = document.getElementById('student-orgfee-sub');
-        const summaryEl = document.getElementById('student-orgfee-summary');
-        const tbody = document.getElementById('student-orgfee-tbody');
+        const subEl  = document.getElementById('student-orgfee-sub');
+        const tbody  = document.getElementById('student-orgfee-tbody');
         nameEl.textContent = 'Student Org Fees';
-        subEl.textContent = 'Loading…';
-        summaryEl.innerHTML = '';
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">Loading…</td></tr>';
+        subEl.textContent  = 'Loading…';
+        tbody.innerHTML    = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-d)">Loading…</td></tr>';
         openModal('modal-student-orgfee');
         try {
-            const res = await fetch('/Home/GetStudentOrgFeeDetails?userId=' + encodeURIComponent(userId));
+            const res  = await fetch('/Home/GetStudentOrgFeeDetails?userId=' + encodeURIComponent(userId));
             const data = await res.json();
             if (!data.success) {
                 subEl.textContent = data.message || 'Unable to load org fee details.';
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">No data available.</td></tr>';
+                tbody.innerHTML   = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-d)">No data available.</td></tr>';
                 return;
             }
             const s = data.student;
             nameEl.textContent = s.name;
-            subEl.textContent = `${s.schoolId} · ${s.courseCode} ${fmtYearSection(s.yearSection)}${s.role === 'Treasurer' ? ' · Treasurer' : ''}${data.schoolYear ? ' · A.Y. ' + data.schoolYear : ''}`;
-            summaryEl.innerHTML = renderCurrentFeesTable(data.schoolYear, data.fees);
-            const txs = data.transactions || [];
-            if (!txs.length) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">No org fee transactions recorded.</td></tr>';
+            subEl.textContent  = `${s.schoolId} · ${s.courseCode} ${fmtYearSection(s.yearSection)}${s.role === 'Treasurer' ? ' · Treasurer' : ''}${data.schoolYear ? ' · A.Y. ' + data.schoolYear : ''}`;
+
+            const fees = data.fees || [];
+            const txs  = data.transactions || [];
+
+            if (!fees.length && !txs.length) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-d)">No org fee records.</td></tr>';
                 return;
             }
-            tbody.innerHTML = txs.map(t => {
-                const semLabel = t.semester === 'First' ? '1st' : '2nd';
+
+            const groupKey = (sy, sem) => `${sy || ''}|${sem || ''}`;
+            const groups   = new Map();
+            fees.forEach(f => {
+                const k = groupKey(f.schoolYear, f.semester);
+                if (!groups.has(k)) groups.set(k, { schoolYear: f.schoolYear, semester: f.semester, fee: null, payments: [] });
+                groups.get(k).fee = f;
+            });
+            txs.forEach(t => {
+                const k = groupKey(t.schoolYear, t.semester);
+                if (!groups.has(k)) groups.set(k, { schoolYear: t.schoolYear, semester: t.semester, fee: null, payments: [] });
+            });
+            groups.forEach(g => { g.payments = []; });
+            txs.forEach(t => { groups.get(groupKey(t.schoolYear, t.semester)).payments.push(t); });
+
+            const sorted = [...groups.values()].sort((a, b) => {
+                const aCur = a.fee && a.fee.isCurrent ? 1 : 0;
+                const bCur = b.fee && b.fee.isCurrent ? 1 : 0;
+                if (aCur !== bCur) return bCur - aCur;
+                const sa = parseInt((a.schoolYear || '').split('–')[0], 10) || 0;
+                const sb = parseInt((b.schoolYear || '').split('–')[0], 10) || 0;
+                if (sa !== sb) return sb - sa;
+                const semOrder = { 'First': 1, 'Second': 2 };
+                return (semOrder[b.semester] || 0) - (semOrder[a.semester] || 0);
+            });
+
+            tbody.innerHTML = sorted.map((g, idx) => {
+                const semLabel  = g.semester === 'First' ? '1st Semester' : g.semester === 'Second' ? '2nd Semester' : (g.semester || '—');
+                const totalPaid = g.payments.reduce((sum, t) => sum + (t.amount || 0), 0);
+                const required  = g.fee?.requiredAmount ?? null;
+                const balance   = g.fee ? g.fee.balance : (required != null ? Math.max(0, required - totalPaid) : 0);
+                let status;
+                if (required != null && required <= 0) status = 'N/A';
+                else if (totalPaid <= 0)               status = 'Unpaid';
+                else if (balance <= 0)                 status = 'Paid';
+                else                                   status = 'Partial';
+
+                // Most recent payment date for this semester group.
+                const dates = g.payments.map(t => t.date).filter(Boolean).sort();
+                const latestDate = dates.length ? fd(dates[dates.length - 1]) : '—';
+
+                // Receipts: one button per payment that has a receipt. Admins can
+                // view/print receipts but not edit, so there is no edit action.
+                const rcButtons = g.payments
+                    .filter(t => t.hasReceipt && t.receiptNumber)
+                    .sort((a, b) => new Date(a.date) - new Date(b.date))
+                    .map(t => {
+                        const safe = String(t.receiptNumber || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                        return `<button type="button" class="btn-outline" style="padding:2px 7px;font-size:10px;font-family:'DM Mono',monospace"
+                                    onclick="printPaymentReceipt(${t.paymentId},'${safe}')">${escapeHtml(t.receiptNumber)}</button>`;
+                    }).join(' ');
+                const receiptCell = rcButtons || '<span style="color:var(--text-d)">—</span>';
+
                 return `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
-                    <td style="padding:9px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${fd(t.date)}</td>
-                    <td style="padding:9px 12px;color:var(--text)">${escapeHtml(t.schoolYear)} · ${semLabel}</td>
-                    <td style="padding:9px 12px">${renderReceiptCell(t.paymentId, t.receiptNumber, t.hasReceipt)}</td>
-                    <td style="padding:9px 12px;text-align:right;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:#5fdd8e">${p(t.amount)}</td>
-                    <td style="padding:9px 12px">${feeStatusBadge(t.paymentStatus)}</td>
+                    <td style="padding:10px 12px;color:var(--text-m);font-size:11px">${idx + 1}</td>
+                    <td style="padding:10px 12px;color:var(--text);font-weight:600">${semLabel}</td>
+                    <td style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${escapeHtml(g.schoolYear || '—')}</td>
+                    <td style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:12px;color:${balance > 0 ? '#f87171' : '#5fdd8e'}">${p(balance)}</td>
+                    <td style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text)">${p(totalPaid)}</td>
+                    <td style="padding:10px 12px">${feeStatusBadge(status)}</td>
+                    <td style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${latestDate}</td>
+                    <td style="padding:10px 12px">${receiptCell}</td>
                 </tr>`;
             }).join('');
+
         } catch (err) {
             console.error('Failed to load student org fee details:', err);
             subEl.textContent = 'Failed to load org fee details.';
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">Request failed.</td></tr>';
+            tbody.innerHTML   = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-d)">Request failed.</td></tr>';
         }
+    }
+
+    // ── START OF PAYMENT (per student) ───────────────────────────────────────
+    // Sets the school year + semester from which the student begins to be charged
+    // org fees. Backend: POST /Home/SetStudentPaymentStart (Treasurer or Admin).
+    async function openPaymentStartModal(userId) {
+        const s = ALL_STUDENTS_PAGE.find(x => String(x.userId) === String(userId));
+        if (!s) { showToast('Student not found.', 'fail'); return; }
+        document.getElementById('payment-start-userid').value = userId;
+        document.getElementById('payment-start-sub').textContent = `${s.name} · ${s.schoolId || ''}`.trim();
+
+        const sySel = document.getElementById('payment-start-sy');
+        sySel.innerHTML = '<option value="">Loading…</option>';
+        try {
+            const res  = await fetch('/Home/GetSchoolYears');
+            const data = await res.json();
+            if (data.success && data.schoolYears.length) {
+                sySel.innerHTML = data.schoolYears.map(sy => {
+                    const id    = sy.schoolYearId ?? sy.SchoolYearId;
+                    const label = `${sy.yearStart ?? sy.YearStart}–${sy.yearEnd ?? sy.YearEnd}`;
+                    return `<option value="${id}">${label}</option>`;
+                }).join('');
+                const cur = data.schoolYears.find(sy => (sy.yearStatus ?? sy.YearStatus) === 'Current');
+                if (cur) sySel.value = String(cur.schoolYearId ?? cur.SchoolYearId);
+            } else {
+                sySel.innerHTML = '<option value="">No school years found</option>';
+            }
+        } catch {
+            sySel.innerHTML = '<option value="">Failed to load</option>';
+        }
+        openModal('modal-payment-start');
+    }
+
+    async function submitPaymentStart() {
+        const userId       = document.getElementById('payment-start-userid').value;
+        const schoolYearId = parseInt(document.getElementById('payment-start-sy').value);
+        const semester     = document.getElementById('payment-start-sem').value;
+        if (!userId)        { showToast('Student not found.', 'fail'); return; }
+        if (!schoolYearId)  { showToast('Please select a school year.', 'fail'); return; }
+        if (!semester)      { showToast('Please select a semester.', 'fail'); return; }
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+        try {
+            const res  = await fetch('/Home/SetStudentPaymentStart', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                body:    JSON.stringify({ userId: parseInt(userId), schoolYearId, semester })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message || 'Payment start set.', 'ok');
+                closeModal('modal-payment-start');
+                await refreshStudents(document.getElementById('students-filter-sy')?.value || null);
+            } else {
+                showToast(data.message || 'Failed to set payment start.', 'fail');
+            }
+        } catch { showToast('Request failed.', 'fail'); }
     }
 
 
@@ -1835,11 +2284,11 @@
             tbody.innerHTML = data.professors.map((p, i) => `
                 <tr>
                     <td class="td-mono td-m">${i + 1}</td>
+                    <td class="td-mono td-m">${p.schoolId}</td>
                     <td>
                         <strong>${p.fullName}</strong>
                         ${p.role === 'Admin' ? '<span style="font-size:10px;font-weight:600;background:rgba(39,167,68,.15);color:#5fdd8e;border:1px solid rgba(39,167,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Admin</span>' : ''}
                     </td>
-                    <td class="td-mono td-m">${p.schoolId}</td>
                     <td class="td-m">${p.email}</td>
                     <td style="width:40px;text-align:right">
                         <div class="dropdown-wrap">
@@ -2178,15 +2627,6 @@
 
             const tbody = document.getElementById('fees-tbody');
 
-            // update summary cards
-            const first  = data.fees.find(f => f.semester === 'First'  && f.isLatest);
-            const second = data.fees.find(f => f.semester === 'Second' && f.isLatest);
-
-            document.getElementById('fee-1st-val').textContent = first  ? '₱' + parseFloat(first.amount).toFixed(2)  : '₱—';
-            document.getElementById('fee-1st-sub').textContent = first  ? first.schoolYear  : 'No fee set';
-            document.getElementById('fee-2nd-val').textContent = second ? '₱' + parseFloat(second.amount).toFixed(2) : '₱—';
-            document.getElementById('fee-2nd-sub').textContent = second ? second.schoolYear : 'No fee set';
-
             if (data.fees.length === 0) {
                 tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No fee records found.</td></tr>';
                 return;
@@ -2315,59 +2755,55 @@
 
     // Initialize settings data when page loads
     document.addEventListener('DOMContentLoaded', function() {
-        // Load initial data for settings
+        refreshRequests();
         refreshSchoolYears();
         refreshCourses();
         refreshFees();
     });
 
     // ================================================================
-    // AUTO-REFRESH POLLING
-    // Automatically refreshes the active page every 15 seconds
-    // so the admin sees new signups, requests, and changes in real-time
-    // Also refreshes dashboard stats in the background so the nav badge stays current
+    // SERVER-SENT EVENTS — live updates pushed from the server
     // ================================================================
+    (function() {
+        function connect() {
+            const sse = new EventSource('/Home/Events');
 
-    const AUTO_REFRESH_INTERVAL = 10000; // 10 seconds
+            sse.addEventListener('accounts-changed', () => {
+                refreshRequests();
+                refreshDashboard();
+                const p = document.querySelector('.page.active')?.id?.replace('page-','');
+                if (p === 'students')   refreshStudents();
+                if (p === 'professors') refreshProfessors();
+            });
 
-    // Refresh active tab
-    setInterval(async () => {
-        await refreshCurrentPage();
-    }, AUTO_REFRESH_INTERVAL);
+            sse.addEventListener('fees-changed', () => {
+                const p = document.querySelector('.page.active')?.id?.replace('page-','');
+                if (p === 'settings') { refreshFees(); refreshSchoolYears(); }
+            });
 
-    // Refresh dashboard nav badge even when not on dashboard
-    setInterval(async () => {
-        const activePage = document.querySelector('.page.active');
-        const pageId = activePage?.id?.replace('page-', '');
-        if (pageId !== 'dashboard') {
-            try {
-                const res = await fetch('/Home/GetDashboardStats');
-                const data = await res.json();
-                if (!data?.success) return;
+            sse.addEventListener('school-years-changed', () => {
+                const p = document.querySelector('.page.active')?.id?.replace('page-','');
+                if (p === 'settings') refreshSchoolYears();
+            });
 
-                const pendingCount = data.pendingCount ?? 0;
-                const badge = document.querySelector('#nav-requests .nav-badge');
+            sse.addEventListener('courses-changed', () => {
+                const p = document.querySelector('.page.active')?.id?.replace('page-','');
+                if (p === 'settings') refreshCourses();
+            });
 
-                if (pendingCount > 0) {
-                    if (badge) {
-                        badge.textContent = pendingCount;
-                    } else {
-                        const navReq = document.getElementById('nav-requests');
-                        if (navReq) {
-                            const b = document.createElement('span');
-                            b.className = 'nav-badge';
-                            b.textContent = pendingCount;
-                            navReq.appendChild(b);
-                        }
-                    }
-                } else {
-                    if (badge) badge.remove();
-                }
-            } catch {
-                // ignore polling errors
-            }
+            sse.addEventListener('payments-changed', () => {
+                const p = document.querySelector('.page.active')?.id?.replace('page-','');
+                if (p === 'students') refreshStudents();
+            });
+
+            sse.onerror = () => {
+                sse.close();
+                setTimeout(connect, 5000);
+            };
         }
-    }, AUTO_REFRESH_INTERVAL);
+        connect();
+    })();
+
 
     // ================================================================
     // AUTO-REFRESH SYSTEM
@@ -2383,8 +2819,7 @@
         const pageId = activePage.id.replace('page-', '');
 
         switch (pageId) {
-            case 'dashboard':   await refreshDashboard();   break;
-            case 'requests':    await refreshRequests();    break;
+            case 'dashboard':   await refreshDashboard(); await refreshRequests(); break;
             case 'students':    await refreshStudents();    break;
             case 'professors':  await refreshProfessors();  break;
             case 'settings':
@@ -2395,7 +2830,7 @@
         }
     }
 
-    // Refreshes the dashboard stat cards and recent requests table
+    // Refreshes the dashboard stat cards
     async function refreshDashboard() {
         try {
             const res  = await fetch('/Home/GetDashboardStats');
@@ -2415,72 +2850,6 @@
             if (professors) professors.textContent = data.professorCount ?? 0;
             if (admins)     admins.textContent     = data.adminCount     ?? 0;
 
-            // Update pending nav badge
-            const badge = document.querySelector('#nav-requests .nav-badge');
-            const pendingCount = data.pendingCount ?? 0;
-            if (pendingCount > 0) {
-                if (badge) {
-                    badge.textContent = pendingCount;
-                } else {
-                    const navReq = document.getElementById('nav-requests');
-                    if (navReq) {
-                        const b = document.createElement('span');
-                        b.className   = 'nav-badge';
-                        b.textContent = pendingCount;
-                        navReq.appendChild(b);
-                    }
-                }
-            } else {
-                if (badge) badge.remove();
-            }
-
-            // Update the sub-header pending count
-            const pendingSub = document.querySelector('#page-requests .page-sub');
-            if (pendingSub) pendingSub.textContent = `${pendingCount} pending approval`;
-
-            // Refresh the recent requests table
-            const tbody = document.getElementById('recent-tbody');
-            if (!tbody) return;
-
-            const allRequests = data.recentRequests ?? [];
-
-            if (allRequests.length === 0) {
-                tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No account requests found.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = allRequests.map((r, i) => {
-                const hidden = i >= 5 ? 'display:none' : '';
-                return `
-                    <tr class="recent-row" style="${hidden}">
-                        <td class="td-mono td-m">${r.schoolId ?? '—'}</td>
-                        <td><strong>${r.fullname}</strong></td>
-                        <td class="td-m">${r.courseCode ?? '—'}</td>
-                        <td class="td-m">${fmtYearLevel(r.yearLevel, r.section)}</td>
-                        <td class="td-m">${r.role ?? '—'}</td>
-                        <td class="td-mono td-m">${r.createdAt}</td>
-                    </tr>`;
-            }).join('');
-
-
-            // Update "View All" button
-            const viewAllBtn = document.getElementById('view-all-btn');
-            if (viewAllBtn) {
-                const wrap = viewAllBtn.closest('.view-all-wrap');
-                if (allRequests.length > 5) {
-                    if (wrap) wrap.style.display = '';
-                    viewAllBtn.setAttribute('data-total', allRequests.length);
-                    viewAllBtn.textContent = `View All (${allRequests.length})`;
-                    viewAllBtn.setAttribute('data-expanded', 'false');
-                } else {
-                    if (wrap) wrap.style.display = 'none';
-                }
-            }
-
-            // Update total badge on recent requests card
-            const totalBadge = document.querySelector('#page-dashboard .badge.by');
-            if (totalBadge) totalBadge.textContent = `${allRequests.length} total`;
-
         } catch(e) { console.error('refreshDashboard failed:', e); }
     }
 
@@ -2494,7 +2863,6 @@
         );
 
         if (!target) return;
-        if (target.id === 'view-all-btn') return;
         if (target.classList.contains('nav-item')) return;
         if (target.classList.contains('dot-btn')) return;
         if (target.textContent.trim() === 'Cancel') return;
@@ -2506,30 +2874,206 @@
         }, 600);
     }, true); // useCapture = true so we run after the element's own onclick
 
+    /* ── AVATAR MODAL ── */
+    function openAvatarModal(src, name) {
+        document.getElementById('avatarModalImg').src = src;
+        document.getElementById('avatarModalName').textContent = name;
+        document.getElementById('avatarModal').classList.add('open');
+    }
+    function closeAvatarModal() {
+        document.getElementById('avatarModal').classList.remove('open');
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAvatarModal(); });
+
+    async function deleteAvatar(userId, btn) {
+        if (!confirm('Remove this profile photo?')) return;
+        btn.disabled = true;
+        try {
+            const res  = await fetch(`/Home/DeleteAvatar?userId=${userId}`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                await refreshStudents();
+            } else {
+                alert(data.message || 'Failed to remove photo.');
+                btn.disabled = false;
+            }
+        } catch {
+            alert('An error occurred. Please try again.');
+            btn.disabled = false;
+        }
+    }
+
+    /* ── RECEIPT FUNCTIONS ── */
+    function amountToWords(amount) {
+      if (amount === 0) return 'Zero Pesos Only';
+      const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+      const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+      function say(n) {
+        if (n < 20) return ones[n];
+        if (n < 100) return tens[Math.floor(n/10)] + (n%10 ? ' '+ones[n%10] : '');
+        if (n < 1000) return ones[Math.floor(n/100)] + ' Hundred' + (n%100 ? ' '+say(n%100) : '');
+        if (n < 1000000) return say(Math.floor(n/1000)) + ' Thousand' + (n%1000 ? ' '+say(n%1000) : '');
+        return say(Math.floor(n/1000000)) + ' Million' + (n%1000000 ? ' '+say(n%1000000) : '');
+      }
+      const pesos = Math.floor(amount);
+      const cents = Math.round((amount - pesos) * 100);
+      let result = say(pesos) + ' Peso' + (pesos !== 1 ? 's' : '');
+      if (cents > 0) result += ' and ' + say(cents) + ' Centavo' + (cents !== 1 ? 's' : '');
+      return result + ' Only';
+    }
+
+    function closeTreasurerReceipt() {
+      document.getElementById('treasurerReceiptModal').classList.remove('open');
+    }
+    function handleTreasurerReceiptBackdropClick(e) {
+      if (e.target === document.getElementById('treasurerReceiptModal') || e.target.classList.contains('receipt-modal-backdrop'))
+        closeTreasurerReceipt();
+    }
+
+    function awaitReceiptReady(timeoutMs = 2500) {
+      return new Promise(resolve => {
+        const start = Date.now();
+        const tick = () => {
+          const paper = document.querySelector('.receipt-paper');
+          const modalOpen = document.querySelector('.receipt-modal.open');
+          if (paper && modalOpen && paper.textContent.trim().length > 0) { requestAnimationFrame(() => resolve(true)); return; }
+          if (Date.now() - start > timeoutMs) { resolve(false); return; }
+          setTimeout(tick, 60);
+        };
+        tick();
+      });
+    }
+
+    async function viewReceipt(type, id, receipt) {
+      if (type !== 'OrgFee' || !receipt || receipt === '—') { showToast('No receipt number recorded.', 'fail'); return; }
+      try {
+        const res  = await fetch('/Home/GetOrgFeeReceipt?paymentId=' + encodeURIComponent(id));
+        const data = await res.json();
+        if (!data.success || !data.receipt) { showToast(data.message || 'Receipt not found.', 'fail'); return; }
+        const r = data.receipt;
+        const amount = Number(r.amount || 0);
+        const status = r.status || 'Partial';
+        const issueDate = (r.paymentDate || r.issueDate) ? new Date(r.paymentDate || r.issueDate) : new Date();
+        const formattedDate = issueDate.toLocaleDateString('en-PH', { month:'2-digit', day:'2-digit', year:'2-digit' });
+        const semLabel = r.semester === 'First' ? '1st Semester' : r.semester === 'Second' ? '2nd Semester' : (r.semester || '');
+        const term = [r.schoolYear, semLabel].filter(Boolean).join(' - ');
+        const courseLine = [r.course, r.yearSection].filter(Boolean).join(' ');
+        const studentName = (r.studentName || '').toUpperCase();
+        const receiptNo   = r.receiptNumber || receipt;
+        document.getElementById('tr-receipt-title').textContent = 'Receipt — ' + (term || 'Org Fee');
+        ['tr-rp', 'own-tr-rp'].forEach(pfx => {
+          const g = id => document.getElementById(`${pfx}-${id}`);
+          if (g('receipt-no'))    g('receipt-no').textContent    = receiptNo;
+          if (g('date'))          g('date').textContent          = formattedDate;
+          if (g('name'))          g('name').textContent          = studentName || '—';
+          if (g('id'))            g('id').textContent            = r.studentId || '—';
+          if (g('course'))        g('course').textContent        = courseLine || '—';
+          if (g('term'))          g('term').textContent          = term || '—';
+          if (g('amount'))        g('amount').textContent        = '₱ ' + amount.toFixed(2);
+          if (g('amount-words'))  g('amount-words').textContent  = amountToWords(amount);
+          if (g('received-by'))   g('received-by').textContent   = r.issuedByName || 'Treasurer';
+          const statusEl = g('status');
+          if (statusEl) { statusEl.textContent = status; statusEl.className = 'rp-status-badge ' + status.toLowerCase(); }
+          const sigImg = g('sig-image');
+          if (sigImg) { sigImg.removeAttribute('src'); sigImg.style.display = 'none'; if (r.signatureData) { sigImg.src = r.signatureData; sigImg.style.display = 'block'; } }
+        });
+        document.getElementById('treasurerReceiptModal').classList.add('open');
+      } catch (err) {
+        console.error('Failed to load receipt:', err);
+        showToast('Failed to load receipt.', 'fail');
+      }
+    }
+
+    async function printPaymentReceipt(paymentId, receiptNumber) {
+      await viewReceipt('OrgFee', paymentId, receiptNumber);
+      await awaitReceiptReady();
+      showToast('Tip: uncheck "Headers and footers" for a clean print.', 'ok');
+      const originalTitle = document.title;
+      const sName = (document.getElementById('tr-rp-name')?.textContent || '').trim().replace(/\s+/g,'_');
+      const rNo   = (document.getElementById('tr-rp-receipt-no')?.textContent || 'receipt').trim();
+      document.title = sName && rNo ? `${sName}_${rNo}` : rNo || ' ';
+      try { window.print(); } finally { document.title = originalTitle; closeTreasurerReceipt(); }
+    }
+
+    async function downloadTreasurerReceiptPDF() {
+      const receiptEl = document.getElementById('trBothReceiptPapers');
+      const sName = (document.getElementById('tr-rp-name')?.textContent || 'Student').replace(/[^\w\s-]+/g,'').trim().replace(/\s+/g,'_');
+      const rNo   = (document.getElementById('tr-rp-receipt-no')?.textContent || 'receipt').replace(/[^\w-]+/g,'-').replace(/^-+|-+$/g,'');
+      showToast('Generating PDF...', 'ok');
+      try {
+        const canvas = await html2canvas(receiptEl, { scale:2, useCORS:true, backgroundColor:'#f9f8f5', logging:false });
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:[216,330] });
+        const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight(), m = 8;
+        const iw = pw - m*2;
+        pdf.addImage(imgData, 'PNG', m, m, iw, Math.min((canvas.height * iw) / canvas.width, ph - m*2));
+        pdf.save(`${sName}_${rNo}.pdf`);
+        showToast('PDF downloaded successfully.', 'ok');
+      } catch (err) { console.error(err); showToast('Failed to generate PDF.', 'fail'); }
+    }
+
 </script>
+
+<!-- Payment Start Modal (per student) -->
+<div class="modal-overlay" id="modal-payment-start">
+  <div class="modal-backdrop" onclick="closeModal('modal-payment-start')"></div>
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title">Payment Start</div>
+        <div class="modal-sub" id="payment-start-sub">—</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-payment-start')">✕</button>
+    </div>
+    <div style="padding:4px 2px 2px">
+      <input type="hidden" id="payment-start-userid" />
+      <div style="display:flex;gap:8px;align-items:flex-start;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18);border-radius:8px;padding:10px 12px;margin-bottom:14px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <div style="font-size:11.5px;line-height:1.5;color:var(--text-m)">
+          This sets the school year and semester from which the student <strong style="color:var(--text)">begins to be charged organizational fees in this system</strong>. The student will not be billed for any semester before this point. This is intended for newly added students, transferees, and senior students who began before the system was in use. It ensures that they are charged only from the selected term onward, and not for earlier terms that they did not yet attend or have already settled through hardcopy receipts.
+        </div>
+      </div>
+      <label class="form-label" style="display:block;margin-bottom:5px">School Year</label>
+      <select id="payment-start-sy" class="form-input" style="margin-bottom:14px">
+        <option value="">Loading…</option>
+      </select>
+      <label class="form-label" style="display:block;margin-bottom:5px">Semester</label>
+      <select id="payment-start-sem" class="form-input">
+        <option value="First">1st Semester</option>
+        <option value="Second">2nd Semester</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('modal-payment-start')">Cancel</button>
+      <button class="btn-primary" onclick="submitPaymentStart()">Set</button>
+    </div>
+  </div>
+</div>
 
 <!-- Student Org Fee Details Modal -->
 <div class="modal-overlay" id="modal-student-orgfee">
   <div class="modal-backdrop" onclick="closeModal('modal-student-orgfee')"></div>
-  <div class="modal-box" style="max-width:680px">
+  <div class="modal-box" style="max-width:920px">
     <div class="modal-hdr">
       <div>
-        <div class="modal-title" id="student-orgfee-name">Student Org Fees</div>
+        <div class="modal-title" id="student-orgfee-name">Ledger</div>
         <div class="modal-sub" id="student-orgfee-sub">Loading…</div>
       </div>
       <button class="modal-close" onclick="closeModal('modal-student-orgfee')">✕</button>
     </div>
-    <div id="student-orgfee-summary" style="margin-bottom:18px"></div>
-    <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:8px">Transaction History</div>
-    <div style="max-height:280px;overflow-y:auto;border:1px solid rgba(255,255,255,.06);border-radius:10px">
+    <div style="max-height:480px;overflow-y:auto;border:1px solid rgba(255,255,255,.06);border-radius:10px">
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
-          <tr style="border-bottom:1px solid rgba(255,255,255,.07)">
-            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Date</th>
-            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">School Year / Sem</th>
-            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Receipt</th>
-            <th style="padding:8px 12px;text-align:right;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Amount</th>
-            <th style="padding:8px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Status</th>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02)">
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">#</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Semester</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">School Year</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Balance</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Paid Amount</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Status</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Date</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Receipt</th>
           </tr>
         </thead>
         <tbody id="student-orgfee-tbody"></tbody>
@@ -2540,5 +3084,104 @@
     </div>
   </div>
 </div>
+
+<!-- Avatar preview modal -->
+<div id="avatarModal" onclick="closeAvatarModal()">
+  <div class="av-inner">
+    <img id="avatarModalImg" src="" alt="" />
+    <div class="av-name" id="avatarModalName"></div>
+    <div class="av-hint">Click anywhere to close</div>
+  </div>
+</div>
+
+<!-- ── RECEIPT MODAL ── -->
+<div id="treasurerReceiptModal" class="receipt-modal" onclick="handleTreasurerReceiptBackdropClick(event)">
+  <div class="receipt-modal-backdrop"></div>
+  <div class="receipt-modal-inner">
+    <div class="receipt-controls">
+      <span class="receipt-ctrl-title" id="tr-receipt-title">Official Receipt</span>
+      <button class="btn-pdf" onclick="downloadTreasurerReceiptPDF()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Save PDF
+      </button>
+      <button class="btn-receipt-close" onclick="closeTreasurerReceipt()">✕</button>
+    </div>
+    <div id="trBothReceiptPapers" style="display:flex;flex-direction:column;align-items:center;gap:0">
+      <!-- Treasurer's Copy -->
+      <div class="receipt-paper" style="padding-top:10px">
+        <div class="rp-header">
+          <div class="rp-org">SUPREME STUDENT GOVERNMENT</div>
+          <div class="rp-campus">Cebu Technological University - Ginatilan Campus</div>
+          <hr class="rp-divider" />
+          <div class="rp-type">Organization Fee</div>
+          <div class="rp-copy">(Treasurer's Copy)</div>
+        </div>
+        <div class="rp-meta">
+          <div><span class="rp-meta-label">Receipt No. </span><span class="rp-meta-value" id="tr-rp-receipt-no" style="color:#c00">—</span></div>
+          <div><span class="rp-meta-label">Date </span><span class="rp-meta-value" id="tr-rp-date">—</span></div>
+        </div>
+        <div class="rp-section-title">Acknowledgement Receipt</div>
+        <div class="rp-field"><span class="rp-field-label">Name:</span><span class="rp-field-value handwritten" id="tr-rp-name">—</span></div>
+        <div class="rp-field"><span class="rp-field-label">ID Number:</span><span class="rp-field-value" id="tr-rp-id">—</span></div>
+        <div class="rp-field"><span class="rp-field-label">Course/Year/Section:</span><span class="rp-field-value" id="tr-rp-course">—</span></div>
+        <div class="rp-field"><span class="rp-field-label">S.Y.-Semester:</span><span class="rp-field-value" id="tr-rp-term">—</span></div>
+        <div class="rp-field"><span class="rp-field-label">Amount Paid:</span><span class="rp-field-value" id="tr-rp-amount">—</span></div>
+        <div class="rp-field"><span class="rp-field-label">Amount in words:</span><span class="rp-field-value handwritten" id="tr-rp-amount-words">—</span></div>
+        <div class="rp-field"><span class="rp-field-label">Status:</span><span class="rp-field-value"><span class="rp-status-badge" id="tr-rp-status">—</span></span></div>
+        <div class="rp-signature-section">
+          <div class="rp-sig-block">
+            <div class="rp-sig-label">Received by:</div>
+            <div style="position:relative;width:220px;height:48px">
+              <div id="tr-rp-received-by" style="font-size:12px;font-weight:700;color:#111;text-align:center;position:absolute;bottom:8px;left:0;right:0;z-index:1">—</div>
+              <div style="border-top:1px solid #555;width:100%;position:absolute;bottom:0;left:0;z-index:1"></div>
+              <img id="tr-rp-sig-image" src="" alt="" style="display:none;position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);max-height:52px;max-width:180px;object-fit:contain;z-index:2;filter:invert(12%) sepia(100%) saturate(5000%) hue-rotate(345deg) brightness(80%) contrast(119%)" />
+            </div>
+            <div class="rp-sig-name-label" style="text-align:center">(Signature over Printed Name)</div>
+          </div>
+        </div>
+      </div>
+      <!-- Cut line -->
+      <div class="receipt-cut-line" style="width:620px;display:flex;align-items:center;gap:10px;padding:10px 0;background:#fff">
+        <div style="flex:1;border-top:2px dashed #888"></div>
+        <span style="font-size:11px;color:#777;white-space:nowrap;font-family:Arial,sans-serif">✂ cut here</span>
+        <div style="flex:1;border-top:2px dashed #888"></div>
+      </div>
+      <!-- Owner's Copy -->
+      <div class="receipt-paper" style="padding-top:10px">
+        <div class="rp-header">
+          <div class="rp-org">SUPREME STUDENT GOVERNMENT</div>
+          <div class="rp-campus">Cebu Technological University - Ginatilan Campus</div>
+          <hr class="rp-divider" />
+          <div class="rp-type">Organization Fee</div>
+          <div class="rp-copy">(Owner's Copy)</div>
+        </div>
+        <div class="rp-meta">
+          <div><span class="rp-meta-label">Receipt No. </span><span class="rp-meta-value" id="own-tr-rp-receipt-no" style="color:#c00">—</span></div>
+          <div><span class="rp-meta-label">Date </span><span class="rp-meta-value" id="own-tr-rp-date">—</span></div>
+        </div>
+        <div class="rp-section-title">Acknowledgement Receipt</div>
+        <div class="rp-field"><span class="rp-field-label">Name:</span><span class="rp-field-value handwritten" id="own-tr-rp-name">—</span></div>
+        <div class="rp-field"><span class="rp-field-label">ID Number:</span><span class="rp-field-value" id="own-tr-rp-id">—</span></div>
+        <div class="rp-field"><span class="rp-field-label">Course/Year/Section:</span><span class="rp-field-value" id="own-tr-rp-course">—</span></div>
+        <div class="rp-field"><span class="rp-field-label">S.Y.-Semester:</span><span class="rp-field-value" id="own-tr-rp-term">—</span></div>
+        <div class="rp-field"><span class="rp-field-label">Amount Paid:</span><span class="rp-field-value" id="own-tr-rp-amount">—</span></div>
+        <div class="rp-field"><span class="rp-field-label">Amount in words:</span><span class="rp-field-value handwritten" id="own-tr-rp-amount-words">—</span></div>
+        <div class="rp-field"><span class="rp-field-label">Status:</span><span class="rp-field-value"><span class="rp-status-badge" id="own-tr-rp-status">—</span></span></div>
+        <div class="rp-signature-section">
+          <div class="rp-sig-block">
+            <div class="rp-sig-label">Received by:</div>
+            <div style="position:relative;width:220px;height:48px">
+              <div id="own-tr-rp-received-by" style="font-size:12px;font-weight:700;color:#111;text-align:center;position:absolute;bottom:8px;left:0;right:0;z-index:1">—</div>
+              <div style="border-top:1px solid #555;width:100%;position:absolute;bottom:0;left:0;z-index:1"></div>
+              <img id="own-tr-rp-sig-image" src="" alt="" style="display:none;position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);max-height:52px;max-width:180px;object-fit:contain;z-index:2;filter:invert(12%) sepia(100%) saturate(5000%) hue-rotate(345deg) brightness(80%) contrast(119%)" />
+            </div>
+            <div class="rp-sig-name-label" style="text-align:center">(Signature over Printed Name)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

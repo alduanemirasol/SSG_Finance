@@ -96,7 +96,7 @@ namespace MyMvcApp.Services
                     return new AuthResult 
                     { 
                         Success = false, 
-                        Message = $"No {role} account found with this school ID." 
+                        Message = $"No {role} account found with this CTU ID."
                     };
                 }
  
@@ -241,9 +241,9 @@ namespace MyMvcApp.Services
                 var regRequest = request;
  
                 // Layer 4 — Duplicate Detection
-                // Prevent the same person from spamming multiple accounts with the same School ID or email.
+                // Prevent the same person from spamming multiple accounts with the same CTU ID or email.
  
-                // Already registered by School ID?
+                // Already registered by CTU ID?
                 var existingById = await _context.Accounts
                     .FirstOrDefaultAsync(a =>
                         a.SchoolId != null &&
@@ -255,7 +255,7 @@ namespace MyMvcApp.Services
                     return new RegistrationResult
                     {
                         Success = false,
-                        Message = "School ID is already registered."
+                        Message = "CTU ID is already registered."
                     };
                 }
  

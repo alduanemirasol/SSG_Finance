@@ -7,6 +7,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<script src="/js/csrf.js"></script>
 <title>Professor Sign Up | SSG Finance</title>
 <link rel="icon" type="image/png" href="/images/favicon.png" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -233,6 +234,7 @@ input[type="password"]::-ms-clear{
 
 .form-group { margin-bottom:14px; }
 
+.req { color:#ef4444; margin-left:2px; }
 .form-label {
   display:block; font-size:12.5px;
   color:#6b7280; margin-bottom:5px; font-weight:500;
@@ -256,6 +258,35 @@ input[type="password"]::-ms-clear{
 
 .form-row { display:flex; gap:14px; }
 .form-row .form-group { flex:1; }
+
+/* ── Avatar upload ── */
+.avatar-file-input { display:none; }
+.avatar-upload-label {
+  display:flex; align-items:center; gap:14px;
+  padding:10px 14px;
+  border:1.5px solid #d1d5db; border-radius:9px;
+  background:#f9fafb; cursor:pointer;
+  transition:border-color .16s, background .16s;
+}
+.avatar-upload-label:hover { border-color:var(--green); background:#fff; }
+.avatar-preview {
+  width:52px; height:52px; border-radius:50%;
+  overflow:hidden; flex-shrink:0;
+  border:2px solid #d1d5db;
+  background:#e5e7eb;
+  display:flex; align-items:center; justify-content:center;
+}
+.avatar-preview img { width:100%; height:100%; object-fit:cover; display:block; }
+.avatar-placeholder-icon { font-size:30px; color:#9ca3af; }
+.avatar-upload-info { display:flex; flex-direction:column; gap:3px; }
+.avatar-upload-btn {
+  display:inline-block; padding:5px 13px;
+  background:var(--green); color:#fff;
+  border-radius:6px; font-size:12px; font-weight:600;
+  width:fit-content;
+}
+.avatar-file-name { font-size:12px; color:#6b7280; }
+.avatar-hint { font-size:11px; color:#9ca3af; margin:4px 0 0; }
 
 .submit-btn {
   width:100%; padding:14px;
@@ -405,7 +436,7 @@ input[type="password"]::-ms-clear{
 
     <div class="lp-left-body">
       <div class="lp-headline">Professor<br>Sign Up</div>
-      <p class="lp-desc">Faculty account registration for the SSG Finance System. Admin approval required.</p>
+      <p class="lp-desc">Register a faculty account for the SSG Finance System. All accounts require admin approval before activation.</p>
 
       <div class="lp-feature-list">
         <div class="lp-feature">
@@ -413,8 +444,8 @@ input[type="password"]::-ms-clear{
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
           </div>
           <div class="lp-feature-text">
-            <strong>Secure hidden access</strong>
-            <span>Only people with the exact link can reach this page.</span>
+            <strong>Invite-only access</strong>
+            <span>This page is private — only those with the link can reach it.</span>
           </div>
         </div>
         <div class="lp-feature">
@@ -423,7 +454,7 @@ input[type="password"]::-ms-clear{
           </div>
           <div class="lp-feature-text">
             <strong>Basic profile only</strong>
-            <span>Only login credentials and basic profile fields are requested.</span>
+            <span>We only ask for your login details and a few basic profile fields.</span>
           </div>
         </div>
         <div class="lp-feature">
@@ -432,13 +463,13 @@ input[type="password"]::-ms-clear{
           </div>
           <div class="lp-feature-text">
             <strong>Admin approval</strong>
-            <span>New professor accounts are pending admin approval before activation.</span>
+            <span>New accounts must be approved by an admin before they're activated.</span>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="lp-copyright">© 2025 SSG Finance System · Cebu Technological University</div>
+    <div class="lp-copyright">© 2026 SSG Finance System · Cebu Technological University</div>
   </div>
 
   <!-- RIGHT PANEL -->
@@ -452,16 +483,16 @@ input[type="password"]::-ms-clear{
 
       <!-- SECURITY -->
       <div class="form-section">
-        <div class="section-title">Security</div>
+        <div class="section-title">Login Credentials</div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label" for="profSchoolId">CTU ID</label>
-            <input type="text" id="profSchoolId" class="form-input" placeholder="Enter here" />
+            <label class="form-label" for="profSchoolId">CTU ID<span class="req">*</span></label>
+            <input type="text" id="profSchoolId" class="form-input" placeholder="Enter your CTU ID" />
           </div>
           <div class="form-group">
-            <label class="form-label" for="profPassword">Password</label>
+            <label class="form-label" for="profPassword">Password<span class="req">*</span></label>
             <div class="password-wrap">
-              <input type="password" id="profPassword" class="form-input password-input" placeholder="Enter here" oninput="updateProfPasswordChecklist(this.value)" onfocus="document.getElementById('prof-password-checklist').style.display='block'" />
+              <input type="password" id="profPassword" class="form-input password-input" placeholder="Create a password" oninput="updateProfPasswordChecklist(this.value)" onfocus="document.getElementById('prof-password-checklist').style.display='block'" />
               <button type="button" class="password-toggle" aria-label="Show password" data-toggle-target="#profPassword" onclick="togglePasswordVisibility(this)">
                 <ion-icon name="eye" class="password-toggle-icon"></ion-icon>
               </button>
@@ -476,9 +507,9 @@ input[type="password"]::-ms-clear{
             </ul>
           </div>
           <div class="form-group">
-            <label class="form-label" for="profConfirmPassword">Confirm Password</label>
+            <label class="form-label" for="profConfirmPassword">Confirm Password<span class="req">*</span></label>
             <div class="password-wrap">
-              <input type="password" id="profConfirmPassword" class="form-input password-input" placeholder="Enter here" />
+              <input type="password" id="profConfirmPassword" class="form-input password-input" placeholder="Re-enter your password" />
               <button type="button" class="password-toggle" aria-label="Show confirm password" data-toggle-target="#profConfirmPassword" onclick="togglePasswordVisibility(this)">
                 <ion-icon name="eye" class="password-toggle-icon"></ion-icon>
               </button>
@@ -493,22 +524,38 @@ input[type="password"]::-ms-clear{
         <div class="section-title">Personal Information</div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label" for="profFirstName">First Name</label>
-            <input type="text" id="profFirstName" class="form-input" placeholder="Enter here" />
+            <label class="form-label" for="profFirstName">First Name<span class="req">*</span></label>
+            <input type="text" id="profFirstName" class="form-input" placeholder="First name" />
           </div>
           <div class="form-group" style="flex:0 0 90px;">
             <label class="form-label" for="profMiddleName">M. I.</label>
             <input type="text" id="profMiddleName" class="form-input" placeholder="M.I." maxlength="2" oninput="autoMiddlePeriod(this)" style="text-align:center;" />
           </div>
           <div class="form-group">
-            <label class="form-label" for="profLastName">Last Name</label>
-            <input type="text" id="profLastName" class="form-input" placeholder="Enter here" />
+            <label class="form-label" for="profLastName">Last Name<span class="req">*</span></label>
+            <input type="text" id="profLastName" class="form-input" placeholder="Last name" />
           </div>
         </div>
         <div class="form-row">
           <div class="form-group" style="flex:0 1 50%;">
-            <label class="form-label" for="profEmail">Email</label>
-            <input type="email" id="profEmail" class="form-input" placeholder="Enter here" />
+            <label class="form-label" for="profEmail">Email<span class="req">*</span></label>
+            <input type="email" id="profEmail" class="form-input" placeholder="name@example.com" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:0 1 60%;">
+            <label class="form-label">Profile Picture<span class="req">*</span></label>
+            <input type="file" id="profAvatarFile" class="avatar-file-input" accept="image/jpeg,image/png,image/webp" onchange="validateAvatarFile(this,'profAvatarPreview','profAvatarFileName','profAvatarBtn')" />
+            <label for="profAvatarFile" class="avatar-upload-label">
+              <div class="avatar-preview" id="profAvatarPreview">
+                <ion-icon name="person-circle-outline" class="avatar-placeholder-icon"></ion-icon>
+              </div>
+              <div class="avatar-upload-info">
+                <span class="avatar-upload-btn" id="profAvatarBtn"><ion-icon name="cloud-upload-outline" style="vertical-align:-2px;margin-right:5px;"></ion-icon>Upload Photo</span>
+                <span class="avatar-file-name" id="profAvatarFileName">No file chosen</span>
+              </div>
+            </label>
+            <p class="avatar-hint">Please upload a 1x1 photo with a white background. Accepted formats: JPG, PNG, or WEBP. Maximum file size: 2MB.</p>
           </div>
         </div>
       </div>
@@ -530,8 +577,8 @@ input[type="password"]::-ms-clear{
       </svg>
     </div>
     <h2 class="success-title" id="successTitle">Account request submitted!</h2>
-    <p class="success-text">Please wait for admin approval, then try to sign in.</p>
-    <a href="/Home/Login" class="success-signin-btn">Try to Sign In</a>
+    <p class="success-text">Your account is now pending admin approval. Once approved, you can sign in.</p>
+    <a href="/Home/Login" class="success-signin-btn">Go to Sign In</a>
   </div>
 </div>
 
@@ -614,6 +661,38 @@ function setFieldError(id, hasError) {
     }
 }
 
+function validateAvatarFile(input, previewId, nameId, btnId) {
+  const file      = input.files[0];
+  const previewEl = document.getElementById(previewId);
+  const nameEl    = document.getElementById(nameId);
+  const btnEl     = document.getElementById(btnId);
+
+  if (!file) return true;
+
+  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!allowed.includes(file.type)) {
+    alert('Only JPG, PNG, or WEBP images are allowed.');
+    input.value = '';
+    return false;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    alert('Image must be 2MB or smaller.');
+    input.value = '';
+    return false;
+  }
+
+  if (nameEl) nameEl.textContent = file.name;
+  if (btnEl) btnEl.innerHTML = '<ion-icon name="repeat-outline" style="vertical-align:-2px;margin-right:5px;"></ion-icon>Replace';
+  if (previewEl) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      previewEl.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+    };
+    reader.readAsDataURL(file);
+  }
+  return true;
+}
+
 function clearAllErrors() {
     ['profSchoolId', 'profPassword', 'profConfirmPassword',
      'profFirstName', 'profLastName', 'profEmail'].forEach(id => setFieldError(id, false));
@@ -689,6 +768,11 @@ async function handleProfessorSignUp() {
         return;
     }
 
+    if (!document.getElementById('profAvatarFile')?.files[0]) {
+        showStatus('Please upload a profile picture.', 'fail');
+        hasError = true;
+    }
+
     if (hasError) {
         showStatus('Please fill in all required fields.', 'fail');
         return;
@@ -714,6 +798,13 @@ async function handleProfessorSignUp() {
         const result = await response.json();
 
         if (result.success) {
+            const avatarFile = document.getElementById('profAvatarFile')?.files[0];
+            if (avatarFile && result.account?.id) {
+                const fd = new FormData();
+                fd.append('accountId', result.account.id);
+                fd.append('avatar', avatarFile);
+                await fetch('/Home/UploadAvatar', { method: 'POST', body: fd });
+            }
             document.querySelectorAll('.form-input').forEach(i => i.value = '');
             clearAllErrors();
             hideStatus();
@@ -721,7 +812,7 @@ async function handleProfessorSignUp() {
         } else {
             /* Highlight field if server returns a known conflict */
             const msg = (result.message || '').toLowerCase();
-            if (msg.includes('school id') || msg.includes('already exists') || msg.includes('id already')) {
+            if (msg.includes('ctu id') || msg.includes('school id') || msg.includes('already exists') || msg.includes('id already')) {
                 setFieldError('profSchoolId', true);
             }
             if (msg.includes('email')) {

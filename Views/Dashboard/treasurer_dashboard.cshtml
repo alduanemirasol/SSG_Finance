@@ -1,10 +1,23 @@
 @model MyMvcApp.Models.DashboardViewModel
 @{
     ViewData["Title"] = "Treasurer Dashboard";
-    var firstName = Context.Session.GetString("FirstName") ?? "Treasurer";
-    var lastName  = Context.Session.GetString("LastName") ?? "";
-    var schoolId  = Context.Session.GetString("SchoolId") ?? "";
-    var initials  = (firstName.Length > 0 ? firstName[0].ToString() : "") + (lastName.Length > 0 ? lastName[0].ToString() : "");
+    var firstName     = Context.Session.GetString("FirstName") ?? "Treasurer";
+    var lastName      = Context.Session.GetString("LastName") ?? "";
+    var middleName    = Context.Session.GetString("MiddleName") ?? "";
+    var schoolId      = Context.Session.GetString("SchoolId") ?? "";
+    var email         = Context.Session.GetString("Email") ?? "";
+    var accountId     = Context.Session.GetString("AccountId") ?? "";
+    var initials      = (firstName.Length > 0 ? firstName[0].ToString() : "") + (lastName.Length > 0 ? lastName[0].ToString() : "");
+    var avatarPath    = Context.Session.GetString("AvatarPath") ?? "";
+    var courseCode    = Context.Session.GetString("CourseCode") ?? "";
+    var courseName    = Context.Session.GetString("CourseName") ?? "";
+    var yearLevel     = Context.Session.GetString("YearLevel") ?? "";
+    var section       = Context.Session.GetString("Section") ?? "";
+    var middleInitial = middleName.Length > 0 ? middleName[0].ToString().ToUpper() + "." : "";
+    var displayName   = (firstName + (middleInitial.Length > 0 ? " " + middleInitial : "") + (lastName.Length > 0 ? " " + lastName : "")).Trim();
+    var yearDisplay   = yearLevel == "5" ? "4 Completed" : (yearLevel.Length > 0 ? yearLevel : "—");
+    var courseDisplay = (courseCode.Length > 0 ? courseCode : "") +
+                        (yearDisplay != "—" ? " — " + yearDisplay + (section.Length > 0 && yearLevel != "5" ? section : "") : "");
 }
 
 <!DOCTYPE html>
@@ -12,6 +25,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="/js/csrf.js"></script>
 <title>SSG Finance - Treasurer</title>
 <link rel="icon" type="image/png" href="~/images/favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -51,12 +65,30 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);display:flex;min-heig
 .sb-spacer{flex:1}
 .sb-user{padding:10px 8px;border-top:1px solid rgba(255,255,255,.05)}
 .user-card{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;background:var(--glass)}
-.user-av{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.user-av{width:36px;min-width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden}
+.user-av img{width:100%;height:100%;object-fit:cover;display:block;border-radius:8px;pointer-events:none}
 .user-name{font-size:12px;font-weight:600;color:#fff}
 .user-role{font-size:10.5px;color:var(--text-d)}
 .signout{display:flex;align-items:center;gap:7px;padding:7px 10px;margin-top:3px;border-radius:8px;font-size:12.5px;font-weight:500;color:var(--text-d);cursor:pointer;transition:all .15s}
 .signout:hover{background:rgba(239,68,68,.08);color:#f87171}
 .signout svg{width:14px;height:14px}
+
+/* ── PROFILE HERO ── */
+.profile-hero{display:flex;flex-direction:column;align-items:center;padding:32px 20px 24px;border-bottom:1px solid rgba(255,255,255,.05)}
+.profile-avatar-wrap{position:relative;width:88px;height:88px;margin-bottom:14px;flex-shrink:0}
+.profile-avatar{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;overflow:hidden;border:2px solid rgba(39,167,68,.3);box-shadow:0 0 18px rgba(39,167,68,.18)}
+.profile-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.avatar-edit-badge{position:absolute;bottom:0;right:0;width:28px;height:28px;border-radius:50%;background:#27a744;border:2px solid var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:3;transition:background .15s,transform .15s;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.avatar-edit-badge:hover{background:#2fbf52;transform:scale(1.08)}
+.profile-hero-name{font-size:16px;font-weight:700;color:#fff;text-align:center;letter-spacing:-.01em;line-height:1.3}
+.profile-hero-role{font-size:11.5px;color:var(--text-d);margin-top:3px}
+.profile-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px}
+.profile-field{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 16px}
+.profile-field label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);display:block;margin-bottom:4px}
+.profile-field span{font-size:13px;font-weight:500;color:var(--text);word-break:break-word}
+.notice{display:flex;align-items:flex-start;gap:10px;padding:13px 16px;border-radius:10px;margin-bottom:16px}
+.notice svg{width:16px;height:16px;flex-shrink:0;margin-top:1px}
+.notice-text{font-size:12px;color:var(--text-m);line-height:1.6}
 
 /* ── MAIN ── */
 .main{flex:1;min-width:0;padding:32px 32px 60px;background:var(--bg);overflow-y:auto;height:100vh;position:relative}
@@ -132,10 +164,15 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 .table-scroll::-webkit-scrollbar-thumb:hover{background:rgba(39,167,68,.55);background-clip:padding-box}
 .table-scroll{scrollbar-width:thin;scrollbar-color:rgba(39,167,68,.4) rgba(255,255,255,.02)}
 
-/* Students list: horizontal scroll so the Action column stays reachable on narrow screens */
-.students-table-scroll{overflow-x:auto;overflow-y:visible;border-radius:0 0 14px 14px}
-.students-table-scroll > table{min-width:1080px}
-.students-table-scroll::-webkit-scrollbar{height:10px}
+/* Students list: horizontal + vertical scroll, sticky header so rows are capped on screen */
+.students-table-scroll{max-height:min(560px,64vh);overflow:auto;border-radius:0 0 14px 14px}
+.students-table-scroll > table{width:100%;min-width:1080px}
+/* Responsive: fill the container on wide screens; shrink the floor and scroll
+   horizontally on smaller screens so the table never blows out the layout. */
+@@media (max-width:992px){.students-table-scroll > table{min-width:820px}}
+@@media (max-width:600px){.students-table-scroll > table{min-width:640px}}
+.students-table-scroll thead th{position:sticky;top:0;z-index:4;background:#10211a}
+.students-table-scroll::-webkit-scrollbar{width:10px;height:10px}
 .students-table-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,.03);border-radius:8px}
 .students-table-scroll::-webkit-scrollbar-thumb{background:rgba(39,167,68,.4);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
 .students-table-scroll::-webkit-scrollbar-thumb:hover{background:rgba(39,167,68,.6);background-clip:padding-box}
@@ -251,6 +288,12 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 
 
 /* ── REPORT LIST ── */
+/* Cap the report list height and scroll when there are many reports */
+#rpt-list-body{max-height:min(520px,60vh);overflow:auto;scrollbar-width:thin;scrollbar-color:rgba(39,167,68,.45) rgba(255,255,255,.03)}
+#rpt-list-body::-webkit-scrollbar{width:10px;height:10px}
+#rpt-list-body::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
+#rpt-list-body::-webkit-scrollbar-thumb{background:rgba(39,167,68,.4);border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+#rpt-list-body::-webkit-scrollbar-thumb:hover{background:rgba(39,167,68,.6);background-clip:padding-box}
 .rpt-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;transition:background .15s}
 .rpt-row:last-child{border-bottom:none}
 .rpt-row:hover{background:rgba(255,255,255,.03)}
@@ -267,6 +310,12 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 .nr-item:hover{background:rgba(39,167,68,.06);border-color:rgba(39,167,68,.2)}
 .nr-item input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--green);flex-shrink:0}
 .nr-section-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin:14px 0 6px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,.06)}
+/* New Report modal: cap the selectable transaction lists so the modal stays compact */
+#nr-expenses-list,#nr-funds-list{max-height:220px;overflow-y:auto;padding-right:4px;scrollbar-width:thin;scrollbar-color:rgba(39,167,68,.45) rgba(255,255,255,.03)}
+#nr-expenses-list::-webkit-scrollbar,#nr-funds-list::-webkit-scrollbar{width:9px}
+#nr-expenses-list::-webkit-scrollbar-track,#nr-funds-list::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
+#nr-expenses-list::-webkit-scrollbar-thumb,#nr-funds-list::-webkit-scrollbar-thumb{background:rgba(39,167,68,.4);border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+#nr-expenses-list::-webkit-scrollbar-thumb:hover,#nr-funds-list::-webkit-scrollbar-thumb:hover{background:rgba(39,167,68,.6);background-clip:padding-box}
 
 /* ── TOAST ── */
 #toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:9px;font-size:12.5px;font-weight:500;background:#1f2937;color:#fff;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;z-index:999;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.4)}
@@ -284,6 +333,19 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 .dropdown-item:hover{background:rgba(39,167,68,.08);color:var(--text)}
 .dropdown-item.danger{color:var(--red-badge-t)}
 .dropdown-item.danger:hover{background:rgba(239,68,68,.08)}
+
+/* ── HOVER TOOLTIPS — position:fixed via JS so they never trigger scrollbars ── */
+.tip-wrap{position:relative;display:inline-flex}
+.tip{display:none;position:fixed;background:rgba(0,0,0,.82);color:#fff;font-size:10px;font-weight:500;padding:3px 9px;border-radius:5px;white-space:nowrap;pointer-events:none;z-index:9999;font-family:'DM Sans',sans-serif;transform:translateX(-50%)}
+.tip.show{display:block}
+
+/* ── HOVER DROPDOWN (Ledger receipt list) — position:fixed via JS so it escapes scroll containers ── */
+.hdrop{position:relative;display:inline-flex}
+.hdrop-menu{display:none;position:fixed;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:9px;min-width:160px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.5);overflow:hidden}
+.hdrop-menu.open{display:block}
+.hdrop-label{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);padding:7px 12px 5px;border-bottom:1px solid rgba(255,255,255,.06)}
+.hdrop-item{display:flex;align-items:center;gap:6px;width:100%;text-align:left;padding:7px 12px;font-size:11.5px;color:var(--text-m);background:transparent;border:none;font-family:inherit;cursor:pointer;transition:background .1s}
+.hdrop-item:hover{background:rgba(39,167,68,.08);color:var(--text)}
 
 /* Receipt preview */
 .receipt-modal{display:none;position:fixed;inset:0;z-index:700;align-items:center;justify-content:center}
@@ -439,9 +501,56 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
     marks: none;
   }
 }
+/* ── Avatar preview modal ── */
+#avatarModal{
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;cursor:pointer;
+}
+#avatarModal.open{ display:flex; }
+#avatarModal img{
+  width:280px;height:280px;border-radius:50%;
+  object-fit:cover;border:4px solid rgba(39,167,68,.6);
+  box-shadow:0 20px 60px rgba(0,0,0,.6);
+  pointer-events:none;
+}
+#avatarModal .av-name{
+  margin-top:16px;font-size:14px;font-weight:600;
+  color:#fff;text-align:center;letter-spacing:.02em;
+}
+#avatarModal .av-hint{
+  margin-top:6px;font-size:11px;color:rgba(255,255,255,.45);text-align:center;
+}
+#avatarModal .av-inner{ display:flex;flex-direction:column;align-items:center; }
 </style>
 </head>
 <body>
+
+<!-- Avatar preview modal: click anywhere to close -->
+<div id="avatarModal" onclick="closeAvatarModal()">
+  <div class="av-inner">
+    <img id="avatarModalImg" src="" alt="" />
+    <div class="av-name" id="avatarModalName"></div>
+    <div class="av-hint">Click anywhere to close</div>
+  </div>
+</div>
+
+<!-- Receipt image gallery lightbox (swipeable) -->
+<div id="expense-image-modal" onclick="if(event.target===this)closeExpenseImageModal()"
+     style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.82);backdrop-filter:blur(4px);align-items:center;justify-content:center;gap:14px;padding:24px">
+  <button type="button" id="expense-gallery-prev" onclick="expenseGalleryPrev(event)" aria-label="Previous receipt"
+          style="flex-shrink:0;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0">
+    <img id="expense-image-modal-img" src="" alt="Receipt"
+         style="max-width:78vw;max-height:80vh;object-fit:contain;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.6)"/>
+    <div id="expense-gallery-counter"
+         style="color:#fff;font-size:12.5px;font-weight:600;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:5px 14px">1 / 1</div>
+  </div>
+  <button type="button" id="expense-gallery-next" onclick="expenseGalleryNext(event)" aria-label="Next receipt"
+          style="flex-shrink:0;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>
+  <button type="button" onclick="closeExpenseImageModal()" aria-label="Close"
+          style="position:absolute;top:18px;right:22px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+</div>
 
 <div class="top-accent"></div>
 
@@ -489,13 +598,22 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 
   <div class="sb-spacer"></div>
   <div class="sb-user">
-    <div class="user-card">
-      <div class="user-av">@initials.ToUpper()</div>
+    <button class="user-card" onclick="showPage('profile',null)" style="width:100%;text-align:left;cursor:pointer;background:var(--glass);border:1px solid transparent;border-radius:9px;padding:8px 10px;transition:all .15s;font-family:inherit;color:inherit;display:flex;align-items:center;gap:9px" onmouseover="this.style.background='var(--green-glow)';this.style.borderColor='rgba(74,222,128,.12)'" onmouseout="this.style.background='var(--glass)';this.style.borderColor='transparent'">
+      <div class="user-av">
+        @if (!string.IsNullOrEmpty(avatarPath))
+        {
+          <img src="@avatarPath" alt="@initials.ToUpper()" />
+        }
+        else
+        {
+          @initials.ToUpper()
+        }
+      </div>
       <div>
         <div class="user-name">@firstName @lastName</div>
         <div class="user-role">Treasurer</div>
       </div>
-    </div>
+    </button>
     <div class="signout" onclick="window.location.href='@Url.Action("Logout", "Home")'">
       <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Sign Out
@@ -553,13 +671,13 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
         <div class="cc-title">Students</div>
         <button class="btn-primary" onclick="goToOrgFeePayment()" style="display:inline-flex;align-items:center;gap:6px">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
-          Record Org Fee Payment
+          Record Payment
         </button>
       </div>
       <div class="toolbar">
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
-          <input type="text" id="students-search" placeholder="Search by name, school ID, course…" oninput="filterStudentsPage(this.value)"/>
+          <input type="text" id="students-search" placeholder="Search by name, CTU ID, course…" oninput="filterStudentsPage(this.value)"/>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <select class="filter-select" id="students-filter-status" onchange="applyStudentsPageFilters()">
@@ -588,15 +706,19 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
       </div>
       <div class="students-table-scroll">
       <table>
-        <thead><tr>
-          <th>#</th><th>School ID</th><th>Name</th><th>Course · Year &amp; Section</th>
-          <th><span id="th-sem1-label">1st Sem</span><span id="th-sem1-badge"></span><br><span style="font-weight:400;font-size:10px;color:var(--text-d);letter-spacing:.04em">Balance · Paid · Status · Receipts</span></th>
-          <th><span id="th-sem2-label">2nd Sem</span><span id="th-sem2-badge"></span><br><span style="font-weight:400;font-size:10px;color:var(--text-d);letter-spacing:.04em">Balance · Paid · Status · Receipts</span></th>
-          <th>Org Fees</th>
-          <th style="text-align:center">Action</th>
-        </tr></thead>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>CTU ID</th>
+            <th>Name</th>
+            <th>Course.Year.Section</th>
+            <th><span id="th-sem1-label">Org Fee Balance - 1st Semester</span><span id="th-sem1-badge"></span></th>
+            <th><span id="th-sem2-label">Org Fee Balance - 2nd Semester</span><span id="th-sem2-badge"></span></th>
+            <th style="text-align:center">Actions</th>
+          </tr>
+        </thead>
         <tbody id="students-page-tbody">
-          <tr class="empty-row"><td colspan="8">Loading students…</td></tr>
+          <tr class="empty-row"><td colspan="7">Loading students…</td></tr>
         </tbody>
       </table>
       </div>
@@ -619,7 +741,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
       <div class="toolbar">
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
-          <input type="text" placeholder="Search by description, student name, school ID, course…" oninput="filterHistory(this.value)"/>
+          <input type="text" id="history-search" placeholder="Search by description, student name, CTU ID, course…" oninput="filterHistory(this.value)"/>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <select class="filter-select" id="hist-filter-type" onchange="applyHistoryFilters()">
@@ -627,6 +749,14 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
             <option value="OrgFee">Org Fees</option>
             <option value="Expense">Expenses</option>
             <option value="OtherFund">Other Fund</option>
+          </select>
+          <select class="filter-select" id="hist-filter-sy" onchange="applyHistoryFilters()">
+            <option value="">All School Years</option>
+          </select>
+          <select class="filter-select" id="hist-filter-sem" onchange="applyHistoryFilters()">
+            <option value="">All Semesters</option>
+            <option value="First">1st Semester</option>
+            <option value="Second">2nd Semester</option>
           </select>
           <select class="filter-select" id="hist-filter-cat" onchange="applyHistoryFilters()" style="display:none">
             <option value="">All Categories</option>
@@ -638,6 +768,10 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
             <option value="Sponsorship">Sponsorship</option>
             <option value="Other">Other</option>
           </select>
+          <button class="btn-outline" onclick="resetHistoryFilters()" title="Reset filters to default" style="padding:7px 14px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L3 8"/></svg>
+            Default
+          </button>
         </div>
       </div>
       <div class="table-scroll">
@@ -676,7 +810,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
       </button>
       <button id="income-tab-fund" onclick="switchIncomeTab('fund')"
         style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--text-m)">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6" stroke="currentColor" stroke-width="1.8"/></svg>
+        <span style="font-weight:700;font-size:14px;line-height:1">₱</span>
         Other Fund
       </button>
     </div>
@@ -689,7 +823,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
       </div>
       <div style="padding:22px">
         <div class="form-group">
-          <label class="form-label">Search Student (name or school ID)</label>
+          <label class="form-label">Search Student (name or CTU ID)</label>
           <input class="form-input" id="page-of-search" placeholder="Type to search…" oninput="pageSearchStudents(this.value)"/>
           <div class="student-list" id="page-of-list"></div>
         </div>
@@ -706,6 +840,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
               <option value="">Loading...</option>
             </select>
             <div style="font-size:10.5px;color:var(--text-d);margin-top:4px" id="page-of-sem-status"></div>
+            <div style="display:none;font-size:10px;color:#fbbf24;margin-top:3px" id="page-of-sem-lock-note">🔒 Locked to the term you selected. Search a student to change.</div>
           </div>
           <div class="form-group">
             <label class="form-label">Amount Paid (₱)</label>
@@ -715,6 +850,10 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
         <div class="form-group">
           <label class="form-label">Payment Status</label>
           <div class="status-box" id="page-of-status">Enter amount to determine status</div>
+          <div style="display:none;font-size:11px;color:#f87171;margin-top:6px;align-items:center;gap:5px" id="page-of-prior-block">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span id="page-of-prior-block-text"></span>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Receipt Number</label>
@@ -722,7 +861,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
           <div style="font-size:10.5px;color:var(--text-d);margin-top:4px">Auto-generated</div>
         </div>
         <div style="display:flex;justify-content:flex-end;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)">
-          <button class="btn-primary" onclick="pageSubmitOrgFee()">
+          <button class="btn-primary" id="page-of-save" onclick="pageSubmitOrgFee()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
             Save Payment
           </button>
@@ -793,6 +932,15 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
             <input class="form-input" type="date" id="ex-date"/>
           </div>
         </div>
+        <div class="form-group" style="margin-top:4px">
+          <label class="form-label">Receipt Images <span style="color:var(--text-d);font-weight:400;text-transform:none;letter-spacing:0">(optional — hardcopy photos)</span></label>
+          <input type="file" id="ex-images" accept="image/jpeg,image/png,image/webp" multiple style="display:none" onchange="addExpenseImages(this)"/>
+          <button type="button" class="btn-outline" onclick="document.getElementById('ex-images').click()" style="padding:8px 14px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+            Upload receipt photo(s)
+          </button>
+          <div id="ex-image-previews" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
+        </div>
         <div style="display:flex;justify-content:flex-end;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)">
           <button class="btn-primary" onclick="saveExpense()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
@@ -805,7 +953,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 
   <!-- REPORTS -->
   <div class="page" id="page-reports">
-    <div class="page-hdr">
+    <div class="page-hdr" style="justify-content:center;text-align:center">
       <div><div class="page-title">Reports</div><div class="page-sub">Financial reports for events, semesters, and annual periods</div></div>
     </div>
 
@@ -822,21 +970,6 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
             <option value="1">1st Semester</option>
             <option value="2">2nd Semester</option>
           </select>
-          <select class="filter-select" id="chart-month" onchange="updateCharts()">
-            <option value="">All Months</option>
-            <option value="0">January</option>
-            <option value="1">February</option>
-            <option value="2">March</option>
-            <option value="3">April</option>
-            <option value="4">May</option>
-            <option value="5">June</option>
-            <option value="6">July</option>
-            <option value="7">August</option>
-            <option value="8">September</option>
-            <option value="9">October</option>
-            <option value="10">November</option>
-            <option value="11">December</option>
-          </select>
           <select class="filter-select" id="chart-mode" onchange="updateCharts()">
             <option value="all">All Transactions</option>
             <option value="both">Income vs Expenses</option>
@@ -844,6 +977,10 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
             <option value="funds">Other Funds</option>
             <option value="expense">Expenses</option>
           </select>
+          <button class="btn-outline" onclick="resetChartFilters()" title="Reset filters to default" style="padding:7px 14px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L3 8"/></svg>
+            Default
+          </button>
         </div>
       </div>
       <div class="chart-wrap"><canvas id="barChart"></canvas></div>
@@ -877,6 +1014,59 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
         </button>
       </div>
       <div id="rpt-detail-body" style="padding:22px 20px"></div>
+    </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="page" id="page-profile">
+    <div class="page-hdr" style="justify-content:center;text-align:center">
+      <div><div class="page-title">My Profile</div><div class="page-sub">Your account information</div></div>
+    </div>
+    <div class="content-card">
+      <div class="profile-hero">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar" id="profileAvatarCircle">
+            @if (!string.IsNullOrEmpty(avatarPath))
+            {
+              <img src="@avatarPath" alt="@displayName" id="profileAvatarImg" />
+            }
+            else
+            {
+              <span id="profileAvatarInitials">@initials.ToUpper()</span>
+            }
+          </div>
+          <button class="avatar-edit-badge" onclick="triggerAvatarUpload()"
+            title="@(string.IsNullOrEmpty(avatarPath) ? "Add photo" : "Change photo")"
+            aria-label="@(string.IsNullOrEmpty(avatarPath) ? "Add photo" : "Change photo")">
+            <svg viewBox="0 0 24 24" fill="none" style="width:14px;height:14px;color:#fff"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.8"/></svg>
+          </button>
+          <input type="file" id="avatarFileInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleAvatarChange(this)" />
+        </div>
+        <div class="profile-hero-name">@displayName</div>
+        <div class="profile-hero-role">Treasurer</div>
+      </div>
+      <div class="profile-fields">
+        <div class="profile-field">
+          <label>CTU ID</label>
+          <span style="font-family:'DM Mono',monospace;font-size:12px">@(schoolId.Length > 0 ? schoolId : "—")</span>
+        </div>
+        <div class="profile-field">
+          <label>Email</label>
+          <span>@(email.Length > 0 ? email : "—")</span>
+        </div>
+        <div class="profile-field">
+          <label>Course</label>
+          <span>@(courseDisplay.Length > 0 ? courseDisplay.Trim() : "—")</span>
+        </div>
+        <div class="profile-field">
+          <label>Course Name</label>
+          <span>@(courseName.Length > 0 ? courseName : "—")</span>
+        </div>
+      </div>
+    </div>
+    <div class="notice" style="background:rgba(59,130,246,.06);border-color:rgba(59,130,246,.18)">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#93c5fd" stroke-width="1.8"/><path d="M12 8v4M12 16h.01" stroke="#93c5fd" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <p class="notice-text">To update your personal information, please contact the SSG administrator.</p>
     </div>
   </div>
 
@@ -966,12 +1156,14 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 
       <div class="content-card">
         <div class="cc-hdr"><div class="cc-title">School Years</div><span class="badge by" id="sy-count-badge">0 total</span></div>
+        <div class="table-scroll">
         <table>
           <thead><tr><th>#</th><th>School Year</th><th>Semesters</th><th>Status</th><th></th></tr></thead>
           <tbody id="sy-tbody">
             <tr class="empty-row"><td colspan="5">No school years found.</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -1001,12 +1193,14 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 
       <div class="content-card">
         <div class="cc-hdr"><div class="cc-title">Courses</div><span class="badge by" id="courses-count-badge">0 total</span></div>
+        <div class="table-scroll">
         <table>
           <thead><tr><th>#</th><th>Code</th><th>Course Name</th><th></th></tr></thead>
           <tbody id="courses-tbody">
             <tr class="empty-row"><td colspan="4">No courses found.</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -1034,31 +1228,16 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-        <div class="content-card">
-          <div style="padding:16px 20px">
-            <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:6px">1st Semester Fee</div>
-            <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-.03em" id="fee-1st-val">₱—</div>
-            <div style="font-size:11px;color:var(--text-m);margin-top:3px" id="fee-1st-sub">No fee set</div>
-          </div>
-        </div>
-        <div class="content-card">
-          <div style="padding:16px 20px">
-            <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:6px">2nd Semester Fee</div>
-            <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-.03em" id="fee-2nd-val">₱—</div>
-            <div style="font-size:11px;color:var(--text-m);margin-top:3px" id="fee-2nd-sub">No fee set</div>
-          </div>
-        </div>
-      </div>
-
       <div class="content-card">
         <div class="cc-hdr"><div class="cc-title">Fee History</div></div>
+        <div class="table-scroll">
         <table>
           <thead><tr><th>School Year</th><th>Semester</th><th>Amount</th><th>Status</th><th></th></tr></thead>
           <tbody id="fee-history-tbody">
             <tr class="empty-row"><td colspan="5">No fee records found.</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -1108,6 +1287,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
           <div class="cc-title">Signature History</div>
           <span class="badge by" id="sig-history-count">0 records</span>
         </div>
+        <div class="table-scroll">
         <table>
           <thead>
             <tr><th>#</th><th>Treasurer</th><th>Date Saved</th><th>Status</th><th>Preview</th></tr>
@@ -1116,6 +1296,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
             <tr class="empty-row"><td colspan="5">No signatures found.</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   </div>
@@ -1133,7 +1314,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
     <div class="modal-hdr"><div><div class="modal-title">Add Transaction</div><div class="modal-sub">Choose a transaction type</div></div><button class="modal-close" onclick="closeModal('modal-pick')">✕</button></div>
     <div style="display:flex;flex-direction:column;gap:8px">
       <button class="btn-primary" style="justify-content:flex-start;padding:12px 14px" onclick="closeModal('modal-pick');openModal('modal-orgfee')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Student Organizational Fee</button>
-      <button class="btn-outline" style="justify-content:flex-start;padding:12px 14px" onclick="closeModal('modal-pick');openModal('modal-fund')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6" stroke="currentColor" stroke-width="1.8"/></svg>Other Receivable Fund</button>
+      <button class="btn-outline" style="justify-content:flex-start;padding:12px 14px" onclick="closeModal('modal-pick');openModal('modal-fund')"><span style="font-weight:700;font-size:14px;line-height:1">₱</span>Other Receivable Fund</button>
       <button class="btn-outline" style="justify-content:flex-start;padding:12px 14px;color:#f87171;border-color:rgba(239,68,68,.2)" onclick="closeModal('modal-pick');openModal('modal-expense')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7 7 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Expense</button>
     </div>
   </div>
@@ -1145,7 +1326,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
   <div class="modal-box">
     <div class="modal-hdr"><div><div class="modal-title">Organizational Fee</div><div class="modal-sub" id="org-fee-modal-sub">Student SSG membership fee — Current: ₱200.00</div></div><button class="modal-close" onclick="closeModal('modal-orgfee')">✕</button></div>
     <div class="form-group">
-      <label class="form-label">Search Student (name or school ID)</label>
+      <label class="form-label">Search Student (name or CTU ID)</label>
       <input class="form-input" id="of-search" placeholder="Type to search…" oninput="searchStudents(this.value)"/>
       <div class="student-list" id="of-list"></div>
     </div>
@@ -1216,11 +1397,12 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
     </div>
 
     <!-- Type selector -->
-    <div style="display:flex;gap:8px;margin-bottom:16px">
-      <button class="nr-type-btn active" id="nr-btn-event"    onclick="nrSetType('Event')">After Event</button>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button class="nr-type-btn active" id="nr-btn-event"    onclick="nrSetType('Event')">Event</button>
       <button class="nr-type-btn"        id="nr-btn-semester" onclick="nrSetType('Semester')">Semester</button>
-      <button class="nr-type-btn"        id="nr-btn-annual"   onclick="nrSetType('Annual')">Annual</button>
+      <button class="nr-type-btn"        id="nr-btn-annual"   onclick="nrSetType('Annual')">School Year</button>
     </div>
+    <div id="nr-type-desc" style="font-size:11.5px;color:var(--text-m);margin-bottom:16px;line-height:1.45"></div>
 
     <!-- Title -->
     <div style="margin-bottom:12px">
@@ -1254,6 +1436,12 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
         <div style="font-size:11px;font-weight:600;color:var(--text-d);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">Date To</div>
         <input class="form-input" type="date" id="nr-date-to" style="width:100%" onchange="nrFilterItems()"/>
       </div>
+    </div>
+
+    <!-- Selection hint -->
+    <div style="font-size:11.5px;color:var(--text-m);line-height:1.5;margin-bottom:10px;display:flex;gap:7px;align-items:flex-start">
+      <svg style="flex-shrink:0;margin-top:1px" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <span>Transactions within this period are ticked automatically — untick any you don't want to include. Greyed-out items fall outside the period and can't be added.</span>
     </div>
 
     <!-- Expenses -->
@@ -1322,7 +1510,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
   <div class="modal-box" style="max-width:920px">
     <div class="modal-hdr">
       <div>
-        <div class="modal-title" id="student-orgfee-name">Student Org Fees</div>
+        <div class="modal-title" id="student-orgfee-name">Ledger</div>
         <div class="modal-sub" id="student-orgfee-sub">Loading…</div>
       </div>
       <button class="modal-close" onclick="closeStudentOrgFeeModal()">✕</button>
@@ -1331,9 +1519,12 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
           <tr style="border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02)">
-            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Semester · School Year</th>
-            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Balance · Paid · Status</th>
-            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Receipts</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">#</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Semester</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">School Year</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Balance</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Paid Amount</th>
+            <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Status</th>
             <th style="padding:9px 12px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Date</th>
             <th style="padding:9px 12px;text-align:right;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Actions</th>
           </tr>
@@ -1388,6 +1579,12 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
     </div>
     <div style="padding:4px 2px 2px">
       <input type="hidden" id="payment-start-userid" />
+      <div style="display:flex;gap:8px;align-items:flex-start;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.18);border-radius:8px;padding:10px 12px;margin-bottom:14px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <div style="font-size:11.5px;line-height:1.5;color:var(--text-m)">
+          This sets the school year and semester from which the student <strong style="color:var(--text)">begins to be charged organizational fees in this system</strong>. The student will not be billed for any semester before this point. This is intended for newly added students, transferees, and senior students who began before the system was in use. It ensures that they are charged only from the selected term onward, and not for earlier terms that they did not yet attend or have already settled through hardcopy receipts.
+        </div>
+      </div>
       <label class="form-label" style="display:block;margin-bottom:5px">School Year</label>
       <select id="payment-start-sy" class="form-input" style="margin-bottom:14px">
         <option value="">Loading…</option>
@@ -1400,7 +1597,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
     </div>
     <div class="modal-footer">
       <button class="btn-outline" onclick="closeModal('modal-payment-start')">Cancel</button>
-      <button class="btn-primary" onclick="submitPaymentStart()">Set Payment Start</button>
+      <button class="btn-primary" onclick="submitPaymentStart()">Set</button>
     </div>
   </div>
 </div>
@@ -1481,7 +1678,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
         <div class="rp-field"><span class="rp-field-label">Name:</span><span class="rp-field-value handwritten" id="tr-rp-name">—</span></div>
         <div class="rp-field"><span class="rp-field-label">ID Number:</span><span class="rp-field-value" id="tr-rp-id">—</span></div>
         <div class="rp-field"><span class="rp-field-label">Course/Year/Section:</span><span class="rp-field-value" id="tr-rp-course">—</span></div>
-        <div class="rp-field"><span class="rp-field-label">Term:</span><span class="rp-field-value" id="tr-rp-term">—</span></div>
+        <div class="rp-field"><span class="rp-field-label">S.Y.-Semester:</span><span class="rp-field-value" id="tr-rp-term">—</span></div>
         <div class="rp-field"><span class="rp-field-label">Amount Paid:</span><span class="rp-field-value" id="tr-rp-amount">—</span></div>
         <div class="rp-field"><span class="rp-field-label">Amount in words:</span><span class="rp-field-value handwritten" id="tr-rp-amount-words">—</span></div>
         <div class="rp-field"><span class="rp-field-label">Status:</span><span class="rp-field-value"><span class="rp-status-badge" id="tr-rp-status">—</span></span></div>
@@ -1522,7 +1719,7 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
         <div class="rp-field"><span class="rp-field-label">Name:</span><span class="rp-field-value handwritten" id="own-tr-rp-name">—</span></div>
         <div class="rp-field"><span class="rp-field-label">ID Number:</span><span class="rp-field-value" id="own-tr-rp-id">—</span></div>
         <div class="rp-field"><span class="rp-field-label">Course/Year/Section:</span><span class="rp-field-value" id="own-tr-rp-course">—</span></div>
-        <div class="rp-field"><span class="rp-field-label">Term:</span><span class="rp-field-value" id="own-tr-rp-term">—</span></div>
+        <div class="rp-field"><span class="rp-field-label">S.Y.-Semester:</span><span class="rp-field-value" id="own-tr-rp-term">—</span></div>
         <div class="rp-field"><span class="rp-field-label">Amount Paid:</span><span class="rp-field-value" id="own-tr-rp-amount">—</span></div>
         <div class="rp-field"><span class="rp-field-label">Amount in words:</span><span class="rp-field-value handwritten" id="own-tr-rp-amount-words">—</span></div>
         <div class="rp-field"><span class="rp-field-label">Status:</span><span class="rp-field-value"><span class="rp-status-badge" id="own-tr-rp-status">—</span></span></div>
@@ -1601,20 +1798,44 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 <div id="toast"></div>
 
 <script>
+function resetDropdownPos(menu) {
+  menu.style.position = '';
+  menu.style.top = '';
+  menu.style.left = '';
+  menu.style.right = '';
+  menu.style.bottom = '';
+}
+function closeAllDropdowns() {
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => { m.classList.remove('open'); resetDropdownPos(m); });
+}
 function toggleDropdown(btn) {
   const menu = btn.nextElementSibling;
-  const isOpen = menu.classList.contains('open');
-  // close all open dropdowns first
-  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
-  if (!isOpen) menu.classList.add('open');
+  const willOpen = !menu.classList.contains('open');
+  closeAllDropdowns();
+  if (!willOpen) return;
+  menu.classList.add('open');
+  // Position as fixed so the menu can escape scrollable table containers
+  const r = btn.getBoundingClientRect();
+  menu.style.position = 'fixed';
+  menu.style.left = 'auto';
+  menu.style.right = (window.innerWidth - r.right) + 'px';
+  const mh = menu.offsetHeight || 200;
+  if (r.bottom + mh + 8 > window.innerHeight) {
+    // not enough room below — open upward
+    menu.style.top = 'auto';
+    menu.style.bottom = (window.innerHeight - r.top + 4) + 'px';
+  } else {
+    menu.style.bottom = 'auto';
+    menu.style.top = (r.bottom + 4) + 'px';
+  }
 }
 
 // close dropdowns when clicking outside
 document.addEventListener('click', e => {
-  if (!e.target.closest('.dropdown-wrap')) {
-    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
-  }
+  if (!e.target.closest('.dropdown-wrap')) closeAllDropdowns();
 });
+// close dropdowns on any scroll so the fixed menus don't detach from their row
+document.addEventListener('scroll', closeAllDropdowns, true);
 
 // ── CONFIG ──────────────────────────────────────────────────────
 let REQ_FEE = 200; // Will be updated from current semester fee
@@ -1646,8 +1867,8 @@ let histSY = '', histSem = '', histCat = '';
 function applyHistoryFilters() {
   histType = document.getElementById('hist-filter-type')?.value ?? '';
   histCat  = document.getElementById('hist-filter-cat')?.value ?? '';
-  histSY   = '';
-  histSem  = '';
+  histSY   = document.getElementById('hist-filter-sy')?.value ?? '';
+  histSem  = document.getElementById('hist-filter-sem')?.value ?? '';
 
   // Show the category sub-dropdown only when "Other Fund" is selected
   const catSel = document.getElementById('hist-filter-cat');
@@ -1689,6 +1910,35 @@ function orgFeeFrom(x) {
   ].filter(Boolean);
   return parts.join(' · ');
 }
+function openAvatarModal(src, name) {
+  document.getElementById('avatarModalImg').src  = src;
+  document.getElementById('avatarModalName').textContent = name;
+  document.getElementById('avatarModal').classList.add('open');
+}
+function closeAvatarModal() {
+  document.getElementById('avatarModal').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAvatarModal(); });
+
+async function deleteAvatar(userId, btn) {
+  if (!confirm('Remove this profile photo?')) return;
+  btn.disabled = true;
+  try {
+    const res  = await fetch(`/Home/DeleteAvatar?userId=${userId}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      // Replace the whole avatar cell with initials fallback by refreshing the list
+      await loadStudentsPage();
+    } else {
+      alert(data.message || 'Failed to remove photo.');
+      btn.disabled = false;
+    }
+  } catch {
+    alert('An error occurred. Please try again.');
+    btn.disabled = false;
+  }
+}
+
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, ch => ({
     '&': '&amp;',
@@ -1903,7 +2153,8 @@ async function loadExpenses() {
         date: e.expenseDate.split('T')[0],
         fullDate: e.expenseDate,
         recordedBy: e.recordedBy,
-        schoolYear: (e.schoolYear || '').replace(/\s*[–-]\s*/g, '–')
+        schoolYear: (e.schoolYear || '').replace(/\s*[–-]\s*/g, '–'),
+        images: e.images || []
       }));
     }
   } catch (err) {
@@ -2115,6 +2366,7 @@ function allTransactions() {
         src: 'Expense',
         sid: x.id,
         schoolYear: x.schoolYear || null,
+        images: x.images || [],
         studentName: '',
         schoolId: '',
         course: '',
@@ -2137,6 +2389,92 @@ function totalExpenses() { return DB.expenses.reduce((s,x)=>s+x.amt,0); }
 // ── HISTORY ──────────────────────────────────────────────────────
 let historyStudentFilter = null; // holds student rows from search
 
+// Populate the School Year filter once (defaults to "All School Years").
+async function populateHistoryFilters() {
+  const sySel = document.getElementById('hist-filter-sy');
+  if (!sySel || sySel.dataset.loaded) return;
+  try {
+    const res  = await fetch('/Home/GetSchoolYears');
+    const data = await res.json();
+    if (!data.success) return;
+    sySel.innerHTML = '<option value="">All School Years</option>' +
+      data.schoolYears.map(sy => `<option value="${sy.yearStart}–${sy.yearEnd}">${sy.yearStart}–${sy.yearEnd}</option>`).join('');
+    sySel.dataset.loaded = 'true';
+  } catch {}
+}
+
+// Render the receipt-image thumbnails for an expense row (clickable to view full size).
+function expenseReceiptCell(images) {
+  const list = Array.isArray(images) ? images : [];
+  if (!list.length) return '<span class="td-m" style="color:var(--text-d)">N/A</span>';
+  const more  = list.length - 1;
+  const badge = more > 0
+    ? `<span style="position:absolute;bottom:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#27a744;border:2px solid var(--card,#0f2918);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1">+${more}</span>`
+    : '';
+  const data = escapeHtml(JSON.stringify(list));
+  return `<div data-images="${data}" onclick="openExpenseGallery(this)"
+               title="${list.length} receipt photo${list.length > 1 ? 's' : ''} — click to view"
+               style="position:relative;display:inline-block;cursor:pointer">
+            <img src="${escapeHtml(list[0])}"
+                 style="width:38px;height:38px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,.15);display:block"/>
+            ${badge}
+          </div>`;
+}
+
+// Receipt image gallery lightbox with prev/next navigation.
+let EXPENSE_GALLERY = { images: [], index: 0 };
+
+function openExpenseGallery(el) {
+  let imgs = [];
+  try { imgs = JSON.parse(el.getAttribute('data-images') || '[]'); } catch {}
+  if (!imgs.length) return;
+  EXPENSE_GALLERY = { images: imgs, index: 0 };
+  renderExpenseGallery();
+  document.getElementById('expense-image-modal').style.display = 'flex';
+}
+
+function renderExpenseGallery() {
+  const { images, index } = EXPENSE_GALLERY;
+  if (!images.length) return;
+  document.getElementById('expense-image-modal-img').src = images[index];
+  const multi = images.length > 1;
+  const counter = document.getElementById('expense-gallery-counter');
+  counter.textContent = `${index + 1} / ${images.length}`;
+  counter.style.display = multi ? 'block' : 'none';
+  document.getElementById('expense-gallery-prev').style.display = multi ? 'flex' : 'none';
+  document.getElementById('expense-gallery-next').style.display = multi ? 'flex' : 'none';
+}
+
+function expenseGalleryPrev(e) {
+  if (e) e.stopPropagation();
+  const n = EXPENSE_GALLERY.images.length;
+  if (!n) return;
+  EXPENSE_GALLERY.index = (EXPENSE_GALLERY.index - 1 + n) % n;
+  renderExpenseGallery();
+}
+
+function expenseGalleryNext(e) {
+  if (e) e.stopPropagation();
+  const n = EXPENSE_GALLERY.images.length;
+  if (!n) return;
+  EXPENSE_GALLERY.index = (EXPENSE_GALLERY.index + 1) % n;
+  renderExpenseGallery();
+}
+
+function closeExpenseImageModal() {
+  const modal = document.getElementById('expense-image-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+// Keyboard navigation while the gallery is open.
+document.addEventListener('keydown', (e) => {
+  const modal = document.getElementById('expense-image-modal');
+  if (!modal || modal.style.display !== 'flex') return;
+  if (e.key === 'ArrowLeft')       expenseGalleryPrev();
+  else if (e.key === 'ArrowRight') expenseGalleryNext();
+  else if (e.key === 'Escape')     closeExpenseImageModal();
+});
+
 function filterHistory(q) {
   histQ = q;
   if (!q.trim()) {
@@ -2145,6 +2483,19 @@ function filterHistory(q) {
     return;
   }
   searchHistoryWithStudents(q);
+}
+
+// Reset the Transaction History search + all filters back to default (show everything).
+function resetHistoryFilters() {
+  histQ = '';
+  historyStudentFilter = null;
+  const search = document.getElementById('history-search');
+  if (search) search.value = '';
+  ['hist-filter-type', 'hist-filter-sy', 'hist-filter-sem', 'hist-filter-cat'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  applyHistoryFilters(); // re-reads the (now cleared) selects, hides the category sub-filter, and re-renders
 }
 
 async function searchHistoryWithStudents(q) {
@@ -2256,7 +2607,7 @@ async function renderHistory() {
       <td class="${t.type==='income'?'amt-in':'amt-out'}">${t.type==='income'?'+':'-'}${p(t.amt)}</td>
       <td class="td-mono td-m">${isOrg ? p(t.balance) : 'N/A'}</td>
       <td>${isOrg ? feeStatusBadge(t.status) : '<span class="td-m" style="color:var(--text-d)">N/A</span>'}</td>
-      <td>${isOrg ? renderReceiptCell(t.sid, t.receipt, hasReceipt) : '<span class="td-m" style="color:var(--text-d)">N/A</span>'}</td>
+      <td>${isOrg ? renderReceiptCell(t.sid, t.receipt, hasReceipt) : expenseReceiptCell(t.images)}</td>
       <td class="td-mono td-m">${fd(t.date)}</td>
       <td>${editBtn}</td>
     </tr>`;
@@ -2300,7 +2651,7 @@ async function showPage(name, el) {
     await loadStudentsPage();
     await refreshDashboardStats();
   }
-  if (name === 'history')   await renderHistory();
+  if (name === 'history')   { await populateHistoryFilters(); await renderHistory(); }
   if (name === 'income')    await initIncomePage();
   if (name === 'expenses')  { await renderExpenses(); const exd = document.getElementById('ex-date'); if (exd && !exd.value) exd.value = today(); }
   if (name === 'reports')   { await loadReports(); await populateChartSchoolYears(); setTimeout(renderCharts, 100); }
@@ -2341,20 +2692,31 @@ function renderCharts() {
     const selectedMonth = document.getElementById('chart-month')?.value;
     const mode          = document.getElementById('chart-mode')?.value || 'both';
 
-    // Resolve the semester date window from the cached range (set when SY was picked).
+    // Resolve the semester window from the cached range (set when SY was picked).
     // No school year selected = semester filter is ignored (we need bounds to apply it).
     let semStart = null, semEnd = null;
-    if (selectedSem && window.currentSYDateRange) {
+    const syRange = window.currentSYDateRange;
+    if (selectedSem && syRange) {
         if (selectedSem === '1') {
-            semStart = window.currentSYDateRange.firstSemStart;
-            semEnd   = window.currentSYDateRange.firstSemEnd;
+            semStart = syRange.firstSemStart;
+            semEnd   = syRange.firstSemEnd;
         } else if (selectedSem === '2') {
-            semStart = window.currentSYDateRange.secondSemStart;
-            semEnd   = window.currentSYDateRange.secondSemEnd;
+            semStart = syRange.secondSemStart;
+            semEnd   = syRange.secondSemEnd;
         }
     }
+    // Split the whole school year at the 2nd semester's start instead of clamping to
+    // each semester's exact start/end. This way transactions dated in the semester
+    // break or after the 2nd semester ends (e.g. graduation) still count — toward the
+    // 1st semester if before the split, toward the 2nd semester if on/after it.
+    const semBoundary = syRange ? syRange.secondSemStart : null;
     const inSemester = (date) => {
-        if (!semStart || !semEnd) return true;          // not applying
+        if (!selectedSem || !syRange) return true;      // not applying
+        if (semBoundary) {
+            return selectedSem === '1' ? date < semBoundary : date >= semBoundary;
+        }
+        // No 2nd-semester start configured — fall back to the exact window.
+        if (!semStart || !semEnd) return true;
         return date >= semStart && date <= semEnd;
     };
 
@@ -2390,7 +2752,7 @@ function renderCharts() {
         })
         .forEach(t => {
             const date  = new Date(t.fullDate || t.date + 'T00:00');
-            const index = selectedMonth !== '' && selectedMonth !== null
+            const index = (selectedMonth !== '' && selectedMonth !== null && selectedMonth !== undefined)
                 ? date.getDate() - 1
                 : date.getMonth();
 
@@ -2468,6 +2830,20 @@ function renderCharts() {
         options: {
             responsive: true, maintainAspectRatio: false,
             layout: { padding: { top: 18 } },
+            // Drill down: clicking a month (while in the all-months view) opens that month's days.
+            onClick: (evt, _els, chart) => {
+                const monthSel = document.getElementById('chart-month');
+                if (!monthSel || monthSel.value !== '') return; // only from the monthly view
+                const pts = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, true);
+                if (!pts.length) return;
+                selectChartMonth(pts[0].index);
+            },
+            onHover: (evt, _els, chart) => {
+                const monthSel = document.getElementById('chart-month');
+                const drillable = monthSel && monthSel.value === '';
+                const pts = drillable ? chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, true) : [];
+                if (evt?.native?.target) evt.native.target.style.cursor = pts.length ? 'pointer' : 'default';
+            },
             plugins: {
                 legend: { display: datasets.length > 1, labels: { color: 'rgba(232,245,236,.5)', font: { size: 11 }, boxWidth: 10, padding: 12 } },
                 tooltip: { callbacks: { label: ctx => ' ' + p(ctx.parsed.y) } }
@@ -2490,30 +2866,18 @@ async function onChartSYChange() {
     await refreshDashboardStats();
 }
 
+// Caches the selected school year's semester date bounds in
+// window.currentSYDateRange, so the semester filter in renderCharts() can apply
+// them. (The month dropdown was removed; this no longer builds any options.)
 async function rebuildMonthsDropdown(selectedSY) {
-    const sel = document.getElementById('chart-month');
-    const currentVal = sel.value;
-
     // Reset the cached semester range; semester filtering needs an SY to work.
     window.currentSYDateRange = null;
-
-    if (!selectedSY) {
-        // No school year selected — show all months
-        sel.innerHTML = '<option value="">All Months</option>' +
-            MONTH_NAMES.map((m, i) => `<option value="${i}">${m}</option>`).join('');
-        sel.value = currentVal;
-        return;
-    }
+    if (!selectedSY) return;
 
     try {
         const res  = await fetch('/Home/GetSchoolYearDateRange?schoolYear=' + encodeURIComponent(selectedSY));
         const data = await res.json();
-
-        if (!data.success) {
-            sel.innerHTML = '<option value="">All Months</option>' +
-                MONTH_NAMES.map((m, i) => `<option value="${i}">${m}</option>`).join('');
-            return;
-        }
+        if (!data.success) return;
 
         // Cache so the semester filter in renderCharts can use these bounds.
         window.currentSYDateRange = {
@@ -2522,47 +2886,35 @@ async function rebuildMonthsDropdown(selectedSY) {
             secondSemStart: data.secondSemStart ? new Date(data.secondSemStart) : null,
             secondSemEnd:   data.secondSemEnd   ? new Date(data.secondSemEnd)   : null
         };
+    } catch { /* leave range uncached */ }
+}
 
-        // Determine month range
-        // Use firstSemStart as the start, secondSemEnd as the end
-        // Fall back to firstSemEnd if secondSemEnd is null
-        const startDate = data.firstSemStart  ? new Date(data.firstSemStart)  : null;
-        const endDate   = data.secondSemEnd   ? new Date(data.secondSemEnd)   :
-                          data.firstSemEnd    ? new Date(data.firstSemEnd)    : null;
+// "Default" button: reset the Monthly Overview filters back to the initial load
+// (current school year, all semesters, all transactions).
+async function resetChartFilters() {
+    const semSel  = document.getElementById('chart-sem');
+    const modeSel = document.getElementById('chart-mode');
+    if (semSel)  semSel.value  = '';
+    if (modeSel) modeSel.value = 'all';
+    await populateChartSchoolYears();   // re-selects the current school year + recaches range
+    updateCharts();
+}
 
-        if (!startDate || !endDate) {
-            sel.innerHTML = '<option value="">All Months</option>' +
-                MONTH_NAMES.map((m, i) => `<option value="${i}">${m}</option>`).join('');
-            return;
-        }
-
-        const startMonth = startDate.getMonth(); // e.g. 7 = August
-        const endMonth   = endDate.getMonth();   // e.g. 5 = June
-
-        let months = [];
-
-        // Handle wrapping across year boundary (e.g. Aug–June spans two calendar years)
-        if (startMonth <= endMonth) {
-            // Same calendar year range (e.g. Jan–Jun)
-            for (let m = startMonth; m <= endMonth; m++)
-                months.push(m);
-        } else {
-            // Wraps across year boundary (e.g. Aug–Jun)
-            for (let m = startMonth; m <= 11; m++) months.push(m);
-            for (let m = 0; m <= endMonth; m++)  months.push(m);
-        }
-
-        sel.innerHTML = '<option value="">All Months</option>' +
-            months.map(m => `<option value="${m}">${MONTH_NAMES[m]}</option>`).join('');
-
-        // Restore previous selection if still valid
-        if ([...sel.options].some(o => o.value === currentVal))
-            sel.value = currentVal;
-
-    } catch {
-        sel.innerHTML = '<option value="">All Months</option>' +
-            MONTH_NAMES.map((m, i) => `<option value="${i}">${m}</option>`).join('');
-    }
+// Drill into a month's daily view (used by the bar-chart click handler).
+function selectChartMonth(monthIndex) {
+  const sel = document.getElementById('chart-month');
+  if (!sel) return;
+  const val = String(monthIndex);
+  // The month dropdown only lists months within the selected school year; if the clicked
+  // month isn't there yet, add it so the value sticks and the chart can switch to days.
+  if (![...sel.options].some(o => o.value === val)) {
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = MONTH_NAMES[monthIndex];
+    sel.appendChild(opt);
+  }
+  sel.value = val;
+  updateCharts();
 }
 
 function updateCharts() { renderCharts(); }
@@ -2582,6 +2934,25 @@ async function renderIncome() {
 let pageSelStudent = null;
 let pageReqFee = 200;
 let pagePreviouslyPaid = 0;
+// When the selected student still owes an earlier school year, the server will reject
+// the payment. We mirror that here so the treasurer is blocked before Save, not after.
+let pagePriorBlock = null;
+
+// Show/hide the prior-year settlement block and enable/disable the Save button to match.
+function pageSetPriorBlock(label) {
+  pagePriorBlock = label || null;
+  const note = document.getElementById('page-of-prior-block');
+  const txt  = document.getElementById('page-of-prior-block-text');
+  const save = document.getElementById('page-of-save');
+  if (pagePriorBlock) {
+    if (txt) txt.textContent = `Settle the ${pagePriorBlock} balance first before paying this term.`;
+    if (note) note.style.display = 'flex';
+    if (save) { save.disabled = true; save.style.opacity = '.5'; save.style.cursor = 'not-allowed'; }
+  } else {
+    if (note) note.style.display = 'none';
+    if (save) { save.disabled = false; save.style.opacity = ''; save.style.cursor = ''; }
+  }
+}
 
 function switchIncomeTab(tab) {
   document.getElementById('income-panel-orgfee').style.display = tab === 'orgfee' ? 'block' : 'none';
@@ -2598,6 +2969,8 @@ function switchIncomeTab(tab) {
 }
 
 async function initIncomePage() {
+  // Fresh page visit: term selector starts unlocked (Pay-button flow re-locks it).
+  setPageSemLock(false);
   // Load semesters
   try {
     const res  = await fetch('/Home/GetAvailableSemesters');
@@ -2646,6 +3019,7 @@ async function pageUpdateSemesterStatusLabel(studentId = null) {
 
   if (!studentId) {
     pagePreviouslyPaid = 0;
+    pageSetPriorBlock(null);
     const status = opt.dataset.status;
     const color  = status === 'Current' ? '#5fdd8e' : '#fbbf24';
     statusEl.innerHTML = `<span style="color:${color};font-weight:600">● ${status}</span>
@@ -2661,7 +3035,10 @@ async function pageUpdateSemesterStatusLabel(studentId = null) {
       '&fullAmountId=' + encodeURIComponent(fullAmountId)
     );
     const data = await res.json();
-    if (!data.success) { statusEl.textContent = ''; return null; }
+    if (!data.success) { statusEl.textContent = ''; pageSetPriorBlock(null); return null; }
+
+    // Earlier school year still owed → block here so the treasurer isn't rejected at Save.
+    pageSetPriorBlock(data.priorBlock);
 
     const paid = Number(data.totalPaid) || 0;
     const unpaid = Number(data.balance) || 0;
@@ -2692,6 +3069,7 @@ async function pageUpdateSemesterStatusLabel(studentId = null) {
     return unpaid;
   } catch {
     statusEl.textContent = '';
+    pageSetPriorBlock(null);
     return null;
   }
 }
@@ -2710,6 +3088,8 @@ async function pageOnSemesterChange() {
 }
 
 async function pageSearchStudents(q) {
+  // Treasurer is manually searching → release any term lock from a Pay button.
+  setPageSemLock(false);
   const list  = document.getElementById('page-of-list');
   const query = (q || '').trim();
   if (!query) { list.style.display = 'none'; return; }
@@ -2807,6 +3187,10 @@ function pageCheckPaymentStatus() {
 
 async function pageSubmitOrgFee() {
   if (!pageSelStudent) { showToast('Please select a student first.', 'fail'); return; }
+  if (pagePriorBlock) {
+    showToast(`Settle the ${pagePriorBlock} balance first before paying this term.`, 'fail');
+    return;
+  }
   const sel     = document.getElementById('page-of-sem');
   const opt     = sel.options[sel.selectedIndex];
   const sem     = sel.value;
@@ -2828,6 +3212,8 @@ async function pageSubmitOrgFee() {
       // Reset form
       pageSelStudent = null;
       pagePreviouslyPaid = 0;
+      pageSetPriorBlock(null);
+      setPageSemLock(false);
       ['page-of-search','page-of-amount','page-of-receipt'].forEach(f => document.getElementById(f).value = '');
       document.getElementById('page-of-selected').style.display = 'none';
       document.getElementById('page-of-status').textContent = 'Enter amount to determine status';
@@ -2936,7 +3322,7 @@ function renderReceiptCell(paymentId, receiptNumber, hasReceipt) {
 
 async function loadStudentsPage(schoolYear = null) {
     const tbody = document.getElementById('students-page-tbody');
-    if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Loading students…</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Loading students…</td></tr>';
 
     const sySel = document.getElementById('students-filter-sy');
 
@@ -2953,7 +3339,7 @@ async function loadStudentsPage(schoolYear = null) {
         const res = await fetch(url);
         const data = await res.json();
         if (!data.success) {
-            if (tbody) tbody.innerHTML = `<tr class="empty-row"><td colspan="8">${escapeHtml(data.message || 'Failed to load students.')}</td></tr>`;
+            if (tbody) tbody.innerHTML = `<tr class="empty-row"><td colspan="7">${escapeHtml(data.message || 'Failed to load students.')}</td></tr>`;
             return;
         }
         ALL_STUDENTS_PAGE = data.students || [];
@@ -2988,20 +3374,9 @@ function renderStudentsPage(filtered) {
   if (!tbody) return;
 
   if (!data.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No students found.</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No students found.</td></tr>';
     return;
   }
-
-  // Renders the receipt buttons for one semester. A semester can hold more than
-  // one receipt (e.g. two partial payments); each opens the receipt modal.
-  const receiptBtns = (receipts) => {
-    if (!receipts || !receipts.length) return '<span style="color:var(--text-d)">—</span>';
-    return receipts.map(rc => {
-      const safe = String(rc.receiptNumber || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-      return `<button type="button" class="btn-outline" style="padding:2px 6px;font-size:10px;font-family:'DM Mono',monospace"
-                onclick="printPaymentReceipt(${rc.paymentId}, '${safe}')">${escapeHtml(rc.receiptNumber || '')}</button>`;
-    }).join(' ');
-  };
 
   tbody.innerHTML = data.map((s, i) => {
     const courseYr = `${escapeHtml(s.courseCode)} ${escapeHtml(fmtYearSection(s.yearSection))}`;
@@ -3012,51 +3387,36 @@ function renderStudentsPage(filtered) {
       ? ' <span style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:6px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle">Inactive</span>'
       : '';
 
-    // Build a sem cell: Balance · Amount Paid · Status · Receipts, stacked.
-    // Graduated/N/A students collapse to a single "N/A" row instead of zeroed lines.
-    const semCell = (required, paid, status, receipts, uid, semNum) => {
-      if ((status || '').toLowerCase() === 'n/a' || (required <= 0 && paid <= 0)) {
-        return `<div style="color:var(--text-d);font-size:11px">N/A</div>`;
-      }
+    // Is the 1st semester settled? (fully paid, or nothing was ever owed.) The
+    // 2nd-semester Pay button stays locked until this is true, so payments are
+    // always applied to the earlier term first.
+    const firstSettled = Math.max(0, (s.firstSemRequired || 0) - (s.firstSemPaid || 0)) <= 0;
+
+    // Sem cell: balance + Pay button, or Paid badge. semNum is 1 or 2; the 2nd
+    // semester only shows a Pay button once the 1st semester is settled.
+    const semCell = (required, paid, status, semNum) => {
+      const sl = (status || '').toLowerCase();
+      if (sl === 'n/a' || (!required && !paid)) return '<span style="color:var(--text-d);font-size:11px">—</span>';
+      if (sl === 'paid') return '<span style="font-family:\'DM Mono\',monospace;font-size:12px;color:#5fdd8e">₱0.00 <span style="color:var(--text-d)">(paid)</span></span>';
       const bal = Math.max(0, (required || 0) - (paid || 0));
-      const balColor = bal > 0 ? '#f87171' : '#5fdd8e';
-      const payBtn = bal > 0
-        ? `<button type="button" onclick="quickPayStudent(${uid},${semNum})"
-             style="background:var(--green);color:#fff;border:none;border-radius:5px;padding:1px 7px;font-size:10px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;line-height:1.6;margin-left:4px">Pay</button>`
-        : '';
-
-      // Edit button — disabled if no payment yet or last payment was > 1 month ago.
-      const lastPayKey  = semNum === 1 ? 'firstSemLastPayDate'      : 'secondSemLastPayDate';
-      const payIdKey    = semNum === 1 ? 'firstSemLatestPaymentId'   : 'secondSemLatestPaymentId';
-      const fullAmtKey  = semNum === 1 ? 'firstSemFullAmount'        : 'secondSemFullAmount';
-      const lastPayDate = s[lastPayKey] ? new Date(s[lastPayKey]) : null;
-      const oneMonthAgo = new Date(); oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-      const canEdit     = lastPayDate && paid > 0 && lastPayDate >= oneMonthAgo;
-      const paymentId   = s[payIdKey];
-      const fullAmt     = s[fullAmtKey] || required || 0;
-      const editBtn = paid > 0
-        ? canEdit
-          ? `<button type="button"
-               onclick="openSemPaymentEdit(${paymentId},${paid},${fullAmt},'${escapeHtml(s.name)} — ${semNum === 1 ? '1st' : '2nd'} Sem')"
-               title="Edit payment"
-               style="background:transparent;border:1px solid rgba(255,255,255,.15);color:var(--text-m);border-radius:5px;padding:2px 5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;margin-left:4px">
-               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-             </button>`
-          : `<button type="button" disabled title="Edit locked — payment is older than 1 month"
-               style="background:transparent;border:1px solid rgba(255,255,255,.06);color:var(--text-d);border-radius:5px;padding:2px 5px;cursor:not-allowed;display:inline-flex;align-items:center;justify-content:center;margin-left:4px;opacity:.4">
-               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-             </button>`
-        : '';
-
-      return `
-        <div style="display:flex;flex-direction:column;gap:2px;font-family:'DM Mono',monospace;font-size:11px;line-height:1.35">
-          <div style="color:${balColor};display:flex;align-items:center;gap:0"><span style="color:var(--text-d);font-family:inherit">Bal:</span>&nbsp;${p(bal)}${payBtn}</div>
-          <div style="color:var(--text);display:flex;align-items:center;gap:0"><span style="color:var(--text-d)">Paid:</span>&nbsp;${p(paid || 0)}${editBtn}</div>
-          <div>${feeStatusBadge(status)}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:2px;font-family:'DM Sans',sans-serif">
-            <span style="color:var(--text-d);font-size:10px">Receipts:</span> ${receiptBtns(receipts)}
-          </div>
+      const balSpan = `<span style="font-family:'DM Mono',monospace;font-size:12px;color:#f87171">₱${bal.toFixed(2)}</span>`;
+      if (semNum === 2 && !firstSettled) {
+        return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${balSpan}
+          <span class="tip-wrap">
+            <span style="font-size:10px;color:var(--text-d);display:inline-flex;align-items:center;gap:3px;cursor:default">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Locked
+            </span>
+            <span class="tip">Settle 1st semester first</span>
+          </span>
         </div>`;
+      }
+      return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        ${balSpan}
+        <button type="button" class="btn-primary" style="padding:2px 10px;font-size:10.5px;border-radius:5px"
+                onclick="quickPayStudent(${s.userId}, ${semNum}, ${parseInt(s.schoolYear) || 'null'})">Pay</button>
+      </div>`;
     };
 
     return `<tr>
@@ -3064,36 +3424,24 @@ function renderStudentsPage(filtered) {
       <td class="td-mono td-m">${escapeHtml(s.schoolId)}</td>
       <td><strong>${escapeHtml(s.name)}</strong>${roleTag}${inactiveTag}</td>
       <td class="td-m">${courseYr}</td>
-      <td>${semCell(s.firstSemRequired,  s.firstSemPaid,  s.firstSemStatus,  s.firstSemReceipts,  s.userId, 1)}</td>
-      <td>${semCell(s.secondSemRequired, s.secondSemPaid, s.secondSemStatus, s.secondSemReceipts, s.userId, 2)}</td>
-      <td>
-        <button class="btn-outline" title="View Org Fees" aria-label="View Org Fees"
-                style="padding:6px 8px;display:inline-flex;align-items:center;justify-content:center"
-                onclick="openStudentOrgFeeModal(${s.userId})">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-        </button>
-      </td>
-      <td>
-        <div style="display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap">
-          <button class="${s.schoolYearId ? 'btn-outline' : 'btn-primary'}" title="Payment start" aria-label="Payment start"
-                  style="padding:6px 10px;display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;font-size:11px"
-                  onclick="openPaymentStartModal(${s.userId})">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
-            Payment Start
-          </button>
-          <button class="btn-outline" title="Fee Exemptions" aria-label="Fee Exemptions"
-                  style="padding:6px 10px;display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;font-size:11px"
-                  onclick="openExemptionModal(${s.userId})">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-            </svg>
-            Exemptions
-          </button>
+      <td>${semCell(s.firstSemRequired,  s.firstSemPaid,  s.firstSemStatus,  1)}</td>
+      <td>${semCell(s.secondSemRequired, s.secondSemPaid, s.secondSemStatus, 2)}</td>
+      <td style="text-align:center;vertical-align:middle">
+        <div style="display:inline-flex;gap:6px;justify-content:center;align-items:center">
+          <div class="tip-wrap">
+            <button class="btn-outline" style="padding:5px 7px;display:inline-flex;align-items:center;justify-content:center"
+                    onclick="openStudentOrgFeeModal(${s.userId})">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <span class="tip">Ledger</span>
+          </div>
+          <div class="tip-wrap">
+            <button class="${s.schoolYearId ? 'btn-outline' : 'btn-primary'}" style="padding:5px 7px;display:inline-flex;align-items:center;justify-content:center"
+                    onclick="openPaymentStartModal(${s.userId})">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </button>
+            <span class="tip">Set the term from which the student begins to be charged fees</span>
+          </div>
         </div>
       </td>
     </tr>`;
@@ -3145,7 +3493,7 @@ function printStudentRecord(userId) {
     <h1>Student Org-Fee Record</h1>
     <div class="sub">SSG Finance Management System</div>
     <div class="meta"><b>Name:</b> ${escapeHtml(s.name)}</div>
-    <div class="meta"><b>School ID:</b> ${escapeHtml(s.schoolId || '—')}</div>
+    <div class="meta"><b>CTU ID:</b> ${escapeHtml(s.schoolId || '—')}</div>
     <div class="meta"><b>Course · Year & Section:</b> ${escapeHtml(s.courseCode || '')} ${escapeHtml(fmtYearSection(s.yearSection) || '')}</div>
     <table>
       <thead><tr><th>Semester</th><th style="text-align:right">Required</th><th style="text-align:right">Paid</th><th style="text-align:right">Balance</th><th>Status</th></tr></thead>
@@ -3330,6 +3678,7 @@ async function addExemption() {
       showToast(data.message || 'Exemption added.', 'ok');
       await refreshExemptionList(parseInt(userId));
       await loadStudentsPage(document.getElementById('students-filter-sy')?.value || null);
+      await refreshDashboardStats(); // keep the Collectable Org Fee card in sync
     } else {
       showToast(data.message || 'Failed to add exemption.', 'fail');
     }
@@ -3349,6 +3698,7 @@ async function removeExemption(exemptionId) {
       showToast(data.message || 'Exemption removed.', 'ok');
       await refreshExemptionList(parseInt(userId));
       await loadStudentsPage(document.getElementById('students-filter-sy')?.value || null);
+      await refreshDashboardStats(); // keep the Collectable Org Fee card in sync
     } else {
       showToast(data.message || 'Failed to remove exemption.', 'fail');
     }
@@ -3416,6 +3766,7 @@ function renderPaymentBreakdown() {
   }
 }
 
+// Navigate to Record Payment with the student pre-selected.
 // Shortcut: jump straight to the Record Payment page with the Org Fee tab active.
 function goToOrgFeePayment() {
   const incomeNav = document.querySelector('.nav-item[onclick*="income"]');
@@ -3424,7 +3775,7 @@ function goToOrgFeePayment() {
 }
 
 // Pay button in the student list: navigate to Record Payment and pre-fill the student + semester.
-async function quickPayStudent(userId, semNum) {
+async function quickPayStudent(userId, semNum, yearStart = null) {
   const s = findStudentRow(userId);
   if (!s) { showToast('Student not found.', 'fail'); return; }
 
@@ -3434,21 +3785,42 @@ async function quickPayStudent(userId, semNum) {
   if (typeof switchIncomeTab === 'function') switchIncomeTab('orgfee');
   await new Promise(r => setTimeout(r, 80));
 
-  // Pre-select the matching semester (prefer Current, fall back to first match).
+  // Pre-select the EXACT term the Pay button represents: the school year currently
+  // shown in the students table + the clicked semester. Only if that term has no
+  // option do we fall back to a Current term, then any matching semester.
   const sel = document.getElementById('page-of-sem');
   if (sel && sel.options.length) {
     const targetSem = semNum === 1 ? 'First' : 'Second';
-    let idx = -1;
+    let exactIdx = -1, currentIdx = -1, firstIdx = -1;
     for (let i = 0; i < sel.options.length; i++) {
-      if (sel.options[i].value === targetSem) {
-        if (sel.options[i].dataset.status === 'Current') { idx = i; break; }
-        if (idx === -1) idx = i;
-      }
+      const o = sel.options[i];
+      if (o.value !== targetSem) continue;
+      if (firstIdx === -1) firstIdx = i;
+      if (o.dataset.status === 'Current' && currentIdx === -1) currentIdx = i;
+      if (yearStart != null && String(o.dataset.yearStart) === String(yearStart)) { exactIdx = i; break; }
     }
+    const idx = exactIdx !== -1 ? exactIdx : (currentIdx !== -1 ? currentIdx : firstIdx);
     if (idx !== -1) { sel.selectedIndex = idx; await pageOnSemesterChange(); }
   }
 
   await pageSelectStudent(s.userId, s.name, s.courseCode, s.yearSection, s.schoolId);
+
+  // Lock the term to the semester the treasurer paid from. Done last so nothing
+  // in the select/student setup above clears it.
+  setPageSemLock(true);
+}
+
+// Lock/unlock the Record Payment term selector. When locked (arrived via a Pay
+// button) the treasurer can't switch terms; manual navigation/search unlocks it.
+function setPageSemLock(locked) {
+  const sel = document.getElementById('page-of-sem');
+  if (sel) {
+    sel.disabled = locked;
+    sel.style.opacity = locked ? '.75' : '';
+    sel.style.cursor  = locked ? 'not-allowed' : '';
+  }
+  const note = document.getElementById('page-of-sem-lock-note');
+  if (note) note.style.display = locked ? 'block' : 'none';
 }
 
 // Edit button in the student list: open the existing edit-orgfee modal pre-filled
@@ -3591,9 +3963,9 @@ async function openStudentOrgFeeModal(userId) {
   // Stash the userId so refreshes after edit can reload the same student.
   window._currentOrgFeeUserId = userId;
 
-  nameEl.textContent = 'Student Org Fees';
+  nameEl.textContent = 'Ledger';
   subEl.textContent = 'Loading…';
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">Loading…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-d)">Loading…</td></tr>';
   openModal('modal-student-orgfee');
 
   try {
@@ -3601,7 +3973,7 @@ async function openStudentOrgFeeModal(userId) {
     const data = await res.json();
     if (!data.success) {
       subEl.textContent = data.message || 'Unable to load org fee details.';
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">No data available.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-d)">No data available.</td></tr>';
       return;
     }
 
@@ -3613,7 +3985,7 @@ async function openStudentOrgFeeModal(userId) {
     const txs  = data.transactions || [];
 
     if (!fees.length && !txs.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-d)">No org fee records.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-d)">No org fee records.</td></tr>';
       return;
     }
 
@@ -3658,77 +4030,82 @@ async function openStudentOrgFeeModal(userId) {
       return (semOrder[b.semester] || 0) - (semOrder[a.semester] || 0);
     });
 
-    // Build rows. Each group emits one parent semester row plus a nested payment row per payment.
-    const html = sorted.map(g => {
+    // Flat table: one row per semester group
+    const ledgerUserId = window._currentOrgFeeUserId;
+    const html = sorted.map((g, idx) => {
       const semLabel = g.semester === 'First' ? '1st Semester'
                      : g.semester === 'Second' ? '2nd Semester' : (g.semester || '—');
-      const totalPaid = g.payments.reduce((s, p) => s + (p.amount || 0), 0);
-      const required = g.fee?.requiredAmount ?? null;
-      const balance  = g.fee ? g.fee.balance : (required != null ? Math.max(0, required - totalPaid) : 0);
-      // Derive the status straight from the figures we actually display (balance +
-      // amount paid) so the badge can never contradict them. A balance of 0 with at
-      // least one payment must read "Paid", never "Partial".
+      const totalPaid = g.payments.reduce((sum, pay) => sum + (pay.amount || 0), 0);
+      const required  = g.fee?.requiredAmount ?? null;
+      const balance   = g.fee ? g.fee.balance : (required != null ? Math.max(0, required - totalPaid) : 0);
+
       let status;
-      if (required != null && required <= 0) {
-        status = 'N/A';
-      } else if (totalPaid <= 0) {
-        status = 'Unpaid';
-      } else if (balance <= 0) {
-        status = 'Paid';
-      } else {
-        status = 'Partial';
-      }
-      const balColor = balance > 0 ? '#f87171' : '#5fdd8e';
+      if (required != null && required <= 0) status = 'N/A';
+      else if (totalPaid <= 0) status = 'Unpaid';
+      else if (balance <= 0)  status = 'Paid';
+      else                    status = 'Partial';
 
-      const summaryHtml = `
-        <div style="display:flex;flex-direction:column;gap:2px;font-family:'DM Mono',monospace;font-size:11px;line-height:1.35">
-          <div style="color:${balColor}"><span style="color:var(--text-d);font-family:inherit">Bal:</span> ${p(balance)}</div>
-          <div style="color:var(--text)"><span style="color:var(--text-d)">Paid:</span> ${p(totalPaid)}</div>
-          <div>${feeStatusBadge(status)}</div>
-        </div>`;
+      // Most recent payment date
+      const dates = g.payments.map(pay => pay.date).filter(Boolean).sort();
+      const latestDate = dates.length ? fd(dates[dates.length - 1]) : '—';
 
-      const parentRow = `
-        <tr style="border-top:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02)">
-          <td style="padding:10px 12px;color:var(--text);font-weight:600">${semLabel}<br><span style="font-size:10.5px;font-weight:400;color:var(--text-d);font-family:'DM Mono',monospace">${escapeHtml(g.schoolYear || '—')}</span></td>
-          <td style="padding:10px 12px">${summaryHtml}</td>
-          <td style="padding:10px 12px;color:var(--text-d);font-size:11px">${g.payments.length ? g.payments.length + ' payment' + (g.payments.length === 1 ? '' : 's') : 'No payments'}</td>
-          <td></td>
-          <td></td>
-        </tr>`;
-
-      const _modalOneMonthAgo = new Date(); _modalOneMonthAgo.setMonth(_modalOneMonthAgo.getMonth() - 1);
-      const paymentRows = g.payments
-        .slice()
+      // Receipt hover-dropdown items — show receipt no. + amount + date so partial payments are easy to trace
+      const rcItems = g.payments
+        .filter(pay => pay.hasReceipt && pay.receiptNumber)
         .sort((a, b) => new Date(a.date) - new Date(b.date))
-        .map(t => {
-          const receiptCell = renderReceiptCell(t.paymentId, t.receiptNumber, t.hasReceipt);
-          const safeReceipt = (t.receiptNumber || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-          const payTooOld = new Date(t.date) < _modalOneMonthAgo;
-          const editBtnHtml = payTooOld
-            ? `<button class="btn-outline" disabled title="Edit locked — transaction is older than 1 month"
-                 style="padding:5px 7px;display:inline-flex;align-items:center;justify-content:center;opacity:.4;cursor:not-allowed">
-                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-               </button>`
-            : `<button class="btn-outline" title="Edit amount" aria-label="Edit amount"
-                 style="padding:5px 7px;display:inline-flex;align-items:center;justify-content:center"
-                 onclick="editPaymentFromModal(${t.paymentId})">
-                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-               </button>`;
-          const actions = `
-            <div style="display:inline-flex;gap:6px;justify-content:flex-end">
-              ${editBtnHtml}
-            </div>`;
-          return `
-            <tr>
-              <td style="padding:8px 12px;padding-left:28px;color:var(--text-d);font-size:11px">↳ payment</td>
-              <td style="padding:8px 12px;text-align:left;font-family:'DM Mono',monospace;font-size:12px;color:#5fdd8e">${p(t.amount)}</td>
-              <td style="padding:8px 12px">${receiptCell}</td>
-              <td style="padding:8px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${fd(t.date)}</td>
-              <td style="padding:8px 12px;text-align:right">${actions}</td>
-            </tr>`;
+        .map(pay => {
+          const safe = (pay.receiptNumber || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          return `<button class="hdrop-item" onclick="printPaymentReceipt(${pay.paymentId},'${safe}')"
+                    style="flex-direction:column;align-items:flex-start;gap:1px;padding:7px 12px">
+            <span style="display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text)">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              ${escapeHtml(pay.receiptNumber)}
+            </span>
+            <span style="font-size:10px;color:var(--text-d);padding-left:15px">${p(pay.amount || 0)} &nbsp;·&nbsp; ${fd(pay.date)}</span>
+          </button>`;
         }).join('');
 
-      return parentRow + paymentRows;
+      const receiptIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
+
+      const receiptAction = rcItems
+        ? `<div class="hdrop">
+             <button class="btn-outline" style="padding:5px 7px;display:inline-flex;align-items:center;justify-content:center">${receiptIcon}</button>
+             <div class="hdrop-menu"><div class="hdrop-label">Receipts</div>${rcItems}</div>
+           </div>`
+        : `<button class="btn-outline" disabled style="padding:5px 7px;display:inline-flex;align-items:center;justify-content:center;opacity:.4;cursor:not-allowed">${receiptIcon}</button>`;
+
+      // Edit button — valid only within 30 days of the most recent payment
+      const sortedPays = g.payments.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+      const latestPay  = sortedPays[0];
+      const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const canEdit = latestPay && latestPay.paymentId && new Date(latestPay.date) >= thirtyDaysAgo;
+      const editSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+      const editAction = canEdit
+        ? `<div class="tip-wrap">
+             <button class="btn-outline" style="padding:5px 7px;display:inline-flex;align-items:center;justify-content:center"
+                     onclick="editPaymentFromModal(${latestPay.paymentId})">${editSvg}</button>
+             <span class="tip">Edit payment</span>
+           </div>`
+        : `<div class="tip-wrap">
+             <button class="btn-outline" disabled style="padding:5px 7px;display:inline-flex;align-items:center;justify-content:center;opacity:.35;cursor:not-allowed">${editSvg}</button>
+             <span class="tip">${latestPay ? 'Locked — older than 30 days' : 'No payment to edit'}</span>
+           </div>`;
+
+      return `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+        <td style="padding:10px 12px;color:var(--text-m);font-size:11px">${idx + 1}</td>
+        <td style="padding:10px 12px;color:var(--text);font-weight:600">${semLabel}</td>
+        <td style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${escapeHtml(g.schoolYear || '—')}</td>
+        <td style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:12px;color:${balance > 0 ? '#f87171' : '#5fdd8e'}">${p(balance)}</td>
+        <td style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text)">${p(totalPaid)}</td>
+        <td style="padding:10px 12px">${feeStatusBadge(status)}</td>
+        <td style="padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${latestDate}</td>
+        <td style="padding:10px 12px;text-align:right">
+          <div style="display:inline-flex;gap:6px;align-items:center">
+            ${receiptAction}
+            ${editAction}
+          </div>
+        </td>
+      </tr>`;
     }).join('');
 
     tbody.innerHTML = html;
@@ -3981,38 +4358,90 @@ async function saveFund() {
   }
 }
 
+// Receipt images selected for the expense currently being recorded.
+let expenseImageFiles = [];
+
+function addExpenseImages(input) {
+  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+  [...input.files].forEach(f => {
+    if (!allowed.includes(f.type)) { showToast(`"${f.name}" is not a JPG/PNG/WEBP image.`, 'fail'); return; }
+    if (f.size > 5 * 1024 * 1024) { showToast(`"${f.name}" is larger than 5MB.`, 'fail'); return; }
+    expenseImageFiles.push(f);
+  });
+  input.value = ''; // allow re-selecting the same file / adding more
+  renderExpenseImagePreviews();
+}
+
+function removeExpenseImage(i) {
+  expenseImageFiles.splice(i, 1);
+  renderExpenseImagePreviews();
+}
+
+function renderExpenseImagePreviews() {
+  const box = document.getElementById('ex-image-previews');
+  if (!box) return;
+  box.innerHTML = expenseImageFiles.map((f, i) => {
+    const url = URL.createObjectURL(f);
+    return `<div style="position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.12)">
+      <img src="${url}" style="width:100%;height:100%;object-fit:cover;display:block"/>
+      <button type="button" onclick="removeExpenseImage(${i})" title="Remove"
+        style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#ef4444;border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;padding:0">×</button>
+    </div>`;
+  }).join('');
+}
+
+// Lowest the running balance reaches on or after `dayStr` (YYYY-MM-DD), mirroring the
+// server's date-aware spending limit. An expense dated that day may not exceed this.
+function minBalanceOnOrAfter(dayStr) {
+  const day = (dayStr || '').split('T')[0];
+  const events = allTransactions().map(t => ({
+    date: ((t.fullDate || t.date) || '').split('T')[0],
+    amt:  t.type === 'income' ? t.amt : -t.amt
+  }));
+  const points = [...new Set(events.filter(e => e.date > day).map(e => e.date))];
+  points.push(day);
+  let min = Infinity;
+  for (const tpt of points) {
+    const bal = events.filter(e => e.date <= tpt).reduce((s, e) => s + e.amt, 0);
+    if (bal < min) min = bal;
+  }
+  return min === Infinity ? 0 : min;
+}
+
 async function saveExpense() {
   let desc = document.getElementById('ex-desc').value.trim();
   let amt  = parseFloat(document.getElementById('ex-amount').value) || 0;
   let date = document.getElementById('ex-date').value || today();
   if (!desc || !amt) { showToast('Description and amount are required.', 'fail'); return; }
 
-  // Spending limit: an expense cannot exceed the remaining balance (cash on hand).
-  const allTx = allTransactions();
-  const totalIncome   = allTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amt, 0);
-  const totalExpenses = allTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amt, 0);
-  const remainingBalance = totalIncome - totalExpenses;
-  if (amt > remainingBalance) {
-    showToast('Remaining balance is not enough for this new expense. Available: ' + p(remainingBalance) + '.', 'fail');
+  // Date-aware spending limit: recording this expense on its date must not drive the
+  // running balance negative on that date or any later point (mirrors the server check).
+  const availableOnDate = minBalanceOnOrAfter(date);
+  if (amt > availableOnDate) {
+    showToast('Recording ' + p(amt) + ' on this date would make the balance negative. Available on/after that date: ' + p(availableOnDate) + '.', 'fail');
     return;
   }
 
   try {
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    const fd = new FormData();
+    fd.append('description', desc);
+    fd.append('amount', amt);
+    fd.append('expenseDate', toTimestamp(date));
+    expenseImageFiles.forEach(f => fd.append('images', f));
+
     const res = await fetch('/Home/AddExpense', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
-      body: JSON.stringify({
-        description: desc,
-        amount: amt,
-        expenseDate: toTimestamp(date)
-      })
+      headers: { 'RequestVerificationToken': token }, // no Content-Type: browser sets multipart boundary
+      body: fd
     });
     const data = await res.json();
     if (data.success) {
       closeModal('modal-expense');
       document.getElementById('ex-desc').value = '';
       document.getElementById('ex-amount').value = '';
+      expenseImageFiles = [];
+      renderExpenseImagePreviews();
       await renderDashboard();
       await renderCharts();
       await renderExpenses();
@@ -4106,6 +4535,46 @@ function showToast(msg, type) {
   let t = document.getElementById('toast');
   t.textContent = msg; t.className = 'show ' + type;
   clearTimeout(t._t); t._t = setTimeout(() => t.className = '', 3000);
+}
+
+function triggerAvatarUpload() {
+  const proceed = confirm(
+    'Photo Guidelines\n\n' +
+    'Please upload a formal photo that meets the following requirements:\n' +
+    '• Format: 1×1 (square)\n' +
+    '• Attire: your official school uniform or a plain white shirt\n' +
+    '• Background: a plain white background\n\n' +
+    'Click OK to choose your photo.'
+  );
+  if (!proceed) return;
+  document.getElementById('avatarFileInput').click();
+}
+async function handleAvatarChange(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const allowed = ['image/jpeg','image/png','image/webp'];
+  if (!allowed.includes(file.type)) { showToast('Only JPG, PNG, or WEBP allowed.','fail'); input.value=''; return; }
+  if (file.size > 2*1024*1024) { showToast('Image must be 2 MB or smaller.','fail'); input.value=''; return; }
+  const fd = new FormData();
+  fd.append('accountId', '@accountId');
+  fd.append('avatar', file);
+  showToast('Uploading photo…','ok');
+  try {
+    const res  = await fetch('/Home/UploadAvatar', { method:'POST', body:fd });
+    const data = await res.json();
+    if (!data.success) { showToast(data.message||'Upload failed.','fail'); return; }
+    const newSrc = data.avatarPath;
+    const circle = document.getElementById('profileAvatarCircle');
+    const initEl = document.getElementById('profileAvatarInitials');
+    let imgEl = document.getElementById('profileAvatarImg');
+    if (initEl) initEl.remove();
+    if (!imgEl) { imgEl = document.createElement('img'); imgEl.id='profileAvatarImg'; Object.assign(imgEl.style,{width:'100%',height:'100%',objectFit:'cover',display:'block'}); circle.appendChild(imgEl); }
+    imgEl.src = newSrc;
+    const sideAv = document.querySelector('.user-av');
+    if (sideAv) sideAv.innerHTML = `<img src="${newSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`;
+    showToast('Photo updated.','ok');
+  } catch { showToast('Upload failed. Try again.','fail'); }
+  input.value = '';
 }
 
 // ── SETTINGS ─────────────────────────────────────────────────────
@@ -4613,15 +5082,6 @@ async function refreshFees() {
 
     const tbody = document.getElementById('fee-history-tbody');
 
-    // update summary cards
-    const first  = data.fees.find(f => f.semester === 'First'  && f.isLatest);
-    const second = data.fees.find(f => f.semester === 'Second' && f.isLatest);
-
-    document.getElementById('fee-1st-val').textContent = first  ? '₱' + parseFloat(first.amount).toFixed(2)  : '₱—';
-    document.getElementById('fee-1st-sub').textContent = first  ? first.schoolYear  : 'No fee set';
-    document.getElementById('fee-2nd-val').textContent = second ? '₱' + parseFloat(second.amount).toFixed(2) : '₱—';
-    document.getElementById('fee-2nd-sub').textContent = second ? second.schoolYear : 'No fee set';
-
     if (data.fees.length === 0) {
       tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No fee records found.</td></tr>';
       await populateFeeSySemDropdown();
@@ -4783,6 +5243,74 @@ async function viewReceipt(type, id, receipt) {
 function closeTreasurerReceipt() {
   document.getElementById('treasurerReceiptModal').classList.remove('open');
 }
+
+// ── HOVER DROPDOWN (fixed-position, escapes scroll containers) ──────────────
+// Uses JS positioning so the menu never gets clipped by overflow:auto parents.
+(function() {
+  let _activeHdrop = null;
+
+  function openHdrop(hdrop) {
+    if (_activeHdrop && _activeHdrop !== hdrop) closeAllHdrops();
+    const menu = hdrop.querySelector('.hdrop-menu');
+    if (!menu) return;
+    const btn  = hdrop.querySelector('button:not([disabled])');
+    if (!btn) return;
+    const r = btn.getBoundingClientRect();
+    menu.style.top   = (r.bottom + 5) + 'px';
+    menu.style.right = (window.innerWidth - r.right) + 'px';
+    menu.style.left  = 'auto';
+    menu.classList.add('open');
+    _activeHdrop = hdrop;
+  }
+
+  function closeAllHdrops() {
+    document.querySelectorAll('.hdrop-menu.open').forEach(m => m.classList.remove('open'));
+    _activeHdrop = null;
+  }
+
+  document.addEventListener('mouseover', function(e) {
+    const hdrop = e.target.closest('.hdrop');
+    if (hdrop) openHdrop(hdrop);
+
+    // Tooltip positioning
+    const tipWrap = e.target.closest('.tip-wrap');
+    if (tipWrap) {
+      const tip = tipWrap.querySelector('.tip');
+      if (tip) {
+        const r = tipWrap.getBoundingClientRect();
+        tip.style.top  = (r.bottom + 5) + 'px';
+        tip.style.left = (r.left + r.width / 2) + 'px';
+        tip.classList.add('show');
+      }
+    }
+  });
+
+  document.addEventListener('mouseout', function(e) {
+    // Tooltip only. The dropdown is intentionally NOT closed on mouseout: the
+    // menu sits a few px below its trigger, and closing here would slam it shut
+    // the moment the cursor crossed that gap to click an item. Closing is now
+    // handled by outside-click / Escape / item-selection below.
+    const tipWrap = e.target.closest('.tip-wrap');
+    if (tipWrap && !tipWrap.contains(e.relatedTarget)) {
+      const tip = tipWrap.querySelector('.tip');
+      if (tip) tip.classList.remove('show');
+    }
+  });
+
+  // Click handling: tapping the trigger opens the menu (so it also works on
+  // touch, which has no hover); clicking a receipt item runs its action and
+  // closes; clicking anywhere else closes.
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.hdrop-item')) { closeAllHdrops(); return; }
+    const hdrop = e.target.closest('.hdrop');
+    if (hdrop) { openHdrop(hdrop); return; }
+    closeAllHdrops();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeAllHdrops();
+  });
+})();
 
 function handleTreasurerReceiptBackdropClick(e) {
   if (e.target === document.getElementById('treasurerReceiptModal') || e.target.classList.contains('receipt-modal-backdrop')) {
@@ -5308,6 +5836,13 @@ function nrSetType(type) {
   });
   document.getElementById('nr-date-wrap').style.display = type === 'Event'    ? 'flex' : 'none';
   document.getElementById('nr-sem-wrap').style.display  = type === 'Semester' ? ''     : 'none';
+  const desc = {
+    Event:    'For a specific activity or event — pick the exact date range it covers.',
+    Semester: 'Covers one full semester of the selected school year.',
+    Annual:   'Covers the entire selected school year.'
+  };
+  const d = document.getElementById('nr-type-desc');
+  if (d) d.textContent = desc[type] || '';
   nrFilterItems();
 }
 
@@ -5333,10 +5868,11 @@ function nrGetAutoRange() {
   if (!sy) return { from: null, to: null, active: false };
 
   if (nrCurrentType === 'Annual') {
-    // full school year: Aug of yearStart to Jul of yearEnd (fallback if no sem dates set)
-    const f = sy.firstSemStart  || `${sy.yearStart}-08-01`;
-    const t = sy.secondSemEnd   || sy.firstSemEnd || `${sy.yearEnd}-07-31`;
-    return { from: f.split('T')[0], to: t.split('T')[0], active: true };
+    // Whole school year: match by the school-year tag the backend already
+    // assigned to each transaction (by calendar-year boundary), NOT by the
+    // semester date window. This way expenses/funds dated in the semester
+    // break or after the 2nd semester ends (e.g. graduation) are still included.
+    return { schoolYearLabel: `${sy.yearStart}–${sy.yearEnd}`, active: true };
   }
 
   if (nrCurrentType === 'Semester') {
@@ -5360,34 +5896,49 @@ function nrGetAutoRange() {
 }
 
 function nrFilterItems() {
-  const { from, to, active } = nrGetAutoRange();
+  const { from, to, active, schoolYearLabel } = nrGetAutoRange();
   const expenses = [...(DB.expenses || [])].sort((a,b) => new Date(b.fullDate||b.date) - new Date(a.fullDate||a.date));
   const funds    = [...(DB.funds    || [])].sort((a,b) => new Date(b.fullDate||b.date) - new Date(a.fullDate||a.date));
   const fmt = n => '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const renderItem = (items, name, color) => items.map(item => {
-    const inRange = active ? nrInRange(item.date, from, to) : false;
-    const dimmed  = active && !inRange;
-    const label   = name === 'nr-expense' ? (item.desc||'—') : (item.desc||item.source||'—');
-    const extra   = name === 'nr-fund' && item.source ? ` · ${escapeHtml(item.source)}` : '';
-    return `
-    <label class="nr-item" style="${dimmed ? 'opacity:.35;pointer-events:none' : ''}">
-      <input type="checkbox" name="${name}" value="${item.id}" ${inRange ? 'checked' : ''}/>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12.5px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(label)}</div>
-        <div style="font-size:11px;color:var(--text-m);margin-top:1px">${fd(item.date)}${extra}</div>
-      </div>
-      <div style="font-family:'DM Mono',monospace;font-size:12px;color:${color};flex-shrink:0">${fmt(item.amt)}</div>
-    </label>`;
-  }).join('');
+  const renderList = (items, name, color, emptyMsg) => {
+    if (items.length === 0)
+      return `<div style="color:var(--text-d);font-size:12px;padding:6px 4px">${emptyMsg}</div>`;
 
-  document.getElementById('nr-expenses-list').innerHTML = expenses.length === 0
-    ? '<div style="color:var(--text-d);font-size:12px;padding:6px 4px">No expenses.</div>'
-    : renderItem(expenses, 'nr-expense', '#f87171');
+    let inRangeCount = 0;
+    const rows = items.map(item => {
+      // Annual reports match by school-year tag; Event/Semester match by date window.
+      const inRange = active
+        ? (schoolYearLabel ? item.schoolYear === schoolYearLabel : nrInRange(item.date, from, to))
+        : false;
+      if (inRange) inRangeCount++;
+      const dimmed  = active && !inRange;
+      const label   = name === 'nr-expense' ? (item.desc||'—') : (item.desc||item.source||'—');
+      const extra   = name === 'nr-fund' && item.source ? ` · ${escapeHtml(item.source)}` : '';
+      return `
+      <label class="nr-item" style="${dimmed ? 'opacity:.45' : ''}">
+        <input type="checkbox" name="${name}" value="${item.id}" ${inRange ? 'checked' : ''}/>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12.5px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(label)}</div>
+          <div style="font-size:11px;color:var(--text-m);margin-top:1px">${fd(item.date)}${extra}</div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:12px;color:${color};flex-shrink:0">${fmt(item.amt)}</div>
+      </label>`;
+    }).join('');
 
-  document.getElementById('nr-funds-list').innerHTML = funds.length === 0
-    ? '<div style="color:var(--text-d);font-size:12px;padding:6px 4px">No other funds.</div>'
-    : renderItem(funds, 'nr-fund', '#5fdd8e');
+    // When a period is active but nothing fell inside it, tell the user instead
+    // of leaving them with a list of greyed-out rows.
+    const notice = (active && inRangeCount === 0)
+      ? '<div style="color:var(--text-d);font-size:11.5px;padding:6px 4px 8px">None in the selected period — check any below to include them anyway.</div>'
+      : '';
+    return notice + rows;
+  };
+
+  document.getElementById('nr-expenses-list').innerHTML =
+    renderList(expenses, 'nr-expense', '#f87171', 'No expenses recorded yet.');
+
+  document.getElementById('nr-funds-list').innerHTML =
+    renderList(funds, 'nr-fund', '#5fdd8e', 'No other funds recorded yet.');
 }
 
 async function submitNewReport() {
@@ -5451,33 +6002,25 @@ function buildReportHTML(r) {
     ${tdr(fmt(i.amount))}
   </tr>`).join('');
 
+  // Full-width section label row (no borders) — kept INSIDE the single table so
+  // every border line is drawn by one table: no seams, no stray/double lines.
+  const labelRow = txt => `<tr><td colspan="2" style="border:none;padding:7px 0 3px;font-size:10px;color:#000">${txt}</td></tr>`;
+
   const revSection = revenue.length ? `
-    </table>
-    <div style="font-size:10px;color:#000;padding:5px 0 2px">Revenue:</div>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:0">
-      <col style="width:70%"/><col style="width:30%"/>
-      ${revRows}
-      <tr>
-        ${td('<strong>TOTAL</strong>', 'font-weight:bold')}
-        ${tdr(`<strong>${fmt(r.totalRevenue)}</strong>`, 'font-weight:bold;border-bottom:3px double #000')}
-      </tr>
-    </table>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:0">
-      <col style="width:70%"/><col style="width:30%"/>` : '';
+    ${labelRow('Revenue:')}
+    ${revRows}
+    <tr>
+      ${td('<strong>TOTAL</strong>', 'font-weight:bold')}
+      ${tdr(`<strong>${fmt(r.totalRevenue)}</strong>`, 'font-weight:bold')}
+    </tr>` : '';
 
   const expSection = expenses.length ? `
-    </table>
-    <div style="font-size:10px;color:#000;padding:5px 0 2px">Less: Expenses:</div>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:0">
-      <col style="width:70%"/><col style="width:30%"/>
-      ${expRows}
-      <tr>
-        ${td('<strong>TOTAL</strong>', 'font-weight:bold')}
-        ${tdr(`<strong>${fmt(r.totalExpenses)}</strong>`, 'font-weight:bold;border-bottom:3px double #000')}
-      </tr>
-    </table>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:0">
-      <col style="width:70%"/><col style="width:30%"/>` : '';
+    ${labelRow('Less: Expenses:')}
+    ${expRows}
+    <tr>
+      ${td('<strong>TOTAL</strong>', 'font-weight:bold')}
+      ${tdr(`<strong>${fmt(r.totalExpenses)}</strong>`, 'font-weight:bold')}
+    </tr>` : '';
 
   return `
 <div style="all:initial;display:block;font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;padding:40px 56px 48px;max-width:794px;margin:0 auto;box-sizing:border-box">
@@ -5510,7 +6053,7 @@ function buildReportHTML(r) {
   </div>
 
   <!-- FINANCIAL TABLE -->
-  <table style="width:100%;border-collapse:collapse;margin-bottom:4px">
+  <table style="width:100%;border-collapse:collapse;margin-bottom:4px;table-layout:fixed">
     <col style="width:70%"/><col style="width:30%"/>
     <tr>
       ${td('<strong>BEGINNING BALANCE</strong>', 'font-weight:bold;background:#d9d9d9')}
@@ -5528,26 +6071,22 @@ function buildReportHTML(r) {
   <table style="width:100%;border-collapse:collapse;margin-top:44px">
     <tr>
       <td style="width:50%;text-align:center;padding:0 28px 0 0;vertical-align:bottom">
-        <div style="font-size:10px;margin-bottom:32px;color:#000">Prepared by:</div>
-        <div style="border-top:1px solid #000;padding-top:3px;font-size:10px;color:#000">&nbsp;</div>
-        <div style="font-size:10px;color:#000;margin-top:2px">SSG Treasurer</div>
+        <div style="font-size:10px;margin-bottom:32px;color:#000;text-align:left">Prepared by:</div>
+        <div style="border-top:1px solid #000;padding-top:3px;font-size:10px;color:#000">SSG Treasurer</div>
       </td>
       <td style="width:50%;text-align:center;padding:0 0 0 28px;vertical-align:bottom">
-        <div style="font-size:10px;margin-bottom:32px;color:#000">Audited by:</div>
-        <div style="border-top:1px solid #000;padding-top:3px;font-size:10px;color:#000">&nbsp;</div>
-        <div style="font-size:10px;color:#000;margin-top:2px">SSG Auditor</div>
+        <div style="font-size:10px;margin-bottom:32px;color:#000;text-align:left">Audited by:</div>
+        <div style="border-top:1px solid #000;padding-top:3px;font-size:10px;color:#000">SSG Auditor</div>
       </td>
     </tr>
     <tr>
       <td style="width:50%;text-align:center;padding:28px 28px 0 0;vertical-align:bottom">
-        <div style="font-size:10px;margin-bottom:32px;color:#000">Noted by:</div>
-        <div style="border-top:1px solid #000;padding-top:3px;font-size:10px;color:#000">&nbsp;</div>
-        <div style="font-size:10px;color:#000;margin-top:2px">SSG President</div>
+        <div style="font-size:10px;margin-bottom:32px;color:#000;text-align:left">Noted by:</div>
+        <div style="border-top:1px solid #000;padding-top:3px;font-size:10px;color:#000">SSG President</div>
       </td>
       <td style="width:50%;text-align:center;padding:28px 0 0 28px;vertical-align:bottom">
-        <div style="font-size:10px;margin-bottom:32px;color:#000">Approved by:</div>
-        <div style="border-top:1px solid #000;padding-top:3px;font-size:10px;color:#000">&nbsp;</div>
-        <div style="font-size:10px;color:#000;margin-top:2px">SSG Adviser</div>
+        <div style="font-size:10px;margin-bottom:32px;color:#000;text-align:left">Approved by:</div>
+        <div style="border-top:1px solid #000;padding-top:3px;font-size:10px;color:#000">SSG Adviser</div>
       </td>
     </tr>
   </table>
@@ -5561,6 +6100,36 @@ function buildReportHTML(r) {
 }
 
 // ── SESSION ──────
+
+// ── SERVER-SENT EVENTS ──────────────────────────────────────────────
+(function() {
+    function connect() {
+        const sse = new EventSource('/Home/Events');
+
+        sse.addEventListener('accounts-changed', () => {
+            const p = document.querySelector('.page.active')?.id?.replace('page-','');
+            if (p === 'students') loadStudentsPage();
+        });
+
+        sse.addEventListener('fees-changed', () => {
+            const p = document.querySelector('.page.active')?.id?.replace('page-','');
+            if (p === 'income') loadStudents(true);
+        });
+
+        sse.addEventListener('payments-changed', () => {
+            const p = document.querySelector('.page.active')?.id?.replace('page-','');
+            if (p === 'students') loadStudentsPage();
+            if (p === 'income')   loadStudents(true);
+            if (p === 'history')  renderHistory();
+        });
+
+        sse.onerror = () => {
+            sse.close();
+            setTimeout(connect, 5000);
+        };
+    }
+    connect();
+})();
 </script>
 </body>
 </html>

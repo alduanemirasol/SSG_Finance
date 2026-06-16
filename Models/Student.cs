@@ -24,6 +24,10 @@ namespace MyMvcApp.Models
         [Column("middle_name")]
         public string? MiddleName { get; set; }
 
+        [StringLength(500)]
+        [Column("avatar_path")]
+        public string? AvatarPath { get; set; }
+
         // Navigation properties
         [ForeignKey("AccountId")]
         public Account Account { get; set; } = null!;

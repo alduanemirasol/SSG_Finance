@@ -34,5 +34,7 @@ namespace MyMvcApp.Models
         public int? SchoolYearId { get; set; }
 
         public Semester? SemesterEntered { get; set; }
+
+        public string? AvatarPath { get; set; }
     }
 }
