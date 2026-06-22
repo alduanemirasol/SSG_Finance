@@ -529,7 +529,7 @@ input[type="password"]::-ms-clear{
           </div>
           <div class="form-group" style="flex:0 0 90px;">
             <label class="form-label" for="profMiddleName">M. I.</label>
-            <input type="text" id="profMiddleName" class="form-input" placeholder="M.I." maxlength="2" oninput="autoMiddlePeriod(this)" style="text-align:center;" />
+            <input type="text" id="profMiddleName" class="form-input" placeholder="M.I." maxlength="2" oninput="autoMiddlePeriod(this, event)" />
           </div>
           <div class="form-group">
             <label class="form-label" for="profLastName">Last Name<span class="req">*</span></label>
@@ -611,7 +611,14 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 /* ── Auto-format Middle Initial: single uppercase letter followed by a period ── */
-function autoMiddlePeriod(input){
+function autoMiddlePeriod(input, event){
+    // On delete (backspace/delete), clear the field instead of re-formatting.
+    // Otherwise backspace only removes the auto-added "." which gets re-appended,
+    // leaving the letter impossible to erase.
+    if (event && typeof event.inputType === 'string' && event.inputType.indexOf('delete') === 0) {
+        input.value = '';
+        return;
+    }
     var val = input.value.replace(/\./g, '').toUpperCase(); // strip periods, uppercase
     input.value = val.length ? val.charAt(0) + '.' : '';     // keep first letter + "."
 }

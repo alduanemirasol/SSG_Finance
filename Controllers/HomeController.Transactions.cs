@@ -288,10 +288,15 @@ public partial class HomeController : AppController
 
             var role     = HttpContext.Session.GetString("UserRole") ?? "";
             var allStudents = await GetStudentsAsync();
+            // Non-admin staff (Treasurer, Professor) only see active students: enrolled
+            // and not yet graduated. Year level 5 is the graduated/completed sentinel
+            // (the year level is the part before the dash in "YearSection", e.g. "5-A"),
+            // matching the isGraduated check used below for fee applicability.
             var students = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
                 ? allStudents
                 : allStudents
-                    .Where(s => string.Equals(s.AcademicStatus, "Enrolled", StringComparison.OrdinalIgnoreCase))
+                    .Where(s => string.Equals(s.AcademicStatus, "Enrolled", StringComparison.OrdinalIgnoreCase)
+                             && !string.Equals((s.YearSection ?? "").Split('-')[0].Trim(), "5", StringComparison.Ordinal))
                     .ToList();
 
             SchoolYear? currentSchoolYear;

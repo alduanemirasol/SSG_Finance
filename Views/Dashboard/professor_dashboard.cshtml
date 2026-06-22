@@ -303,7 +303,7 @@
             </div>
             <div class="tbl-scroll">
             <table>
-                <thead><tr><th>#</th><th>CTU ID</th><th>Name</th><th>Course · Year &amp; Section</th><th>Org Fee Balance – 1st Semester</th><th>Org Fee Balance – 2nd Semester</th><th>Ledger</th></tr></thead>
+                <thead><tr><th>#</th><th>CTU ID</th><th>Name</th><th>Course · Year &amp; Section</th><th>Org Fee Bal(1st Sem<span id="th-sem1-badge"></span></th><th>Org Fee Bal(2nd Sem)<span id="th-sem2-badge"></span></th><th>Ledger</th></tr></thead>
                 <tbody id="students-page-tbody">
                     <tr class="empty-row"><td colspan="7">Loading students…</td></tr>
                 </tbody>
@@ -720,6 +720,26 @@ setInterval(async () => {
 let ALL_STUDENTS_PAGE = [];
 let studentsPageQ = '';
 let studentsPageCourse = '';
+let _currentSem = null; // 'first' | 'second' | null (past school year)
+
+// Resolve the live semester for the loaded school year from the API's
+// per-fee flags (all rows share the same value, so the first row is enough).
+function computeProfSemContext() {
+  const s = ALL_STUDENTS_PAGE[0];
+  _currentSem = s && s.firstSemIsCurrent ? 'first'
+              : s && s.secondSemIsCurrent ? 'second'
+              : null;
+}
+
+// Put a "Current" badge on whichever semester column is the live one. Only the
+// real current semester gets the badge — past school years show none.
+function updateSemHeaderIndicators() {
+  const badge = '<span style="font-size:9px;font-weight:700;background:var(--green-glow);color:#5fdd8e;border:1px solid rgba(74,222,128,.3);border-radius:5px;padding:1px 6px;margin-left:6px;letter-spacing:.04em;text-transform:uppercase;vertical-align:middle">Current</span>';
+  const b1 = document.getElementById('th-sem1-badge');
+  const b2 = document.getElementById('th-sem2-badge');
+  if (b1) b1.innerHTML = _currentSem === 'first'  ? badge : '';
+  if (b2) b2.innerHTML = _currentSem === 'second' ? badge : '';
+}
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, ch => ({
@@ -800,6 +820,8 @@ async function loadStudentsPage(schoolYear = null) {
     ALL_STUDENTS_PAGE = data.students || [];
     const sub = document.getElementById('students-page-sub');
     if (sub) sub.textContent = `${ALL_STUDENTS_PAGE.length} student${ALL_STUDENTS_PAGE.length !== 1 ? 's' : ''} · A.Y. ${data.schoolYear}`;
+    computeProfSemContext();
+    updateSemHeaderIndicators();
     populateStudentsPageFilters();
     applyStudentsPageFilters();
   } catch (err) {

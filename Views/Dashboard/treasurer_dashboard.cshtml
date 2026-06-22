@@ -304,6 +304,9 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 .rpt-title{font-size:13px;font-weight:600;color:#fff;flex:1}
 .rpt-meta{font-size:11px;color:var(--text-d)}
 .rpt-bal{font-family:'DM Mono',monospace;font-size:12.5px;font-weight:600;color:#5fdd8e}
+.rpt-del{flex-shrink:0;width:30px;height:30px;border-radius:7px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text-d);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.rpt-del:hover{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.3);color:#f87171}
+.rpt-del svg{width:15px;height:15px}
 .nr-type-btn{flex:1;padding:10px 8px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);color:var(--text-m);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center}
 .nr-type-btn:hover,.nr-type-btn.active{background:rgba(39,167,68,.1);border-color:rgba(39,167,68,.3);color:#5fdd8e}
 .nr-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);cursor:pointer;transition:all .13s;margin-bottom:5px;user-select:none}
@@ -712,8 +715,8 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
             <th>CTU ID</th>
             <th>Name</th>
             <th>Course.Year.Section</th>
-            <th><span id="th-sem1-label">Org Fee Balance - 1st Semester</span><span id="th-sem1-badge"></span></th>
-            <th><span id="th-sem2-label">Org Fee Balance - 2nd Semester</span><span id="th-sem2-badge"></span></th>
+            <th><span id="th-sem1-label">Org Fee Bal(1st Sem)</span><span id="th-sem1-badge"></span></th>
+            <th><span id="th-sem2-label">Org Fee Bal(2nd Sem)</span><span id="th-sem2-badge"></span></th>
             <th style="text-align:center">Actions</th>
           </tr>
         </thead>
@@ -5736,8 +5739,34 @@ async function loadReports() {
         <div class="rpt-title">${escapeHtml(r.title)}</div>
         <div class="rpt-meta">${r.schoolYear || ''}${r.semester ? ' · ' + r.semester + ' Sem' : ''}${r.dateFrom ? ' · ' + r.dateFrom.substring(0,10) : ''}</div>
         <div class="rpt-bal">${fmt(r.runningBalance)}</div>
+        <button class="rpt-del" title="Delete report" aria-label="Delete report" onclick="event.stopPropagation(); deleteReport(${r.reportId}, this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+        </button>
       </div>`).join('');
   } catch { /* silent */ }
+}
+
+async function deleteReport(id, btn) {
+  // Read the rendered title for a clear confirm prompt (textContent is already
+  // HTML-decoded, so no double-escaping of names that contain & < > etc.).
+  const title = btn?.closest('.rpt-row')?.querySelector('.rpt-title')?.textContent?.trim() || 'this report';
+  if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+  try {
+    const res = await fetch('/Home/DeleteReport', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+      body: JSON.stringify({ reportId: id })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(data.message || 'Report deleted.', 'ok');
+      await loadReports();
+    } else {
+      showToast(data.message || 'Failed to delete report.', 'fail');
+    }
+  } catch {
+    showToast('Request failed.', 'fail');
+  }
 }
 
 async function viewReport(id) {

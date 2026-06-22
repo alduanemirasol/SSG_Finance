@@ -195,4 +195,38 @@ public partial class HomeController : AppController
             return Json(new { success = false, message = "An error occurred. Please try again." });
         }
     }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteReport([FromBody] DeleteReportRequest req)
+    {
+        var guard = RequireAnyRole("Treasurer", "Admin");
+        if (guard != null) return guard;
+
+        try
+        {
+            var report = await _context.Reports
+                .Include(r => r.Items)
+                .FirstOrDefaultAsync(r => r.ReportId == req.ReportId);
+
+            if (report == null)
+                return Json(new { success = false, message = "Report not found." });
+
+            // Items are cascade-configured, but remove them explicitly to mirror the
+            // delete pattern used elsewhere (e.g. DeleteAccount) and avoid relying on
+            // the database-level cascade.
+            if (report.Items.Count > 0)
+                _context.ReportItems.RemoveRange(report.Items);
+
+            _context.Reports.Remove(report);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Report deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex}");
+            return Json(new { success = false, message = "An error occurred. Please try again." });
+        }
+    }
 }

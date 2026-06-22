@@ -20,6 +20,11 @@ public class CreateReportRequest
     public List<int> FundIds    { get; set; } = new();
 }
 
+public class DeleteReportRequest
+{
+    public int ReportId { get; set; }
+}
+
 public class LoginRequest
 {
     public string  SchoolId  { get; set; } = string.Empty;
