@@ -78,8 +78,8 @@ phase_1_validate_env() {
   phase 1 "Environment Validation"
   [ ! -f /etc/os-release ] && error "Cannot detect OS." && exit 1
   source /etc/os-release
-  [ "$ID" != "ubuntu" ] || { [ "$VERSION_ID" != "22.04" ] && [ "$VERSION_ID" != "24.04" ]; } && \
-    error "Unsupported: $ID $VERSION_ID. Requires Ubuntu 22.04/24.04." && exit 1
+  [ "$ID" != "ubuntu" ] && \
+    error "Unsupported: $ID $VERSION_ID. Requires Ubuntu." && exit 1
   info "OS: $NAME $VERSION_ID"
   ARCH=$(uname -m)
   [ "$ARCH" != "x86_64" ] && [ "$ARCH" != "aarch64" ] && \
