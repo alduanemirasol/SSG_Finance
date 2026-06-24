@@ -1,3 +1,6 @@
+# ---- Deployment secrets ----
+.env
+
 # ---- Build output ----
 bin/
 obj/
