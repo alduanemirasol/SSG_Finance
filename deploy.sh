@@ -79,6 +79,9 @@ install_system_packages() {
 install_dotnet() {
     if command -v dotnet &>/dev/null && dotnet --list-sdks | grep -q "^10."; then
         log ".NET 10 SDK already installed ($(dotnet --version))"
+        local dotnet_path
+        dotnet_path=$(command -v dotnet)
+        ln -sf "$dotnet_path" /usr/local/bin/dotnet
     else
         log "Installing .NET 10 SDK (preview channel)..."
         wget -q https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh
@@ -88,10 +91,9 @@ install_dotnet() {
             --channel 10.0 \
             --install-dir /usr/share/dotnet \
             --no-path
-    fi
 
-    # Always ensure the symlink exists — systemd hardcodes this path
-    ln -sf /usr/share/dotnet/dotnet /usr/local/bin/dotnet
+        ln -sf /usr/share/dotnet/dotnet /usr/local/bin/dotnet
+    fi
 
     # Verify
     dotnet --version || err ".NET SDK installation failed"
