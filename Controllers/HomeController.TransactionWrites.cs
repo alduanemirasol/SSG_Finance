@@ -58,7 +58,7 @@ public partial class HomeController : AppController
                 return Json(new { success = false, message = "Fee not found." });
 
             if (targetFee == null)
-                return Json(new { success = false, message = $"No fee set for {semesterInput} Semester of {currentSchoolYear.YearStart}–{currentSchoolYear.YearEnd}. Please set the fee in Settings first." });
+                return Json(new { success = false, message = $"No fee set for {semesterInput} Semester of {currentSchoolYear!.YearStart}–{currentSchoolYear.YearEnd}. Please set the fee in Settings first." });
 
             var student = await _context.Users
                 .Include(u => u.AcademicProfile)
@@ -137,6 +137,14 @@ public partial class HomeController : AppController
 
             var cumulativeTotal = previouslyPaid + request.Amount;
 
+            // Reject an already-used receipt number up front, so we never create a payment
+            // that then fails to attach its receipt (unique index uq_receipt_number).
+            if (!string.IsNullOrWhiteSpace(request.ReceiptNumber)
+                && await _context.Receipts.AnyAsync(r => r.ReceiptNumber == request.ReceiptNumber))
+            {
+                return Json(new { success = false, message = $"Receipt number \"{request.ReceiptNumber}\" has already been used. Please enter a different one." });
+            }
+
             var payment = new OrgFeePayment
             {
                 UserId        = request.UserId,
@@ -154,18 +162,21 @@ public partial class HomeController : AppController
             };
 
             _context.OrgFeePayments.Add(payment);
-            await _context.SaveChangesAsync();
 
+            // Add the receipt to the SAME change-set so the payment and its receipt are
+            // written in one transaction: if the receipt can't be saved, the payment is
+            // rolled back too — no more orphan payment with no receipt number.
             if (!string.IsNullOrWhiteSpace(request.ReceiptNumber))
             {
                 _context.Receipts.Add(new Receipt
                 {
                     ReceiptNumber = request.ReceiptNumber,
-                    PaymentId     = payment.PaymentId,
+                    Payment       = payment,   // EF fills in PaymentId after the payment insert
                     IssuedBy      = receivedBy
                 });
-                await _context.SaveChangesAsync();
             }
+
+            await _context.SaveChangesAsync();
 
             await _sse.BroadcastAsync("payments-changed");
             return Json(new
@@ -461,6 +472,15 @@ public partial class HomeController : AppController
 
             if (payment == null)
                 return Json(new { success = false, message = "Payment not found." });
+
+            // Reject a receipt number already used by a DIFFERENT payment (re-saving this
+            // payment's own number is fine), so the update doesn't fail on uq_receipt_number.
+            if (!string.IsNullOrWhiteSpace(request.ReceiptNumber)
+                && await _context.Receipts.AnyAsync(r => r.ReceiptNumber == request.ReceiptNumber
+                                                      && r.PaymentId != payment.PaymentId))
+            {
+                return Json(new { success = false, message = $"Receipt number \"{request.ReceiptNumber}\" has already been used. Please enter a different one." });
+            }
 
             payment.Amount = request.Amount;
             payment.PaymentStatus = request.Amount >= request.FullAmount
