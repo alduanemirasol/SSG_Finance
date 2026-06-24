@@ -79,18 +79,18 @@ install_system_packages() {
 install_dotnet() {
     if command -v dotnet &>/dev/null && dotnet --list-sdks | grep -q "^10."; then
         log ".NET 10 SDK already installed ($(dotnet --version))"
-        return
+    else
+        log "Installing .NET 10 SDK (preview channel)..."
+        wget -q https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh
+        chmod +x /tmp/dotnet-install.sh
+
+        /tmp/dotnet-install.sh \
+            --channel 10.0 \
+            --install-dir /usr/share/dotnet \
+            --no-path
     fi
 
-    log "Installing .NET 10 SDK (preview channel)..."
-    wget -q https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh
-    chmod +x /tmp/dotnet-install.sh
-
-    /tmp/dotnet-install.sh \
-        --channel 10.0 \
-        --install-dir /usr/share/dotnet \
-        --no-path
-
+    # Always ensure the symlink exists — systemd hardcodes this path
     ln -sf /usr/share/dotnet/dotnet /usr/local/bin/dotnet
 
     # Verify
@@ -129,8 +129,10 @@ SQL
 # ---- Phase 4: Application Files ----
 clone_or_pull_repo() {
     if [[ -d "${SRC_DIR}/.git" ]]; then
-        log "Pulling latest code from ${BRANCH} branch..."
-        git -C "$SRC_DIR" pull origin "$BRANCH"
+        log "Fetching latest code from ${BRANCH} branch..."
+        git -C "$SRC_DIR" fetch origin "$BRANCH"
+        git -C "$SRC_DIR" reset --hard "origin/${BRANCH}"
+        git -C "$SRC_DIR" clean -fd
     else
         log "Cloning ${REPO_URL} (${BRANCH})..."
         git clone --branch "$BRANCH" --single-branch "$REPO_URL" "$SRC_DIR"
@@ -261,6 +263,25 @@ enable_service() {
     else
         warn "Application may still be starting. Check: journalctl -u ${SERVICE_NAME}"
     fi
+}
+
+# ---- Phase 6b: Print active endpoints ----
+print_active_endpoints() {
+    local ip
+    ip=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+\.\d+\.\d+\.\d+' | grep -v '127.0.0.1' | head -1)
+
+    echo ""
+    echo "=============================================="
+    echo "  Active Endpoints"
+    echo "=============================================="
+    echo ""
+    echo "  Kestrel:  http://127.0.0.1:${APP_PORT}"
+    echo "  Network:  http://${ip:-<unresolved>}:${APP_PORT}"
+    echo "  Nginx:    http://${ip:-<unresolved>}/"
+    echo ""
+    echo "  Verify locally:"
+    echo "    curl -s http://127.0.0.1:${APP_PORT}/"
+    echo ""
 }
 
 # ---- Phase 7: Nginx ----
@@ -440,6 +461,7 @@ main() {
     build_and_publish
     write_systemd_service
     enable_service
+    print_active_endpoints
     write_nginx_config
     reload_nginx
     configure_firewall
