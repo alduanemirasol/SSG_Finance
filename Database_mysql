@@ -262,29 +262,3 @@ CREATE TABLE student_fee_exemptions (
         ON DELETE CASCADE
 );
 
--- ============================================================================
--- MIGRATION STATEMENTS
--- A fresh database created from the CREATE TABLE statements above ALREADY
--- includes everything below, so a brand-new setup can ignore this section.
--- If you ALREADY have an older copy of this database, run ONLY the statements
--- below to bring it up to date.
--- ============================================================================
-
--- 1. Convert existing Graduated/Transferred students to Dropped
---    (keeps them inactive and fee-exempt, as they were before).
-UPDATE academic_profile
-SET academic_status = 'Dropped'
-WHERE academic_status IN ('Graduated', 'Transferred');
-
--- 2. Tighten the column so only the two allowed values remain.
-ALTER TABLE academic_profile
-MODIFY COLUMN academic_status ENUM('Enrolled','Dropped') NOT NULL DEFAULT 'Enrolled';
-
-ALTER TABLE org_fee_payments DROP FOREIGN KEY fk_payment_user;
-
-ALTER TABLE org_fee_payments MODIFY user_id INT NULL;
-
-ALTER TABLE org_fee_payments
-  ADD CONSTRAINT fk_payment_user
-  FOREIGN KEY (user_id) REFERENCES users (user_id)
-  ON UPDATE CASCADE ON DELETE SET NULL;
