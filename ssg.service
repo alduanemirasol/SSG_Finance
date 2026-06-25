@@ -1,0 +1,44 @@
+# Reference systemd unit for SSG Finance (native, no Docker).
+#
+# This is a TEMPLATE for documentation. `deploy-native.sh` generates the live
+# copy at /etc/systemd/system/ssg.service with values filled in from your .env.
+# To use this file by hand instead:
+#   1. Replace the <PLACEHOLDERS> below.
+#   2. sudo cp ssg.service /etc/systemd/system/ssg.service
+#   3. sudo systemctl daemon-reload && sudo systemctl enable --now ssg
+#
+# Manage it with:  systemctl status ssg | journalctl -u ssg -f
+
+[Unit]
+Description=SSG Finance (ASP.NET Core, native)
+After=network.target mysql.service
+Requires=mysql.service
+
+[Service]
+WorkingDirectory=<APP_DIR>
+ExecStart=/usr/bin/dotnet <APP_DIR>/MyMvcApp.dll
+Restart=always
+RestartSec=10
+User=<SERVICE_USER>
+KillSignal=SIGINT
+SyslogIdentifier=ssg
+
+# Bind HTTP only on the LAN port. Do NOT set ASPNETCORE_HTTPS_PORT — leaving it
+# unset makes the app's UseHttpsRedirection() a no-op so plain HTTP works.
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=ASPNETCORE_URLS=http://0.0.0.0:8085
+Environment=DOTNET_NOLOGO=true
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+
+# Secrets — keep them here (root-owned unit), not in appsettings.json.
+Environment="ConnectionStrings__DefaultConnection=server=localhost;port=3306;database=<DB_NAME>;uid=<DB_USER>;pwd=<DB_PASSWORD>;"
+
+# Optional SMTP (delete these four lines to disable password-reset email).
+Environment=SmtpSettings__Host=<SMTP_HOST>
+Environment=SmtpSettings__Port=<SMTP_PORT>
+Environment=SmtpSettings__UserName=<SMTP_USERNAME>
+Environment=SmtpSettings__Password=<SMTP_PASSWORD>
+Environment=SmtpSettings__EnableSsl=true
+
+[Install]
+WantedBy=multi-user.target
