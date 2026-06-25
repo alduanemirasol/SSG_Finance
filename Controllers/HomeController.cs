@@ -346,10 +346,10 @@ namespace MyMvcApp.Controllers;
         {
             receipts = await _context.Receipts
                 .Include(r => r.Payment)
-                    .ThenInclude(p => p.FullAmount)
+                    .ThenInclude(p => p!.FullAmount)
                         .ThenInclude(fa => fa.SchoolYear)
                 .Include(r => r.Payment)
-                    .ThenInclude(p => p.User)
+                    .ThenInclude(p => p!.User)
                 .Where(r => r.Payment != null && r.Payment.UserId == userId)
                 .Select(r => new StudentReceiptViewModel
                 {
@@ -591,7 +591,7 @@ namespace MyMvcApp.Controllers;
             });
 
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Json(new { success = false, message = "Login failed." });
 

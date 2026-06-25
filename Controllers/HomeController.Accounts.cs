@@ -63,7 +63,7 @@ public partial class HomeController : AppController
 
             return Json(new { success = false, message = result.Message });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Json(new { success = false, message = "Registration failed." });
 
@@ -200,7 +200,7 @@ Best regards,<br>SSG Financial Management System";
 
             return Json(new { success = true, message = genericMessage, studentId = request.StudentId });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Json(new { success = false, message = "Failed to process request." });
 
@@ -238,7 +238,7 @@ Best regards,<br>SSG Financial Management System";
 
             return Json(new { success = true, message = "Code verified. You can now reset your password." });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Json(new { success = false, message = "Failed to verify code." });
 
@@ -288,7 +288,7 @@ Best regards,<br>SSG Financial Management System";
 
             return Json(new { success = true, message = "Password reset successfully. You can now log in." });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Json(new { success = false, message = "Failed to reset password." });
 
@@ -437,7 +437,7 @@ Best regards,<br>SSG Financial Management System";
                         await _sse.BroadcastAsync("accounts-changed");
                         return Json(new { success = true, message = $"Account {request.Status} successfully. Email notification sent." });
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                         return Json(new { success = false, message = "Failed to update account status." });
 

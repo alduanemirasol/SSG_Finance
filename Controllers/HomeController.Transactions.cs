@@ -71,10 +71,10 @@ public partial class HomeController : AppController
 
             var payments = await _context.OrgFeePayments
                 .Include(p => p.User)
-                    .ThenInclude(u => u.AcademicProfile)
-                        .ThenInclude(ap => ap.Course)
+                    .ThenInclude(u => u!.AcademicProfile)
+                        .ThenInclude(ap => ap!.Course)
                 .Include(p => p.User)
-                    .ThenInclude(u => u.Account)
+                    .ThenInclude(u => u!.Account)
                 .Include(p => p.FullAmount)
                     .ThenInclude(f => f.SchoolYear)
                 .Include(p => p.Receipts)
@@ -127,9 +127,9 @@ public partial class HomeController : AppController
 
             var recentPayments = await _context.OrgFeePayments
                 .Include(p => p.User)
-                    .ThenInclude(u => u.Account)
+                    .ThenInclude(u => u!.Account)
                 .Include(p => p.User)
-                    .ThenInclude(u => u.AcademicProfile)
+                    .ThenInclude(u => u!.AcademicProfile)
                         .ThenInclude(ap => ap!.Course)
                 .Where(p => p.PaymentStatus == PaymentStatus.Paid
                          || p.PaymentStatus == PaymentStatus.Partial)
@@ -575,10 +575,10 @@ public partial class HomeController : AppController
 
             var payment = await _context.OrgFeePayments
                 .Include(p => p.User)
-                    .ThenInclude(u => u.Account)
+                    .ThenInclude(u => u!.Account)
                 .Include(p => p.User)
-                    .ThenInclude(u => u.AcademicProfile)
-                        .ThenInclude(ap => ap.Course)
+                    .ThenInclude(u => u!.AcademicProfile)
+                        .ThenInclude(ap => ap!.Course)
                 .Include(p => p.FullAmount)
                     .ThenInclude(f => f.SchoolYear)
                 .Include(p => p.Receipts)
@@ -810,7 +810,7 @@ public partial class HomeController : AppController
                         : "Org Fee",
                     amount = p.Amount,
                     date = p.PaymentDate,
-                    receipt = p.Receipts.FirstOrDefault() != null ? p.Receipts.FirstOrDefault().ReceiptNumber : "—"
+                    receipt = p.Receipts.FirstOrDefault() != null ? p.Receipts.FirstOrDefault()!.ReceiptNumber : "—"
                 })
                 .ToListAsync();
 
