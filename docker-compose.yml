@@ -21,10 +21,10 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: "server=db;port=3306;database=${MYSQL_DATABASE:-ssg_system};uid=root;pwd=${DB_ROOT_PASSWORD};"
-      SmtpSettings__Host: ${SMTP_HOST}
-      SmtpSettings__Port: ${SMTP_PORT}
-      SmtpSettings__UserName: ${SMTP_USERNAME}
-      SmtpSettings__Password: ${SMTP_PASSWORD}
+      SmtpSettings__Host: ${SMTP_HOST:-}
+      SmtpSettings__Port: ${SMTP_PORT:-}
+      SmtpSettings__UserName: ${SMTP_USERNAME:-}
+      SmtpSettings__Password: ${SMTP_PASSWORD:-}
       SmtpSettings__EnableSsl: "true"
     volumes:
       - ./App_data:/app/App_data:ro

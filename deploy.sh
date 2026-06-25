@@ -9,6 +9,13 @@ if [ ! -f .env ]; then
   exit 1
 fi
 
+if ! docker info > /dev/null 2>&1; then
+  echo "ERROR: Cannot connect to Docker daemon."
+  echo "       Run:  sudo usermod -aG docker \$USER"
+  echo "       Then log out and back in, or run:  newgrp docker"
+  exit 1
+fi
+
 echo "Pulling latest code..."
 git pull
 

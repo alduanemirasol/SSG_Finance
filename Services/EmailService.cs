@@ -15,6 +15,11 @@ namespace MyMvcApp.Services
 
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
+            if (string.IsNullOrEmpty(_smtpSettings.Host))
+            {
+                return;
+            }
+
             using var client = new SmtpClient(_smtpSettings.Host, _smtpSettings.Port)
             {
                 Credentials = new NetworkCredential(_smtpSettings.UserName, _smtpSettings.Password),
