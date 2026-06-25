@@ -10,6 +10,7 @@ x86/
 wwwroot/uploads/
 
 # ---- Credentials / secrets kept out of the repo ----
+.env
 App_data/*.json
 
 # ---- IDE / editor ----
