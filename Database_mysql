@@ -90,9 +90,7 @@ CREATE TABLE full_amount (
   semester        ENUM('First','Second')  NOT NULL,
   amount          DECIMAL(10,2)           NOT NULL,
   semester_status ENUM('Current','Ended') NOT NULL DEFAULT 'Current',
-  semester_start  DATE                    NULL,
-  semester_end    DATE                    NULL,
-
+  
   PRIMARY KEY (full_amount_id),
   CONSTRAINT fk_full_amount_sy
     FOREIGN KEY (school_year_id) REFERENCES school_years (school_year_id)
