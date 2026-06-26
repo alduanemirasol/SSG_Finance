@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+bin/
+obj/
+App_data/
+wwwroot/uploads/
+debug_fees.txt
+*.user
+*.suo

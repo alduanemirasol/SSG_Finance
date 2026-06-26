@@ -1,10 +1,19 @@
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using MyMvcApp.Data;
 using MyMvcApp.Services;
 
+LoadDotEnv();
+
 var builder = WebApplication.CreateBuilder(args);
+
+var configuredPort = builder.Configuration["PORT"];
+if (!string.IsNullOrWhiteSpace(configuredPort) && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
+{
+    builder.WebHost.UseUrls($"http://+:{configuredPort}");
+}
 
 // Add services to the container.
 // AutoValidateAntiforgeryToken enforces CSRF validation on ALL unsafe HTTP methods
@@ -29,7 +38,14 @@ builder.Services.AddAntiforgery(options =>
 });
 
 // Add Entity Framework Core
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = BuildDatabaseConnectionString(builder.Configuration)
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException("Database connection is not configured. Set DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, and DB_PASSWORD in .env.");
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
@@ -37,7 +53,20 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Add Email Service
-builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+builder.Services.Configure<SmtpSettings>(options =>
+{
+    var smtpSettings = builder.Configuration.GetSection("SmtpSettings");
+    options.Host = GetConfigValue(builder.Configuration["SMTP_HOST"], smtpSettings["Host"]);
+    options.UserName = GetConfigValue(builder.Configuration["SMTP_USERNAME"], smtpSettings["UserName"]);
+    options.Password = GetConfigValue(builder.Configuration["SMTP_PASSWORD"], smtpSettings["Password"]);
+
+    if (int.TryParse(GetConfigValue(builder.Configuration["SMTP_PORT"], smtpSettings["Port"], "587"), out var smtpPort))
+    {
+        options.Port = smtpPort;
+    }
+
+    options.EnableSsl = !bool.TryParse(smtpSettings["EnableSsl"], out var enableSsl) || enableSsl;
+});
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Add SSE Service
@@ -175,3 +204,75 @@ app.MapControllerRoute(
 
 
 app.Run();
+
+static void LoadDotEnv()
+{
+    var envPath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+    if (!File.Exists(envPath))
+    {
+        return;
+    }
+
+    foreach (var rawLine in File.ReadAllLines(envPath))
+    {
+        var line = rawLine.Trim();
+        if (string.IsNullOrWhiteSpace(line) || line.StartsWith('#'))
+        {
+            continue;
+        }
+
+        var separatorIndex = line.IndexOf('=');
+        if (separatorIndex <= 0)
+        {
+            continue;
+        }
+
+        var key = line[..separatorIndex].Trim();
+        var value = line[(separatorIndex + 1)..].Trim();
+
+        if ((value.StartsWith('"') && value.EndsWith('"')) ||
+            (value.StartsWith('\'') && value.EndsWith('\'')))
+        {
+            value = value[1..^1];
+        }
+
+        if (Environment.GetEnvironmentVariable(key) is null)
+        {
+            Environment.SetEnvironmentVariable(key, value);
+        }
+    }
+}
+
+static string? BuildDatabaseConnectionString(ConfigurationManager configuration)
+{
+    var dbValues = new Dictionary<string, string>
+    {
+        ["DB_HOST"] = configuration["DB_HOST"] ?? string.Empty,
+        ["DB_PORT"] = configuration["DB_PORT"] ?? string.Empty,
+        ["DB_DATABASE"] = configuration["DB_DATABASE"] ?? string.Empty,
+        ["DB_USERNAME"] = configuration["DB_USERNAME"] ?? string.Empty,
+        ["DB_PASSWORD"] = configuration["DB_PASSWORD"] ?? string.Empty
+    };
+
+    if (dbValues.Values.All(string.IsNullOrWhiteSpace))
+    {
+        return null;
+    }
+
+    var missingKeys = dbValues
+        .Where(pair => string.IsNullOrWhiteSpace(pair.Value))
+        .Select(pair => pair.Key)
+        .ToArray();
+
+    if (missingKeys.Length > 0)
+    {
+        throw new InvalidOperationException($"Database environment is incomplete. Missing: {string.Join(", ", missingKeys)}.");
+    }
+
+    return $"server={dbValues["DB_HOST"]};port={dbValues["DB_PORT"]};database={dbValues["DB_DATABASE"]};uid={dbValues["DB_USERNAME"]};pwd={dbValues["DB_PASSWORD"]};";
+}
+
+static string GetConfigValue(params string?[] values)
+{
+    return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
+}

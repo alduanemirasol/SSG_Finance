@@ -16,15 +16,26 @@ if ! docker info > /dev/null 2>&1; then
   exit 1
 fi
 
+for network in ssgfinance-network proxy-network; do
+  if ! docker network inspect "$network" > /dev/null 2>&1; then
+    echo "ERROR: Docker network '$network' does not exist."
+    echo "       Create it first: docker network create $network"
+    exit 1
+  fi
+done
+
 echo "Pulling latest code..."
 git pull
 
 echo "Building and starting containers..."
 docker compose up -d --build
 
-HOST_IP=$(hostname -I | awk '{print $1}')
+PORT=$(awk -F= '/^[[:space:]]*PORT[[:space:]]*=/{value=$0; sub(/^[^=]*=/, "", value); gsub(/^[[:space:]]+|[[:space:]]+$/, "", value); print value; exit}' .env)
+PORT=${PORT:-3000}
+
 echo ""
 echo "========================================"
 echo "  SSG Finance is running!"
-echo "  LAN access: http://${HOST_IP}:5183"
+echo "  Container: ssgfinance-app:${PORT}"
+echo "  Proxy URL depends on your nginx config."
 echo "========================================"
