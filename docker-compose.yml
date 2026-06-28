@@ -9,24 +9,13 @@ services:
 
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: http://+:${PORT:-3000}
+      ASPNETCORE_URLS: "http://+:${PORT:-3000}"
 
-    expose:
-      - "${PORT:-3000}"
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
 
     volumes:
-      - uploads:/app/wwwroot/uploads
+      - "${HOME}/uploads:/app/wwwroot/uploads"
 
-    networks:
-      - ssgfinance-network
-      - proxy-network
-
-volumes:
-  uploads:
-
-networks:
-  ssgfinance-network:
-    external: true
-
-  proxy-network:
-    external: true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

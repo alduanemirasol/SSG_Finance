@@ -1,4 +1,2 @@
-# Deployment scripts and unit files must keep LF endings so they run on Linux.
+# Shell scripts must keep LF line endings so they run on the Linux server.
 *.sh        text eol=lf
-*.service   text eol=lf
-deploy.sh   text eol=lf
