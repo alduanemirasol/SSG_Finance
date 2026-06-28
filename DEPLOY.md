@@ -46,8 +46,8 @@ bash deploy-server.sh
 │  Nginx (port 80/443)                                │
 │    └─ proxy_pass http://127.0.0.1:3000             │
 │                                                     │
-│  MySQL (port 3306) ◄── app connects via             │
-│                         host.docker.internal        │
+│  MySQL (port 3306, host) ◄── app connects via       │
+│                         127.0.0.1 (host networking) │
 │                                                     │
 │  ~/app/          Application files + Docker config  │
 │  ~/uploads/      Persistent user uploads            │
@@ -67,7 +67,7 @@ The `.env` file must contain:
 
 | Variable     | Description                         |
 |--------------|-------------------------------------|
-| `DB_HOST`    | MySQL host (`host.docker.internal`) |
+| `DB_HOST`    | MySQL host (`127.0.0.1`)            |
 | `DB_PORT`    | MySQL port (`3306`)                 |
 | `DB_DATABASE`| Database name                       |
 | `DB_USERNAME`| Database user                       |

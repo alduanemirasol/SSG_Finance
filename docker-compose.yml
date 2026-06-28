@@ -3,19 +3,13 @@ services:
     build: .
     container_name: ssgfinance-app
     restart: unless-stopped
+    network_mode: host
 
     env_file:
       - .env
 
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: "http://+:${PORT:-3000}"
-
-    ports:
-      - "${PORT:-3000}:${PORT:-3000}"
 
     volumes:
       - "${HOME}/uploads:/app/wwwroot/uploads"
-
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
