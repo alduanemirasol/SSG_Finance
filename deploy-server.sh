@@ -21,7 +21,8 @@ DB_HOST=$(grep -E '^DB_HOST=' .env | cut -d= -f2)
 DB_PORT=$(grep -E '^DB_PORT=' .env | cut -d= -f2)
 DB_PORT=${DB_PORT:-3306}
 DB_USERNAME=$(grep -E '^DB_USERNAME=' .env | cut -d= -f2)
-DB_PASSWORD=$(grep -E '^DB_PASSWORD=' .env | cut -d= -f2)
+line=$(grep -E '^DB_PASSWORD=' .env)
+DB_PASSWORD="${line#*=}"
 
 if ! MYSQL_PWD="${DB_PASSWORD}" mysqladmin ping \
   -h "${DB_HOST:-127.0.0.1}" \
